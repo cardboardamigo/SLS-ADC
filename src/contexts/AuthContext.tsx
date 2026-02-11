@@ -7,6 +7,9 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -39,6 +42,8 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -77,6 +82,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchProfile(cred.user.uid);
   }
 
+  async function signInWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    const cred = await signInWithPopup(auth, provider);
+    const docRef = doc(db, "users", cred.user.uid);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) {
+      const newProfile: UserProfile = {
+        uid: cred.user.uid,
+        email: cred.user.email || "",
+        name: cred.user.displayName || "",
+        phone: cred.user.phoneNumber || "",
+        title: "",
+        profilePicUrl: cred.user.photoURL || "",
+      };
+      await setDoc(docRef, newProfile);
+      setProfile(newProfile);
+    } else {
+      setProfile(snap.data() as UserProfile);
+    }
+  }
+
+  async function resetPassword(email: string) {
+    await sendPasswordResetEmail(auth, email);
+  }
+
   async function signUp(email: string, password: string, name: string) {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const newProfile: UserProfile = {
@@ -105,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, signIn, signUp, signOut, refreshProfile }}
+      value={{ user, profile, loading, signIn, signInWithGoogle, resetPassword, signUp, signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>
