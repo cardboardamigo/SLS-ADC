@@ -12,6 +12,28 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types";
 
+function friendlyAuthError(err: unknown): string {
+  if (!(err instanceof Error)) return "Something went wrong. Please try again.";
+  const msg = err.message;
+  if (msg.includes("auth/operation-not-allowed"))
+    return "Email/password sign-in is not enabled. Please contact the administrator to enable it in the Firebase console.";
+  if (msg.includes("auth/user-not-found") || msg.includes("auth/wrong-password") || msg.includes("auth/invalid-credential"))
+    return "Invalid email or password. Please try again.";
+  if (msg.includes("auth/email-already-in-use"))
+    return "An account with this email already exists. Try signing in instead.";
+  if (msg.includes("auth/weak-password"))
+    return "Password is too weak. Please use at least 6 characters.";
+  if (msg.includes("auth/invalid-email"))
+    return "Please enter a valid email address.";
+  if (msg.includes("auth/too-many-requests"))
+    return "Too many failed attempts. Please wait a moment and try again.";
+  if (msg.includes("auth/network-request-failed"))
+    return "Network error. Please check your internet connection.";
+  return "Something went wrong. Please try again.";
+}
+
+export { friendlyAuthError };
+
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
