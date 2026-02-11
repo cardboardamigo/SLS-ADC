@@ -41,11 +41,52 @@ export default function RegisterPage() {
     }
   }
 
+  const inputStyle = {
+    borderRadius: "var(--bubble-radius-input)",
+    background: "#f8fafc",
+    border: "1.5px solid #e2e8f0",
+    fontFamily: "'Poppins', sans-serif",
+  };
+
+  function handleInputFocus(e: React.FocusEvent<HTMLInputElement>) {
+    e.target.style.borderColor = "rgba(15,42,74,0.3)";
+    e.target.style.boxShadow = "0 0 0 3px rgba(15,42,74,0.08)";
+    e.target.style.background = "#ffffff";
+  }
+
+  function handleInputBlur(e: React.FocusEvent<HTMLInputElement>) {
+    e.target.style.borderColor = "#e2e8f0";
+    e.target.style.boxShadow = "none";
+    e.target.style.background = "#f8fafc";
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#e8f4f8] via-[#f0f7fa] to-white">
+    <div className="min-h-screen flex flex-col" style={{ fontFamily: "'Poppins', sans-serif", background: "linear-gradient(160deg, #f0f4f8 0%, #ffffff 40%, #fdf0ef 100%)" }}>
+      {/* Decorative background bubbles */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full" style={{ background: "radial-gradient(circle, rgba(15,42,74,0.05) 0%, transparent 70%)" }} />
+        <div className="absolute top-1/4 -left-20 w-64 h-64 rounded-full" style={{ background: "radial-gradient(circle, rgba(192,57,43,0.035) 0%, transparent 70%)" }} />
+        <div className="absolute bottom-1/4 right-0 w-48 h-48 rounded-full" style={{ background: "radial-gradient(circle, rgba(15,42,74,0.04) 0%, transparent 70%)" }} />
+        <div className="absolute bottom-10 left-1/4 w-32 h-32 rounded-full" style={{ background: "radial-gradient(circle, rgba(192,57,43,0.025) 0%, transparent 70%)" }} />
+        {/* Subtle watermark logo */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] opacity-[0.02]">
+          <Image
+            src="/SLS-LOGO.png"
+            alt=""
+            width={500}
+            height={500}
+            className="object-contain"
+            aria-hidden="true"
+          />
+        </div>
+      </div>
+
       {/* Top section with branding */}
-      <div className="flex-shrink-0 flex flex-col items-center justify-end pt-12 pb-5 px-6">
-        <div className="w-20 h-20 rounded-2xl overflow-hidden mb-4 bg-white shadow-sm border border-gray-100 flex items-center justify-center p-1.5">
+      <div className="relative flex-shrink-0 flex flex-col items-center justify-end pt-12 pb-5 px-6">
+        <div
+          className="w-20 h-20 overflow-hidden mb-4 flex items-center justify-center p-1.5 shadow-md"
+          style={{ borderRadius: "24px", background: "rgba(255,255,255,0.9)", border: "1.5px solid rgba(15,42,74,0.08)", backdropFilter: "blur(10px)" }}
+        >
           <Image
             src="/SLS-LOGO.png"
             alt="Salt Lake Specialty"
@@ -57,18 +98,25 @@ export default function RegisterPage() {
             }}
           />
         </div>
-        <h1 className="text-2xl font-bold text-[#1e3a5f] tracking-tight">
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "#0f2a4a" }}>
           Create Account
         </h1>
-        <p className="text-gray-400 text-sm mt-1">Census Tracker</p>
+        <p className="text-sm mt-1.5 font-light" style={{ color: "#94a3b8" }}>Census Tracker</p>
       </div>
 
       {/* Bottom section with form */}
-      <div className="flex-1 flex flex-col items-center justify-start px-6 pt-2">
-        <div className="w-full max-w-sm">
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+      <div className="relative flex-1 flex flex-col items-center justify-start px-6 pt-2">
+        <div className="w-full max-w-[400px]">
+          <form
+            onSubmit={handleSubmit}
+            className="p-7 shadow-lg border border-gray-100/60"
+            style={{ borderRadius: "var(--bubble-radius)", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)" }}
+          >
             {error && (
-              <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-3 rounded-xl mb-4 flex items-start gap-2">
+              <div
+                className="text-sm p-3.5 mb-4 flex items-start gap-2.5"
+                style={{ borderRadius: "var(--bubble-radius-input)", background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}
+              >
                 <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -76,8 +124,8 @@ export default function RegisterPage() {
               </div>
             )}
 
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-600 mb-1.5">
+            <div className="mb-3.5">
+              <label className="block text-sm font-medium mb-2" style={{ color: "#0f2a4a" }}>
                 Full Name
               </label>
               <input
@@ -85,13 +133,16 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/30 focus:bg-white transition-all"
+                className="w-full px-5 py-3.5 text-gray-900 placeholder-gray-300 focus:outline-none transition-all"
+                style={inputStyle}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
                 placeholder="Your full name"
               />
             </div>
 
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-600 mb-1.5">
+            <div className="mb-3.5">
+              <label className="block text-sm font-medium mb-2" style={{ color: "#0f2a4a" }}>
                 Email
               </label>
               <input
@@ -99,13 +150,16 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/30 focus:bg-white transition-all"
+                className="w-full px-5 py-3.5 text-gray-900 placeholder-gray-300 focus:outline-none transition-all"
+                style={inputStyle}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
                 placeholder="your@email.com"
               />
             </div>
 
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-600 mb-1.5">
+            <div className="mb-3.5">
+              <label className="block text-sm font-medium mb-2" style={{ color: "#0f2a4a" }}>
                 Password
               </label>
               <input
@@ -113,13 +167,16 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/30 focus:bg-white transition-all"
+                className="w-full px-5 py-3.5 text-gray-900 placeholder-gray-300 focus:outline-none transition-all"
+                style={inputStyle}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
                 placeholder="At least 6 characters"
               />
             </div>
 
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-gray-600 mb-1.5">
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2" style={{ color: "#0f2a4a" }}>
                 Confirm Password
               </label>
               <input
@@ -127,15 +184,35 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/30 focus:bg-white transition-all"
+                className="w-full px-5 py-3.5 text-gray-900 placeholder-gray-300 focus:outline-none transition-all"
+                style={inputStyle}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
                 placeholder="Confirm password"
               />
             </div>
 
+            {/* Create Account button — Crimson Red */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#1e3a5f] text-white py-3 rounded-xl font-semibold hover:bg-[#2c5282] active:scale-[0.98] disabled:opacity-50 transition-all"
+              className="w-full text-white py-3.5 font-semibold active:scale-[0.98] disabled:opacity-50 transition-all shadow-md"
+              style={{
+                borderRadius: "var(--bubble-radius-input)",
+                background: "var(--crimson)",
+                fontFamily: "'Poppins', sans-serif",
+                boxShadow: "0 4px 14px rgba(192,57,43,0.25)",
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.background = "var(--crimson-hover)";
+                  e.currentTarget.style.boxShadow = "0 6px 20px rgba(192,57,43,0.35)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--crimson)";
+                e.currentTarget.style.boxShadow = "0 4px 14px rgba(192,57,43,0.25)";
+              }}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -150,20 +227,34 @@ export default function RegisterPage() {
               )}
             </button>
 
-            <p className="text-center text-sm text-gray-400 mt-4">
+            <p className="text-center text-sm mt-5" style={{ color: "#94a3b8" }}>
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="text-[#1e3a5f] font-semibold hover:text-[#2c5282] transition-colors"
+                className="font-semibold transition-colors"
+                style={{ color: "#0f2a4a" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--crimson)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#0f2a4a")}
               >
                 Sign In
               </Link>
             </p>
           </form>
 
-          <div className="h-8" />
+          <div className="h-4" />
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="relative text-center pb-6 pt-4 px-6">
+        <div className="h-px mx-auto max-w-[200px] mb-4" style={{ background: "linear-gradient(to right, transparent, #e2e8f0, transparent)" }} />
+        <p className="text-xs font-medium" style={{ color: "#94a3b8" }}>
+          slspecialty.org
+        </p>
+        <p className="text-xs mt-1" style={{ color: "#cbd5e1" }}>
+          4252 Birkhill Blvd, Murray, UT 84107
+        </p>
+      </footer>
     </div>
   );
 }

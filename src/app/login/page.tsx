@@ -109,9 +109,17 @@ export default function LoginPage() {
     }
   }
 
+  // Password reset view
   if (resetMode) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#e8f4f8] via-[#f0f7fa] to-white">
+      <div className="min-h-screen flex flex-col" style={{ fontFamily: "'Poppins', sans-serif", background: "linear-gradient(160deg, #f0f4f8 0%, #ffffff 40%, #fdf0ef 100%)" }}>
+        {/* Decorative bubbles */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full" style={{ background: "radial-gradient(circle, rgba(15,42,74,0.04) 0%, transparent 70%)" }} />
+          <div className="absolute top-1/3 -left-16 w-56 h-56 rounded-full" style={{ background: "radial-gradient(circle, rgba(192,57,43,0.03) 0%, transparent 70%)" }} />
+          <div className="absolute bottom-20 right-10 w-40 h-40 rounded-full" style={{ background: "radial-gradient(circle, rgba(15,42,74,0.03) 0%, transparent 70%)" }} />
+        </div>
+
         <div className="relative flex-1 flex flex-col items-center justify-center px-6 py-12">
           <div className="w-full max-w-sm">
             {/* Back button */}
@@ -121,7 +129,10 @@ export default function LoginPage() {
                 setResetSent(false);
                 setError("");
               }}
-              className="flex items-center gap-2 text-[#1e3a5f]/60 hover:text-[#1e3a5f] transition mb-8 -ml-1"
+              className="flex items-center gap-2 transition mb-8 -ml-1"
+              style={{ color: "rgba(15,42,74,0.5)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#0f2a4a")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(15,42,74,0.5)")}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -129,27 +140,33 @@ export default function LoginPage() {
               <span className="text-sm font-medium">Back to Sign In</span>
             </button>
 
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-              <div className="w-12 h-12 rounded-xl bg-[#1e3a5f]/10 flex items-center justify-center mb-5">
-                <svg className="w-6 h-6 text-[#1e3a5f]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <div
+              className="p-8 shadow-lg border border-gray-100/60"
+              style={{ borderRadius: "var(--bubble-radius)", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)" }}
+            >
+              <div
+                className="w-12 h-12 flex items-center justify-center mb-5"
+                style={{ borderRadius: "16px", background: "rgba(15,42,74,0.08)" }}
+              >
+                <svg className="w-6 h-6" style={{ color: "#0f2a4a" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                 </svg>
               </div>
 
-              <h2 className="text-xl font-bold text-[#1e3a5f] mb-1">Reset Password</h2>
-              <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+              <h2 className="text-xl font-bold mb-1" style={{ color: "#0f2a4a" }}>Reset Password</h2>
+              <p className="text-sm mb-6 leading-relaxed" style={{ color: "#94a3b8" }}>
                 Enter your email and we&apos;ll send you a reset link.
               </p>
 
               {resetSent ? (
-                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                <div className="p-4" style={{ borderRadius: "var(--bubble-radius-input)", background: "#ecfdf5", border: "1px solid #d1fae5" }}>
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "#10b981" }} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                      <p className="text-emerald-700 font-semibold text-sm">Email Sent!</p>
-                      <p className="text-emerald-600/70 text-sm mt-1 leading-relaxed">
+                      <p className="font-semibold text-sm" style={{ color: "#065f46" }}>Email Sent!</p>
+                      <p className="text-sm mt-1 leading-relaxed" style={{ color: "rgba(6,95,70,0.7)" }}>
                         Check your inbox for a password reset link.
                       </p>
                     </div>
@@ -158,7 +175,10 @@ export default function LoginPage() {
               ) : (
                 <form onSubmit={handleSubmit}>
                   {error && (
-                    <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-3 rounded-xl mb-5 flex items-start gap-2.5">
+                    <div
+                      className="text-sm p-3 mb-5 flex items-start gap-2.5"
+                      style={{ borderRadius: "var(--bubble-radius-input)", background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}
+                    >
                       <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -167,7 +187,7 @@ export default function LoginPage() {
                   )}
 
                   <div className="mb-5">
-                    <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: "#64748b" }}>
                       Email Address
                     </label>
                     <input
@@ -175,7 +195,23 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/30 focus:bg-white transition-all"
+                      className="w-full px-5 py-3.5 text-gray-900 placeholder-gray-300 focus:outline-none transition-all"
+                      style={{
+                        borderRadius: "var(--bubble-radius-input)",
+                        background: "#f8fafc",
+                        border: "1.5px solid #e2e8f0",
+                        fontFamily: "'Poppins', sans-serif",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "rgba(15,42,74,0.3)";
+                        e.target.style.boxShadow = "0 0 0 3px rgba(15,42,74,0.08)";
+                        e.target.style.background = "#ffffff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#e2e8f0";
+                        e.target.style.boxShadow = "none";
+                        e.target.style.background = "#f8fafc";
+                      }}
                       placeholder="your@email.com"
                     />
                   </div>
@@ -183,7 +219,14 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-[#1e3a5f] text-white py-3 rounded-xl font-semibold hover:bg-[#2c5282] active:scale-[0.98] disabled:opacity-50 transition-all"
+                    className="w-full text-white py-3.5 font-semibold active:scale-[0.98] disabled:opacity-50 transition-all"
+                    style={{
+                      borderRadius: "var(--bubble-radius-input)",
+                      background: "var(--crimson)",
+                      fontFamily: "'Poppins', sans-serif",
+                    }}
+                    onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "var(--crimson-hover)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "var(--crimson)"; }}
                   >
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
@@ -206,13 +249,36 @@ export default function LoginPage() {
     );
   }
 
+  // Main login view
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#e8f4f8] via-[#f0f7fa] to-white">
+    <div className="min-h-screen flex flex-col" style={{ fontFamily: "'Poppins', sans-serif", background: "linear-gradient(160deg, #f0f4f8 0%, #ffffff 40%, #fdf0ef 100%)" }}>
+      {/* Decorative background bubbles */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full" style={{ background: "radial-gradient(circle, rgba(15,42,74,0.05) 0%, transparent 70%)" }} />
+        <div className="absolute top-1/4 -left-20 w-64 h-64 rounded-full" style={{ background: "radial-gradient(circle, rgba(192,57,43,0.035) 0%, transparent 70%)" }} />
+        <div className="absolute bottom-1/4 right-0 w-48 h-48 rounded-full" style={{ background: "radial-gradient(circle, rgba(15,42,74,0.04) 0%, transparent 70%)" }} />
+        <div className="absolute bottom-10 left-1/4 w-32 h-32 rounded-full" style={{ background: "radial-gradient(circle, rgba(192,57,43,0.025) 0%, transparent 70%)" }} />
+        {/* Subtle watermark logo */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] opacity-[0.02]">
+          <Image
+            src="/SLS-LOGO.png"
+            alt=""
+            width={500}
+            height={500}
+            className="object-contain"
+            aria-hidden="true"
+          />
+        </div>
+      </div>
+
       {/* Main content */}
       <div className="relative flex-1 flex flex-col items-center justify-center px-6 py-10">
         {/* Logo & branding */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-24 h-24 rounded-2xl overflow-hidden mb-5 bg-white shadow-sm border border-gray-100 flex items-center justify-center p-2">
+          <div
+            className="w-24 h-24 overflow-hidden mb-5 flex items-center justify-center p-2 shadow-md"
+            style={{ borderRadius: "28px", background: "rgba(255,255,255,0.9)", border: "1.5px solid rgba(15,42,74,0.08)", backdropFilter: "blur(10px)" }}
+          >
             <Image
               src="/SLS-LOGO.png"
               alt="Salt Lake Specialty"
@@ -224,19 +290,25 @@ export default function LoginPage() {
               }}
             />
           </div>
-          <h1 className="text-2xl font-bold text-[#1e3a5f] tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: "#0f2a4a" }}>
             Census Tracker
           </h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-sm mt-1.5 font-light" style={{ color: "#94a3b8" }}>
             Salt Lake Specialty Hospital
           </p>
         </div>
 
         {/* Form card */}
-        <div className="w-full max-w-sm">
-          <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-100">
+        <div className="w-full max-w-[400px]">
+          <div
+            className="p-8 shadow-lg border border-gray-100/60"
+            style={{ borderRadius: "var(--bubble-radius)", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)" }}
+          >
             {error && (
-              <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-3 rounded-xl mb-5 flex items-start gap-2.5">
+              <div
+                className="text-sm p-3.5 mb-5 flex items-start gap-2.5"
+                style={{ borderRadius: "var(--bubble-radius-input)", background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}
+              >
                 <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -247,12 +319,12 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit}>
               {/* Email */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                <label className="block text-sm font-medium mb-2" style={{ color: "#0f2a4a" }}>
                   Email
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5" style={{ color: "#cbd5e1" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                     </svg>
                   </div>
@@ -261,7 +333,23 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/30 focus:bg-white transition-all"
+                    className="w-full pl-12 pr-4 py-3.5 text-gray-900 placeholder-gray-300 focus:outline-none transition-all"
+                    style={{
+                      borderRadius: "var(--bubble-radius-input)",
+                      background: "#f8fafc",
+                      border: "1.5px solid #e2e8f0",
+                      fontFamily: "'Poppins', sans-serif",
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = "rgba(15,42,74,0.3)";
+                      e.target.style.boxShadow = "0 0 0 3px rgba(15,42,74,0.08)";
+                      e.target.style.background = "#ffffff";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = "#e2e8f0";
+                      e.target.style.boxShadow = "none";
+                      e.target.style.background = "#f8fafc";
+                    }}
                     placeholder="your@email.com"
                   />
                 </div>
@@ -269,12 +357,12 @@ export default function LoginPage() {
 
               {/* Password */}
               <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                <label className="block text-sm font-medium mb-2" style={{ color: "#0f2a4a" }}>
                   Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5" style={{ color: "#cbd5e1" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                     </svg>
                   </div>
@@ -283,13 +371,32 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full pl-11 pr-11 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/30 focus:bg-white transition-all"
+                    className="w-full pl-12 pr-12 py-3.5 text-gray-900 placeholder-gray-300 focus:outline-none transition-all"
+                    style={{
+                      borderRadius: "var(--bubble-radius-input)",
+                      background: "#f8fafc",
+                      border: "1.5px solid #e2e8f0",
+                      fontFamily: "'Poppins', sans-serif",
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = "rgba(15,42,74,0.3)";
+                      e.target.style.boxShadow = "0 0 0 3px rgba(15,42,74,0.08)";
+                      e.target.style.background = "#ffffff";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = "#e2e8f0";
+                      e.target.style.boxShadow = "none";
+                      e.target.style.background = "#f8fafc";
+                    }}
                     placeholder="Enter password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-300 hover:text-gray-500 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center transition-colors"
+                    style={{ color: "#cbd5e1" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "#64748b")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "#cbd5e1")}
                     tabIndex={-1}
                   >
                     {showPassword ? (
@@ -307,24 +414,43 @@ export default function LoginPage() {
               </div>
 
               {/* Forgot password link */}
-              <div className="flex justify-end mb-5">
+              <div className="flex justify-end mb-6">
                 <button
                   type="button"
                   onClick={() => {
                     setResetMode(true);
                     setError("");
                   }}
-                  className="text-[#1e3a5f]/50 text-sm font-medium hover:text-[#1e3a5f] transition-colors"
+                  className="text-sm font-medium transition-colors"
+                  style={{ color: "rgba(15,42,74,0.45)" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#0f2a4a")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(15,42,74,0.45)")}
                 >
                   Forgot password?
                 </button>
               </div>
 
-              {/* Sign In button */}
+              {/* Log In button — Crimson Red */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#1e3a5f] text-white py-3 rounded-xl font-semibold hover:bg-[#2c5282] active:scale-[0.98] disabled:opacity-50 transition-all"
+                className="w-full text-white py-3.5 font-semibold active:scale-[0.98] disabled:opacity-50 transition-all shadow-md"
+                style={{
+                  borderRadius: "var(--bubble-radius-input)",
+                  background: "var(--crimson)",
+                  fontFamily: "'Poppins', sans-serif",
+                  boxShadow: "0 4px 14px rgba(192,57,43,0.25)",
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.background = "var(--crimson-hover)";
+                    e.currentTarget.style.boxShadow = "0 6px 20px rgba(192,57,43,0.35)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "var(--crimson)";
+                  e.currentTarget.style.boxShadow = "0 4px 14px rgba(192,57,43,0.25)";
+                }}
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -335,23 +461,32 @@ export default function LoginPage() {
                     Signing in...
                   </span>
                 ) : (
-                  "Sign In"
+                  "Log In"
                 )}
               </button>
             </form>
 
             {/* Divider */}
-            <div className="flex items-center gap-3 my-5">
-              <div className="flex-1 h-px bg-gray-100" />
-              <span className="text-gray-300 text-xs font-medium uppercase tracking-wider">or</span>
-              <div className="flex-1 h-px bg-gray-100" />
+            <div className="flex items-center gap-3 my-6">
+              <div className="flex-1 h-px" style={{ background: "#e2e8f0" }} />
+              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "#cbd5e1" }}>or</span>
+              <div className="flex-1 h-px" style={{ background: "#e2e8f0" }} />
             </div>
 
             {/* Google sign-in */}
             <button
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-3 bg-gray-50 border border-gray-200 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 transition-all"
+              className="w-full flex items-center justify-center gap-3 py-3.5 font-medium active:scale-[0.98] disabled:opacity-50 transition-all"
+              style={{
+                borderRadius: "var(--bubble-radius-input)",
+                background: "#f8fafc",
+                border: "1.5px solid #e2e8f0",
+                color: "#475569",
+                fontFamily: "'Poppins', sans-serif",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "#f8fafc")}
             >
               {googleLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -359,7 +494,7 @@ export default function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  <span className="text-gray-400">Connecting...</span>
+                  <span style={{ color: "#94a3b8" }}>Connecting...</span>
                 </span>
               ) : (
                 <>
@@ -379,9 +514,18 @@ export default function LoginPage() {
               <button
                 onClick={handleBiometricSignIn}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-3 bg-gray-50 border border-gray-200 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 transition-all mt-3"
+                className="w-full flex items-center justify-center gap-3 py-3.5 font-medium active:scale-[0.98] disabled:opacity-50 transition-all mt-3"
+                style={{
+                  borderRadius: "var(--bubble-radius-input)",
+                  background: "#f8fafc",
+                  border: "1.5px solid #e2e8f0",
+                  color: "#475569",
+                  fontFamily: "'Poppins', sans-serif",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "#f8fafc")}
               >
-                <svg className="w-5 h-5 text-[#1e3a5f]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <svg className="w-5 h-5" style={{ color: "#0f2a4a" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a48.667 48.667 0 00-1.26 8.303M12 10.5a3 3 0 11-6 0 3 3 0 016 0zm-1.5 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                 </svg>
                 Sign in with Biometrics / PIN
@@ -390,21 +534,35 @@ export default function LoginPage() {
           </div>
 
           {/* Register link */}
-          <p className="text-center text-gray-400 text-sm mt-6">
+          <p className="text-center text-sm mt-7" style={{ color: "#94a3b8" }}>
             Don&apos;t have an account?{" "}
             <Link
               href="/register"
-              className="text-[#1e3a5f] font-semibold hover:text-[#2c5282] transition-colors"
+              className="font-semibold transition-colors"
+              style={{ color: "#0f2a4a" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--crimson)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "#0f2a4a")}
             >
               Register
             </Link>
           </p>
 
-          <p className="text-center text-gray-300 text-xs mt-3 pb-8">
+          <p className="text-center text-xs mt-3" style={{ color: "#cbd5e1" }}>
             Add to home screen for the best experience
           </p>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="relative text-center pb-6 pt-4 px-6">
+        <div className="h-px mx-auto max-w-[200px] mb-4" style={{ background: "linear-gradient(to right, transparent, #e2e8f0, transparent)" }} />
+        <p className="text-xs font-medium" style={{ color: "#94a3b8" }}>
+          slspecialty.org
+        </p>
+        <p className="text-xs mt-1" style={{ color: "#cbd5e1" }}>
+          4252 Birkhill Blvd, Murray, UT 84107
+        </p>
+      </footer>
     </div>
   );
 }
