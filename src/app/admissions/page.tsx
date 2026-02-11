@@ -24,11 +24,13 @@ export default function AdmissionsPage() {
   const [recentAdmissions, setRecentAdmissions] = useState<Admission[]>([]);
 
   const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
 
   const loadRecent = useCallback(async () => {
-    const data = await getAdmissionsForMonth(now.getFullYear(), now.getMonth() + 1);
+    const data = await getAdmissionsForMonth(currentYear, currentMonth);
     setRecentAdmissions(data);
-  }, [now.getFullYear(), now.getMonth()]);
+  }, [currentYear, currentMonth]);
 
   useEffect(() => {
     if (!loading && !user) {
