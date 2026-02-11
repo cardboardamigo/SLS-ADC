@@ -111,13 +111,7 @@ export default function LoginPage() {
 
   if (resetMode) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#1e3a5f] via-[#1a3355] to-[#0f2440]">
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-80 h-80 bg-[#38b2ac]/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-[#38b2ac]/5 rounded-full blur-3xl" />
-        </div>
-
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#e8f4f8] via-[#f0f7fa] to-white">
         <div className="relative flex-1 flex flex-col items-center justify-center px-6 py-12">
           <div className="w-full max-w-sm">
             {/* Back button */}
@@ -127,7 +121,7 @@ export default function LoginPage() {
                 setResetSent(false);
                 setError("");
               }}
-              className="flex items-center gap-2 text-white/60 hover:text-white/90 transition mb-8 -ml-1"
+              className="flex items-center gap-2 text-[#1e3a5f]/60 hover:text-[#1e3a5f] transition mb-8 -ml-1"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -135,28 +129,28 @@ export default function LoginPage() {
               <span className="text-sm font-medium">Back to Sign In</span>
             </button>
 
-            <div className="bg-white/[0.07] backdrop-blur-xl rounded-3xl p-8 border border-white/[0.08] shadow-2xl">
-              <div className="w-14 h-14 rounded-2xl bg-[#38b2ac]/20 flex items-center justify-center mb-6">
-                <svg className="w-7 h-7 text-[#38b2ac]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+              <div className="w-12 h-12 rounded-xl bg-[#1e3a5f]/10 flex items-center justify-center mb-5">
+                <svg className="w-6 h-6 text-[#1e3a5f]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                 </svg>
               </div>
 
-              <h2 className="text-2xl font-bold text-white mb-2">Reset Password</h2>
-              <p className="text-white/50 text-sm mb-8 leading-relaxed">
-                Enter your email address and we&apos;ll send you a link to reset your password.
+              <h2 className="text-xl font-bold text-[#1e3a5f] mb-1">Reset Password</h2>
+              <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+                Enter your email and we&apos;ll send you a reset link.
               </p>
 
               {resetSent ? (
-                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-5">
+                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <svg className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <svg className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                      <p className="text-emerald-300 font-semibold text-sm">Email Sent!</p>
-                      <p className="text-emerald-300/70 text-sm mt-1 leading-relaxed">
-                        Check your inbox for a password reset link. It may take a few minutes to arrive.
+                      <p className="text-emerald-700 font-semibold text-sm">Email Sent!</p>
+                      <p className="text-emerald-600/70 text-sm mt-1 leading-relaxed">
+                        Check your inbox for a password reset link.
                       </p>
                     </div>
                   </div>
@@ -164,7 +158,7 @@ export default function LoginPage() {
               ) : (
                 <form onSubmit={handleSubmit}>
                   {error && (
-                    <div className="bg-red-500/10 border border-red-500/20 text-red-300 text-sm p-4 rounded-2xl mb-6 flex items-start gap-3">
+                    <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-3 rounded-xl mb-5 flex items-start gap-2.5">
                       <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -172,8 +166,8 @@ export default function LoginPage() {
                     </div>
                   )}
 
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-white/70 mb-2">
+                  <div className="mb-5">
+                    <label className="block text-sm font-medium text-gray-600 mb-1.5">
                       Email Address
                     </label>
                     <input
@@ -181,7 +175,7 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full px-4 py-3.5 bg-white/[0.07] border border-white/[0.1] rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#38b2ac]/50 focus:border-[#38b2ac]/50 focus:bg-white/[0.1] transition-all"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/30 focus:bg-white transition-all"
                       placeholder="your@email.com"
                     />
                   </div>
@@ -189,7 +183,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-[#38b2ac] text-white py-3.5 rounded-xl font-semibold hover:bg-[#319795] active:scale-[0.98] disabled:opacity-50 transition-all shadow-lg shadow-[#38b2ac]/20"
+                    className="w-full bg-[#1e3a5f] text-white py-3 rounded-xl font-semibold hover:bg-[#2c5282] active:scale-[0.98] disabled:opacity-50 transition-all"
                   >
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
@@ -213,42 +207,36 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#1e3a5f] via-[#1a3355] to-[#0f2440]">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-24 -right-24 w-80 h-80 bg-[#38b2ac]/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-[#38b2ac]/5 rounded-full blur-3xl" />
-      </div>
-
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#e8f4f8] via-[#f0f7fa] to-white">
       {/* Main content */}
-      <div className="relative flex-1 flex flex-col items-center justify-center px-6 py-12">
+      <div className="relative flex-1 flex flex-col items-center justify-center px-6 py-10">
         {/* Logo & branding */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-xl shadow-black/30 mb-6 bg-white/10 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/10">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-24 h-24 rounded-2xl overflow-hidden mb-5 bg-white shadow-sm border border-gray-100 flex items-center justify-center p-2">
             <Image
               src="/SLS-LOGO.png"
               alt="Salt Lake Specialty"
-              width={80}
-              height={80}
-              className="rounded-2xl"
+              width={88}
+              height={88}
+              className="object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
             />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl font-bold text-[#1e3a5f] tracking-tight">
             Census Tracker
           </h1>
-          <p className="text-white/40 text-sm mt-2 font-medium tracking-wide">
+          <p className="text-gray-400 text-sm mt-1">
             Salt Lake Specialty Hospital
           </p>
         </div>
 
         {/* Form card */}
         <div className="w-full max-w-sm">
-          <div className="bg-white/[0.07] backdrop-blur-xl rounded-3xl p-8 border border-white/[0.08] shadow-2xl">
+          <div className="bg-white rounded-2xl p-7 shadow-sm border border-gray-100">
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-300 text-sm p-4 rounded-2xl mb-6 flex items-start gap-3">
+              <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-3 rounded-xl mb-5 flex items-start gap-2.5">
                 <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -258,13 +246,13 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit}>
               {/* Email */}
-              <div className="mb-5">
-                <label className="block text-sm font-medium text-white/70 mb-2">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-600 mb-1.5">
                   Email
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-white/30" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                     </svg>
                   </div>
@@ -273,20 +261,20 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full pl-12 pr-4 py-3.5 bg-white/[0.07] border border-white/[0.1] rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#38b2ac]/50 focus:border-[#38b2ac]/50 focus:bg-white/[0.1] transition-all"
+                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/30 focus:bg-white transition-all"
                     placeholder="your@email.com"
                   />
                 </div>
               </div>
 
               {/* Password */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-white/70 mb-2">
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-600 mb-1.5">
                   Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-white/30" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                     </svg>
                   </div>
@@ -295,13 +283,13 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full pl-12 pr-12 py-3.5 bg-white/[0.07] border border-white/[0.1] rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#38b2ac]/50 focus:border-[#38b2ac]/50 focus:bg-white/[0.1] transition-all"
+                    className="w-full pl-11 pr-11 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]/30 focus:bg-white transition-all"
                     placeholder="Enter password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-white/40 hover:text-white/70 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-300 hover:text-gray-500 transition-colors"
                     tabIndex={-1}
                   >
                     {showPassword ? (
@@ -319,14 +307,14 @@ export default function LoginPage() {
               </div>
 
               {/* Forgot password link */}
-              <div className="flex justify-end mb-6">
+              <div className="flex justify-end mb-5">
                 <button
                   type="button"
                   onClick={() => {
                     setResetMode(true);
                     setError("");
                   }}
-                  className="text-[#38b2ac] text-sm font-medium hover:text-[#4fd1c5] transition-colors"
+                  className="text-[#1e3a5f]/50 text-sm font-medium hover:text-[#1e3a5f] transition-colors"
                 >
                   Forgot password?
                 </button>
@@ -336,7 +324,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#38b2ac] text-white py-3.5 rounded-xl font-semibold hover:bg-[#319795] active:scale-[0.98] disabled:opacity-50 transition-all shadow-lg shadow-[#38b2ac]/20"
+                className="w-full bg-[#1e3a5f] text-white py-3 rounded-xl font-semibold hover:bg-[#2c5282] active:scale-[0.98] disabled:opacity-50 transition-all"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -353,25 +341,25 @@ export default function LoginPage() {
             </form>
 
             {/* Divider */}
-            <div className="flex items-center gap-4 my-6">
-              <div className="flex-1 h-px bg-white/10" />
-              <span className="text-white/30 text-xs font-medium uppercase tracking-wider">or</span>
-              <div className="flex-1 h-px bg-white/10" />
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 h-px bg-gray-100" />
+              <span className="text-gray-300 text-xs font-medium uppercase tracking-wider">or</span>
+              <div className="flex-1 h-px bg-gray-100" />
             </div>
 
             {/* Google sign-in */}
             <button
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white/[0.07] border border-white/[0.1] text-white py-3.5 rounded-xl font-medium hover:bg-white/[0.12] active:scale-[0.98] disabled:opacity-50 transition-all"
+              className="w-full flex items-center justify-center gap-3 bg-gray-50 border border-gray-200 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 transition-all"
             >
               {googleLoading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-5 w-5 text-gray-400" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Connecting...
+                  <span className="text-gray-400">Connecting...</span>
                 </span>
               ) : (
                 <>
@@ -391,9 +379,9 @@ export default function LoginPage() {
               <button
                 onClick={handleBiometricSignIn}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-3 bg-white/[0.07] border border-white/[0.1] text-white py-3.5 rounded-xl font-medium hover:bg-white/[0.12] active:scale-[0.98] disabled:opacity-50 transition-all mt-3"
+                className="w-full flex items-center justify-center gap-3 bg-gray-50 border border-gray-200 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 transition-all mt-3"
               >
-                <svg className="w-5 h-5 text-[#38b2ac]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <svg className="w-5 h-5 text-[#1e3a5f]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a48.667 48.667 0 00-1.26 8.303M12 10.5a3 3 0 11-6 0 3 3 0 016 0zm-1.5 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                 </svg>
                 Sign in with Biometrics / PIN
@@ -402,17 +390,17 @@ export default function LoginPage() {
           </div>
 
           {/* Register link */}
-          <p className="text-center text-white/50 text-sm mt-8">
+          <p className="text-center text-gray-400 text-sm mt-6">
             Don&apos;t have an account?{" "}
             <Link
               href="/register"
-              className="text-[#38b2ac] font-semibold hover:text-[#4fd1c5] transition-colors"
+              className="text-[#1e3a5f] font-semibold hover:text-[#2c5282] transition-colors"
             >
               Register
             </Link>
           </p>
 
-          <p className="text-center text-white/20 text-xs mt-4 pb-8">
+          <p className="text-center text-gray-300 text-xs mt-3 pb-8">
             Add to home screen for the best experience
           </p>
         </div>
