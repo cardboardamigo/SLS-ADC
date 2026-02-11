@@ -68,7 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        await fetchProfile(firebaseUser.uid);
+        try {
+          await fetchProfile(firebaseUser.uid);
+        } catch (err) {
+          console.error("Failed to fetch user profile:", err);
+        }
       } else {
         setProfile(null);
       }
