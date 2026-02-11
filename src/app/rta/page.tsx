@@ -32,11 +32,13 @@ export default function RTAPage() {
   const [recentRTAs, setRecentRTAs] = useState<RTA[]>([]);
 
   const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
 
   const loadRecent = useCallback(async () => {
-    const data = await getRTAsForMonth(now.getFullYear(), now.getMonth() + 1);
+    const data = await getRTAsForMonth(currentYear, currentMonth);
     setRecentRTAs(data);
-  }, [now.getFullYear(), now.getMonth()]);
+  }, [currentYear, currentMonth]);
 
   useEffect(() => {
     if (!loading && !user) {

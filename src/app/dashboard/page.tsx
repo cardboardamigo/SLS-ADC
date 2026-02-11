@@ -16,6 +16,7 @@ import {
 import { MonthlyADC, Admission, Discharge, RTA } from "@/lib/types";
 import { calculateBonus, formatCurrency, BONUS_TIERS } from "@/lib/bonus";
 import { format } from "date-fns";
+import { useRef } from "react";
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -29,6 +30,8 @@ export default function DashboardPage() {
   const [editingCensus, setEditingCensus] = useState(false);
   const [censusInput, setCensusInput] = useState("");
   const [showBonusHint, setShowBonusHint] = useState(false);
+  const tapCountRef = useRef(0);
+  const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const now = new Date();
   const year = now.getFullYear();
@@ -298,7 +301,18 @@ export default function DashboardPage() {
         {/* Hidden bonus access - triple tap area */}
         <div
           className="mt-6 text-center"
-          onDoubleClick={() => router.push("/bonus")}
+          onClick={() => {
+            tapCountRef.current += 1;
+            if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+            if (tapCountRef.current >= 3) {
+              tapCountRef.current = 0;
+              router.push("/bonus");
+            } else {
+              tapTimerRef.current = setTimeout(() => {
+                tapCountRef.current = 0;
+              }, 800);
+            }
+          }}
         >
           <p className="text-xs text-gray-300 select-none">v1.0 - SLS Census Tracker</p>
         </div>
