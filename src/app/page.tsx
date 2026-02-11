@@ -18,6 +18,17 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
+  // Safety timeout: if auth takes too long, redirect to login
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn("Auth state check timed out, redirecting to login");
+        router.replace("/login");
+      }
+    }, 5000);
+    return () => clearTimeout(timeout);
+  }, [loading, router]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#1e3a5f]">
       <div className="text-center text-white">
