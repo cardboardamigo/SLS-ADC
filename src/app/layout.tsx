@@ -5,8 +5,8 @@ import InstallPrompt from "@/components/InstallPrompt";
 import NotificationManager from "@/components/NotificationManager";
 
 export const metadata: Metadata = {
-  title: "Census Tracker - Salt Lake Specialty",
-  description: "Average Daily Census tracking for Salt Lake Specialty Hospital",
+  title: "Census Tracker",
+  description: "Average Daily Census tracking application",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

@@ -34,7 +34,7 @@ export default function Home() {
       <div className="text-center text-white">
         <div className="animate-pulse">
           <h1 className="text-2xl font-bold mb-2">Census Tracker</h1>
-          <p className="text-white/70">Salt Lake Specialty Hospital</p>
+          <p className="text-white/70">Loading...</p>
         </div>
       </div>
     </div>
