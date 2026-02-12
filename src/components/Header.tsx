@@ -23,8 +23,8 @@ export default function Header() {
       <div className="flex items-center justify-between h-20 px-5 max-w-2xl mx-auto">
         <div className="flex items-center gap-3">
           <Image
-            src="/SLS-LOGO.png"
-            alt="SLS Logo"
+            src="/CT_logo.png"
+            alt="Census Tracker"
             width={48}
             height={48}
             className="rounded-lg"

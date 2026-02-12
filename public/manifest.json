@@ -1,7 +1,7 @@
 {
-  "name": "Census Tracker - Salt Lake Specialty",
+  "name": "Census Tracker",
   "short_name": "Census Tracker",
-  "description": "Average Daily Census tracking for Salt Lake Specialty Hospital",
+  "description": "Average Daily Census tracking application",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#1e3a5f",

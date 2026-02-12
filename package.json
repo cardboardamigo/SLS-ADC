@@ -2,7 +2,7 @@
   "name": "census-tracker",
   "version": "1.0.0",
   "private": true,
-  "description": "Census Tracker - Salt Lake Specialty Hospital ADC Tracking",
+  "description": "Census Tracker - Average Daily Census Tracking",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
