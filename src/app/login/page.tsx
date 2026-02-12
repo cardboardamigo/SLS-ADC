@@ -299,37 +299,20 @@ export default function LoginPage() {
         {view === "welcome" && (
           <>
             <div className="flex flex-col items-center mb-10">
-              <div
-                className="w-32 h-32 flex items-center justify-center mb-5 shadow-lg"
-                style={{
-                  borderRadius: "var(--bubble-radius)",
-                  background: "rgba(255,255,255,0.1)",
-                  border: "1.5px solid rgba(255,255,255,0.15)",
-                  backdropFilter: "blur(12px)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)",
-                }}
-              >
-                <Image
-                  src="/CT_logo.png"
-                  alt="Census Tracker"
-                  width={100}
-                  height={100}
-                  className="object-contain"
-                  priority
-                />
-              </div>
-              <h1
-                className="text-3xl font-bold tracking-tight text-center"
-                style={{ color: "#ffffff" }}
-              >
-                Census Tracker
-              </h1>
+              <Image
+                src="/CT_logo.png"
+                alt="Census Tracker"
+                width={120}
+                height={120}
+                className="object-contain"
+                priority
+              />
             </div>
 
-            <div className="w-full space-y-3">
+            <div className="w-full flex flex-col items-center gap-5">
               <button
                 onClick={() => navigateTo("login-choice")}
-                className="h-12 w-full text-white text-sm font-semibold active:scale-[0.98] transition-all"
+                className="h-12 w-1/2 text-white text-sm font-semibold active:scale-[0.98] transition-all"
                 style={{
                   borderRadius: "var(--bubble-radius-input)",
                   background: "var(--crimson)",
@@ -341,7 +324,7 @@ export default function LoginPage() {
               </button>
               <button
                 onClick={() => navigateTo("register-choice")}
-                className="h-12 w-full text-sm font-semibold active:scale-[0.98] transition-all"
+                className="h-12 w-1/2 text-sm font-semibold active:scale-[0.98] transition-all"
                 style={{
                   borderRadius: "var(--bubble-radius-input)",
                   background: "rgba(255,255,255,0.08)",
@@ -397,11 +380,19 @@ export default function LoginPage() {
                 <p className="font-semibold mb-2" style={{ color: "rgba(255,255,255,0.8)" }}>
                   To install on your device:
                 </p>
-                <ol className="list-decimal pl-4 space-y-1">
-                  <li>Tap the <strong>Share</strong> button in your browser</li>
-                  <li>Select &quot;Add to Home Screen&quot;</li>
-                  <li>Tap &quot;Add&quot; to confirm</li>
-                </ol>
+                {isIOS ? (
+                  <ol className="list-decimal pl-4 space-y-1">
+                    <li>Tap the <strong>Share</strong> button in your browser</li>
+                    <li>Select &quot;Add to Home Screen&quot;</li>
+                    <li>Tap &quot;Add&quot; to confirm</li>
+                  </ol>
+                ) : (
+                  <ol className="list-decimal pl-4 space-y-1">
+                    <li>Tap the <strong>menu</strong> (three dots) in your browser</li>
+                    <li>Select &quot;Add to Home Screen&quot; or &quot;Install App&quot;</li>
+                    <li>Tap &quot;Install&quot; to confirm</li>
+                  </ol>
+                )}
               </div>
             )}
           </>
