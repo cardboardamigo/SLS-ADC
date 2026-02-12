@@ -251,7 +251,7 @@ export default function LoginPage() {
       className="min-h-[100svh] flex flex-col items-center justify-center px-5 py-10"
       style={{
         fontFamily: "'Poppins', sans-serif",
-        background: "linear-gradient(165deg, #0a1e36 0%, #0f2a4a 40%, #143252 70%, #1e3a5f 100%)",
+        background: "linear-gradient(165deg, #c5ddf5 0%, #d4e6f9 40%, #ddeafa 70%, #e5eefb 100%)",
       }}
     >
       <div className="relative w-full max-w-[380px] flex flex-col items-center">
@@ -285,40 +285,18 @@ export default function LoginPage() {
               </button>
               <button
                 onClick={() => navigateTo("register-choice")}
-                className="h-12 w-1/2 text-sm font-semibold active:scale-[0.98] transition-all"
+                className="h-12 w-1/2 text-white text-sm font-semibold active:scale-[0.98] transition-all"
                 style={{
                   borderRadius: "var(--bubble-radius-input)",
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1.5px solid rgba(255,255,255,0.2)",
-                  color: "rgba(255,255,255,0.85)",
+                  background: "var(--navy)",
                   fontFamily: "'Poppins', sans-serif",
+                  boxShadow: "0 4px 20px rgba(15,42,74,0.35)",
                 }}
               >
                 Create Account
               </button>
             </div>
 
-            {/* Download App Button */}
-            <button
-              onClick={handleInstallClick}
-              className="flex items-center gap-3 px-6 py-3 mt-10 text-sm font-semibold"
-              style={{
-                borderRadius: "var(--bubble-radius-input)",
-                background: "rgba(255,255,255,0.1)",
-                border: "1.5px solid rgba(255,255,255,0.2)",
-                color: "rgba(255,255,255,0.85)",
-                fontFamily: "'Poppins', sans-serif",
-              }}
-            >
-              <Image
-                src="/CT_App_Icon.png"
-                alt="Census Tracker App"
-                width={32}
-                height={32}
-                className="rounded-xl"
-              />
-              Download App
-            </button>
           </>
         )}
 
@@ -729,6 +707,22 @@ export default function LoginPage() {
           </div>
         )}
       </div>
+
+      {/* Download App Link */}
+      <button
+        onClick={handleInstallClick}
+        className="mt-auto pt-10 pb-4 text-sm font-medium"
+        style={{
+          color: "var(--navy)",
+          fontFamily: "'Poppins', sans-serif",
+          background: "none",
+          border: "none",
+          textDecoration: "underline",
+          textUnderlineOffset: "3px",
+        }}
+      >
+        Download App
+      </button>
     </main>
   );
 }
