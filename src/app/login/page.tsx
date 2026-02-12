@@ -8,9 +8,7 @@ import { friendlyAuthError } from "@/contexts/AuthContext";
 
 type ViewState =
   | "welcome"
-  | "login-choice"
   | "login-email"
-  | "register-choice"
   | "register-email"
   | "reset-password";
 
@@ -58,12 +56,8 @@ export default function LoginPage() {
   function handleBack() {
     setError("");
     setResetSent(false);
-    if (view === "login-choice" || view === "register-choice") {
+    if (view === "login-email" || view === "register-email") {
       setView("welcome");
-    } else if (view === "login-email") {
-      setView("login-choice");
-    } else if (view === "register-email") {
-      setView("register-choice");
     } else if (view === "reset-password") {
       setView("login-email");
     }
@@ -209,43 +203,6 @@ export default function LoginPage() {
     </div>
   ) : null;
 
-  const googleButton = (
-    <button
-      type="button"
-      onClick={handleGoogleSignIn}
-      disabled={googleLoading}
-      className="flex h-12 w-full items-center justify-center gap-3 text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all"
-      style={{
-        borderRadius: "var(--bubble-radius-input)",
-        background: "rgba(255,255,255,0.95)",
-        color: "#1f2937",
-        fontFamily: "'Poppins', sans-serif",
-      }}
-    >
-      {googleLoading ? (
-        <span className="flex items-center justify-center gap-2 text-gray-400">
-          {spinner}
-          Connecting...
-        </span>
-      ) : (
-        <>
-          {googleIcon}
-          Continue with Google
-        </>
-      )}
-    </button>
-  );
-
-  const divider = (
-    <div className="flex items-center gap-3 my-5">
-      <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.1)" }} />
-      <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.25)" }}>
-        or
-      </span>
-      <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.1)" }} />
-    </div>
-  );
-
   return (
     <main
       className="min-h-[100svh] flex flex-col items-center justify-center px-5 py-10"
@@ -271,8 +228,9 @@ export default function LoginPage() {
             </div>
 
             <div className="w-full flex flex-col items-center gap-5">
+              {errorBanner}
               <button
-                onClick={() => navigateTo("login-choice")}
+                onClick={() => navigateTo("login-email")}
                 className="h-12 w-1/2 text-white text-sm font-semibold active:scale-[0.98] transition-all"
                 style={{
                   borderRadius: "var(--bubble-radius-input)",
@@ -284,7 +242,7 @@ export default function LoginPage() {
                 Log In
               </button>
               <button
-                onClick={() => navigateTo("register-choice")}
+                onClick={() => navigateTo("register-email")}
                 className="h-12 w-1/2 text-white text-sm font-semibold active:scale-[0.98] transition-all"
                 style={{
                   borderRadius: "var(--bubble-radius-input)",
@@ -295,54 +253,43 @@ export default function LoginPage() {
               >
                 Create Account
               </button>
+
+              <div className="flex items-center gap-3 w-1/2 my-1">
+                <div className="h-px flex-1" style={{ background: "rgba(15,42,74,0.2)" }} />
+                <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "rgba(15,42,74,0.4)" }}>
+                  or
+                </span>
+                <div className="h-px flex-1" style={{ background: "rgba(15,42,74,0.2)" }} />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={googleLoading}
+                className="flex h-12 w-1/2 items-center justify-center gap-3 text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all"
+                style={{
+                  borderRadius: "var(--bubble-radius-input)",
+                  background: "rgba(255,255,255,0.95)",
+                  color: "#1f2937",
+                  fontFamily: "'Poppins', sans-serif",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                }}
+              >
+                {googleLoading ? (
+                  <span className="flex items-center justify-center gap-2 text-gray-400">
+                    {spinner}
+                    Connecting...
+                  </span>
+                ) : (
+                  <>
+                    {googleIcon}
+                    Google
+                  </>
+                )}
+              </button>
             </div>
 
           </>
-        )}
-
-        {/* ── Login Choice View ── */}
-        {view === "login-choice" && (
-          <div className="w-full">
-            {backButton}
-            <div className="flex flex-col items-center mb-6">
-              <Image
-                src="/CT_LOGO_.png"
-                alt="Census Tracker"
-                width={180}
-                height={180}
-                className="object-contain mb-3"
-              />
-              <h2 className="text-xl font-bold" style={{ color: "#ffffff" }}>
-                Sign In
-              </h2>
-              <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>
-                Choose how you&apos;d like to sign in
-              </p>
-            </div>
-
-            <div className="p-7" style={glassCard}>
-              {errorBanner}
-              {googleButton}
-              {divider}
-              <button
-                type="button"
-                onClick={() => navigateTo("login-email")}
-                className="flex h-12 w-full items-center justify-center gap-3 text-sm font-semibold active:scale-[0.98] transition-all"
-                style={{
-                  borderRadius: "var(--bubble-radius-input)",
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1.5px solid rgba(255,255,255,0.15)",
-                  color: "rgba(255,255,255,0.8)",
-                  fontFamily: "'Poppins', sans-serif",
-                }}
-              >
-                <svg className="w-5 h-5" style={{ color: "rgba(255,255,255,0.5)" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                </svg>
-                Continue with Email
-              </button>
-            </div>
-          </div>
         )}
 
         {/* ── Login Email View ── */}
@@ -463,51 +410,6 @@ export default function LoginPage() {
                   )}
                 </button>
               </form>
-            </div>
-          </div>
-        )}
-
-        {/* ── Register Choice View ── */}
-        {view === "register-choice" && (
-          <div className="w-full">
-            {backButton}
-            <div className="flex flex-col items-center mb-6">
-              <Image
-                src="/CT_LOGO_.png"
-                alt="Census Tracker"
-                width={180}
-                height={180}
-                className="object-contain mb-3"
-              />
-              <h2 className="text-xl font-bold" style={{ color: "#ffffff" }}>
-                Create Account
-              </h2>
-              <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>
-                Choose how you&apos;d like to register
-              </p>
-            </div>
-
-            <div className="p-7" style={glassCard}>
-              {errorBanner}
-              {googleButton}
-              {divider}
-              <button
-                type="button"
-                onClick={() => navigateTo("register-email")}
-                className="flex h-12 w-full items-center justify-center gap-3 text-sm font-semibold active:scale-[0.98] transition-all"
-                style={{
-                  borderRadius: "var(--bubble-radius-input)",
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1.5px solid rgba(255,255,255,0.15)",
-                  color: "rgba(255,255,255,0.8)",
-                  fontFamily: "'Poppins', sans-serif",
-                }}
-              >
-                <svg className="w-5 h-5" style={{ color: "rgba(255,255,255,0.5)" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                </svg>
-                Continue with Email
-              </button>
             </div>
           </div>
         )}
