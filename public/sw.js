@@ -25,8 +25,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: "/icon-192.png",
-      badge: "/icon-192.png",
+      icon: "/CT_App_Icon.png",
+      badge: "/CT_App_Icon.png",
       tag: "census-reminder",
       renotify: true,
       actions: [

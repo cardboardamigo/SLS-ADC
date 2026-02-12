@@ -27,7 +27,7 @@ export default function NotificationManager() {
     if (!hasData) {
       new Notification("Census Tracker Reminder", {
         body: `Census data for ${yesterday} has not been entered. Please update your admissions, discharges, and RTAs.`,
-        icon: "/icon-192.png",
+        icon: "/CT_App_Icon.png",
         tag: "census-reminder",
       });
     }

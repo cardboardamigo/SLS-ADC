@@ -141,12 +141,14 @@ export default function LoginPage() {
 
   async function handleInstall() {
     if (deferredPrompt) {
+      // Chromium browsers: trigger native install dialog with one touch
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === "accepted") {
         setDeferredPrompt(null);
       }
-    } else if (isIOS) {
+    } else {
+      // iOS and other browsers: show manual instructions
       setShowIOSInstall(!showIOSInstall);
     }
   }
@@ -300,7 +302,7 @@ export default function LoginPage() {
           <>
             <div className="flex flex-col items-center mb-10">
               <Image
-                src="/CT_logo.png"
+                src="/CT_LOGO_.png"
                 alt="Census Tracker"
                 width={120}
                 height={120}
@@ -337,35 +339,22 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {/* Install App Link */}
-            {showInstallOption && (
+            {/* Install App Button — one-touch install */}
+            {!isStandalone && (
               <button
                 onClick={handleInstall}
-                className="flex items-center gap-2 mt-8 transition-colors"
-                style={{ color: "rgba(255,255,255,0.4)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.4)")}
+                className="flex items-center gap-2 mt-8 px-5 py-2.5 active:scale-[0.98] transition-all"
+                style={{
+                  borderRadius: "var(--bubble-radius-input)",
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1.5px solid rgba(255,255,255,0.15)",
+                  color: "rgba(255,255,255,0.7)",
+                }}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
-                <span className="text-xs font-medium">Add to Home Screen</span>
-              </button>
-            )}
-
-            {/* Always show install link when not in standalone mode */}
-            {!isStandalone && !showInstallOption && (
-              <button
-                onClick={() => setShowIOSInstall(!showIOSInstall)}
-                className="flex items-center gap-2 mt-8 transition-colors"
-                style={{ color: "rgba(255,255,255,0.4)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.4)")}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                <span className="text-xs font-medium">Add to Home Screen</span>
+                <span className="text-xs font-semibold">Install App</span>
               </button>
             )}
 
@@ -382,15 +371,15 @@ export default function LoginPage() {
                 </p>
                 {isIOS ? (
                   <ol className="list-decimal pl-4 space-y-1">
-                    <li>Tap the <strong>Share</strong> button in your browser</li>
-                    <li>Select &quot;Add to Home Screen&quot;</li>
-                    <li>Tap &quot;Add&quot; to confirm</li>
+                    <li>Tap the <strong>Share</strong> button <span style={{ fontSize: "16px" }}>&#x2B06;&#xFE0F;</span> at the bottom of Safari</li>
+                    <li>Scroll down and tap <strong>&quot;Add to Home Screen&quot;</strong></li>
+                    <li>Tap <strong>&quot;Add&quot;</strong> in the top right</li>
                   </ol>
                 ) : (
                   <ol className="list-decimal pl-4 space-y-1">
                     <li>Tap the <strong>menu</strong> (three dots) in your browser</li>
-                    <li>Select &quot;Add to Home Screen&quot; or &quot;Install App&quot;</li>
-                    <li>Tap &quot;Install&quot; to confirm</li>
+                    <li>Select <strong>&quot;Add to Home Screen&quot;</strong> or <strong>&quot;Install App&quot;</strong></li>
+                    <li>Tap <strong>&quot;Install&quot;</strong> to confirm</li>
                   </ol>
                 )}
               </div>
@@ -404,7 +393,7 @@ export default function LoginPage() {
             {backButton}
             <div className="flex flex-col items-center mb-6">
               <Image
-                src="/CT_logo.png"
+                src="/CT_LOGO_.png"
                 alt="Census Tracker"
                 width={60}
                 height={60}
@@ -571,7 +560,7 @@ export default function LoginPage() {
             {backButton}
             <div className="flex flex-col items-center mb-6">
               <Image
-                src="/CT_logo.png"
+                src="/CT_LOGO_.png"
                 alt="Census Tracker"
                 width={60}
                 height={60}
