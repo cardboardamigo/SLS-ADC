@@ -10,6 +10,11 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(clients.claim());
 });
 
+// Fetch event - required for PWA install prompt to fire
+self.addEventListener("fetch", (event) => {
+  event.respondWith(fetch(event.request));
+});
+
 // Push notification event
 self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {
