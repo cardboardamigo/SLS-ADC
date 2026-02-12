@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,11 +14,6 @@ type ViewState =
   | "register-email"
   | "reset-password";
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
-
 export default function LoginPage() {
   const [view, setView] = useState<ViewState>("welcome");
   const [email, setEmail] = useState("");
@@ -30,31 +25,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-  const [showIOSInstall, setShowIOSInstall] = useState(false);
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
-    setIsStandalone(window.matchMedia("(display-mode: standalone)").matches);
-
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(console.error);
-    }
-
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  const showInstallOption = !isStandalone && (deferredPrompt !== null || isIOS);
 
   function navigateTo(next: ViewState) {
     setError("");
@@ -136,20 +108,6 @@ export default function LoginPage() {
       setError(friendlyAuthError(err));
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleInstall() {
-    if (deferredPrompt) {
-      // Chromium browsers: trigger native install dialog with one touch
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") {
-        setDeferredPrompt(null);
-      }
-    } else {
-      // iOS and other browsers: show manual instructions
-      setShowIOSInstall(!showIOSInstall);
     }
   }
 
@@ -272,7 +230,7 @@ export default function LoginPage() {
       className="min-h-[100svh] flex flex-col items-center justify-center px-5 py-10"
       style={{
         fontFamily: "'Poppins', sans-serif",
-        background: "linear-gradient(165deg, #0a1f38 0%, #0f2a4a 40%, #162d4a 70%, #1a3352 100%)",
+        background: "linear-gradient(165deg, #c5ddf5 0%, #d4e6f9 40%, #ddeafa 70%, #e5eefb 100%)",
       }}
     >
       {/* Decorative glow orbs */}
@@ -304,8 +262,8 @@ export default function LoginPage() {
               <Image
                 src="/CT_LOGO_.png"
                 alt="Census Tracker"
-                width={120}
-                height={120}
+                width={360}
+                height={360}
                 className="object-contain"
                 priority
               />
@@ -338,52 +296,6 @@ export default function LoginPage() {
                 Create Account
               </button>
             </div>
-
-            {/* Install App Button — one-touch install */}
-            {!isStandalone && (
-              <button
-                onClick={handleInstall}
-                className="flex items-center gap-2 mt-8 px-5 py-2.5 active:scale-[0.98] transition-all"
-                style={{
-                  borderRadius: "var(--bubble-radius-input)",
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1.5px solid rgba(255,255,255,0.15)",
-                  color: "rgba(255,255,255,0.7)",
-                }}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                <span className="text-xs font-semibold">Install App</span>
-              </button>
-            )}
-
-            {showIOSInstall && (
-              <div
-                className="mt-4 p-4 text-xs leading-relaxed w-full"
-                style={{
-                  ...glassCard,
-                  color: "rgba(255,255,255,0.6)",
-                }}
-              >
-                <p className="font-semibold mb-2" style={{ color: "rgba(255,255,255,0.8)" }}>
-                  To install on your device:
-                </p>
-                {isIOS ? (
-                  <ol className="list-decimal pl-4 space-y-1">
-                    <li>Tap the <strong>Share</strong> button <span style={{ fontSize: "16px" }}>&#x2B06;&#xFE0F;</span> at the bottom of Safari</li>
-                    <li>Scroll down and tap <strong>&quot;Add to Home Screen&quot;</strong></li>
-                    <li>Tap <strong>&quot;Add&quot;</strong> in the top right</li>
-                  </ol>
-                ) : (
-                  <ol className="list-decimal pl-4 space-y-1">
-                    <li>Tap the <strong>menu</strong> (three dots) in your browser</li>
-                    <li>Select <strong>&quot;Add to Home Screen&quot;</strong> or <strong>&quot;Install App&quot;</strong></li>
-                    <li>Tap <strong>&quot;Install&quot;</strong> to confirm</li>
-                  </ol>
-                )}
-              </div>
-            )}
           </>
         )}
 
@@ -395,8 +307,8 @@ export default function LoginPage() {
               <Image
                 src="/CT_LOGO_.png"
                 alt="Census Tracker"
-                width={60}
-                height={60}
+                width={180}
+                height={180}
                 className="object-contain mb-3"
               />
               <h2 className="text-xl font-bold" style={{ color: "#ffffff" }}>
@@ -562,8 +474,8 @@ export default function LoginPage() {
               <Image
                 src="/CT_LOGO_.png"
                 alt="Census Tracker"
-                width={60}
-                height={60}
+                width={180}
+                height={180}
                 className="object-contain mb-3"
               />
               <h2 className="text-xl font-bold" style={{ color: "#ffffff" }}>
