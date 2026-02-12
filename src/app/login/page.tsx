@@ -272,7 +272,7 @@ export default function LoginPage() {
       className="min-h-[100svh] flex flex-col items-center justify-center px-5 py-10"
       style={{
         fontFamily: "'Poppins', sans-serif",
-        background: "linear-gradient(165deg, #0a1f38 0%, #0f2a4a 40%, #162d4a 70%, #1a3352 100%)",
+        background: "linear-gradient(165deg, #c5ddf5 0%, #d4e6f9 40%, #ddeafa 70%, #e5eefb 100%)",
       }}
     >
       {/* Decorative glow orbs */}
@@ -304,8 +304,8 @@ export default function LoginPage() {
               <Image
                 src="/CT_LOGO_.png"
                 alt="Census Tracker"
-                width={120}
-                height={120}
+                width={360}
+                height={360}
                 className="object-contain"
                 priority
               />
@@ -395,8 +395,8 @@ export default function LoginPage() {
               <Image
                 src="/CT_LOGO_.png"
                 alt="Census Tracker"
-                width={60}
-                height={60}
+                width={180}
+                height={180}
                 className="object-contain mb-3"
               />
               <h2 className="text-xl font-bold" style={{ color: "#ffffff" }}>
@@ -562,8 +562,8 @@ export default function LoginPage() {
               <Image
                 src="/CT_LOGO_.png"
                 alt="Census Tracker"
-                width={60}
-                height={60}
+                width={180}
+                height={180}
                 className="object-contain mb-3"
               />
               <h2 className="text-xl font-bold" style={{ color: "#ffffff" }}>
