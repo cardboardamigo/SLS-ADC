@@ -41,91 +41,123 @@ export default function RegisterPage() {
     }
   }
 
-  const inputStyle = {
+  const glassCard = {
+    borderRadius: "var(--bubble-radius)",
+    background: "rgba(255,255,255,0.07)",
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    border: "1px solid rgba(255,255,255,0.12)",
+  };
+
+  const inputBase: React.CSSProperties = {
     borderRadius: "var(--bubble-radius-input)",
-    background: "#f8fafc",
-    border: "1.5px solid #e2e8f0",
+    background: "rgba(255,255,255,0.08)",
+    border: "1.5px solid rgba(255,255,255,0.15)",
     fontFamily: "'Poppins', sans-serif",
+    color: "#ffffff",
   };
 
   function handleInputFocus(e: React.FocusEvent<HTMLInputElement>) {
-    e.target.style.borderColor = "rgba(15,42,74,0.3)";
-    e.target.style.boxShadow = "0 0 0 3px rgba(15,42,74,0.08)";
-    e.target.style.background = "#ffffff";
+    e.target.style.borderColor = "rgba(255,255,255,0.35)";
+    e.target.style.boxShadow = "0 0 0 3px rgba(255,255,255,0.08)";
+    e.target.style.background = "rgba(255,255,255,0.12)";
   }
 
   function handleInputBlur(e: React.FocusEvent<HTMLInputElement>) {
-    e.target.style.borderColor = "#e2e8f0";
+    e.target.style.borderColor = "rgba(255,255,255,0.15)";
     e.target.style.boxShadow = "none";
-    e.target.style.background = "#f8fafc";
+    e.target.style.background = "rgba(255,255,255,0.08)";
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ fontFamily: "'Poppins', sans-serif", background: "linear-gradient(160deg, #f0f4f8 0%, #ffffff 40%, #fdf0ef 100%)" }}>
-      {/* Decorative background bubbles */}
+    <main
+      className="min-h-[100svh] flex flex-col items-center justify-center px-5 py-10"
+      style={{
+        fontFamily: "'Poppins', sans-serif",
+        background: "linear-gradient(165deg, #0a1f38 0%, #0f2a4a 40%, #162d4a 70%, #1a3352 100%)",
+      }}
+    >
+      {/* Decorative glow orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full" style={{ background: "radial-gradient(circle, rgba(15,42,74,0.05) 0%, transparent 70%)" }} />
-        <div className="absolute top-1/4 -left-20 w-64 h-64 rounded-full" style={{ background: "radial-gradient(circle, rgba(192,57,43,0.035) 0%, transparent 70%)" }} />
-        <div className="absolute bottom-1/4 right-0 w-48 h-48 rounded-full" style={{ background: "radial-gradient(circle, rgba(15,42,74,0.04) 0%, transparent 70%)" }} />
-        <div className="absolute bottom-10 left-1/4 w-32 h-32 rounded-full" style={{ background: "radial-gradient(circle, rgba(192,57,43,0.025) 0%, transparent 70%)" }} />
-        {/* Subtle watermark logo */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] opacity-[0.02]">
-          <Image
-            src="/SLS-LOGO.png"
-            alt=""
-            width={500}
-            height={500}
-            className="object-contain"
-            aria-hidden="true"
-          />
-        </div>
-      </div>
-
-      {/* Top section with branding */}
-      <div className="relative flex-shrink-0 flex flex-col items-center justify-end pt-12 pb-5 px-6">
         <div
-          className="w-20 h-20 overflow-hidden mb-4 flex items-center justify-center p-1.5 shadow-md"
-          style={{ borderRadius: "24px", background: "rgba(255,255,255,0.9)", border: "1.5px solid rgba(15,42,74,0.08)", backdropFilter: "blur(10px)" }}
-        >
-          <Image
-            src="/SLS-LOGO.png"
-            alt="Salt Lake Specialty"
-            width={72}
-            height={72}
-            className="object-contain"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
-          />
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "#0f2a4a" }}>
-          Create Account
-        </h1>
-        <p className="text-sm mt-1.5 font-light" style={{ color: "#94a3b8" }}>Census Tracker</p>
+          className="absolute w-[500px] h-[500px] rounded-full"
+          style={{
+            top: "-10%",
+            right: "-15%",
+            background: "radial-gradient(circle, rgba(192,57,43,0.08) 0%, transparent 65%)",
+          }}
+        />
+        <div
+          className="absolute w-[400px] h-[400px] rounded-full"
+          style={{
+            bottom: "-5%",
+            left: "-10%",
+            background: "radial-gradient(circle, rgba(30,58,95,0.25) 0%, transparent 65%)",
+          }}
+        />
       </div>
 
-      {/* Bottom section with form */}
-      <div className="relative flex-1 flex flex-col items-center justify-start px-6 pt-2">
-        <div className="w-full max-w-[400px]">
-          <form
-            onSubmit={handleSubmit}
-            className="p-7 shadow-lg border border-gray-100/60"
-            style={{ borderRadius: "var(--bubble-radius)", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)" }}
-          >
-            {error && (
-              <div
-                className="text-sm p-3.5 mb-4 flex items-start gap-2.5"
-                style={{ borderRadius: "var(--bubble-radius-input)", background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}
-              >
-                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
+      <div className="relative w-full max-w-[380px] flex flex-col items-center">
 
-            <div className="mb-3.5">
-              <label className="block text-sm font-medium mb-2" style={{ color: "#0f2a4a" }}>
+        {/* ── Logo & Branding ── */}
+        <div className="flex flex-col items-center mb-6">
+          <div
+            className="w-20 h-20 flex items-center justify-center mb-4 shadow-lg"
+            style={{
+              borderRadius: "var(--bubble-radius-sm)",
+              background: "rgba(255,255,255,0.1)",
+              border: "1.5px solid rgba(255,255,255,0.15)",
+              backdropFilter: "blur(12px)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)",
+            }}
+          >
+            <Image
+              src="/SLS-LOGO.png"
+              alt="Salt Lake Specialty"
+              width={60}
+              height={60}
+              className="object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          </div>
+          <h1
+            className="text-2xl font-bold tracking-tight text-center"
+            style={{ color: "#ffffff" }}
+          >
+            Create Account
+          </h1>
+          <p
+            className="text-sm mt-1 font-light tracking-wide"
+            style={{ color: "rgba(255,255,255,0.5)" }}
+          >
+            Census Tracker
+          </p>
+        </div>
+
+        {/* ── Glass Card ── */}
+        <div className="w-full p-7" style={glassCard}>
+          {error && (
+            <div
+              className="text-sm p-3.5 mb-4 flex items-start gap-2.5"
+              style={{
+                borderRadius: "var(--bubble-radius-input)",
+                background: "rgba(220,38,38,0.15)",
+                border: "1px solid rgba(220,38,38,0.3)",
+                color: "#fca5a5",
+              }}
+            >
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
                 Full Name
               </label>
               <input
@@ -133,16 +165,16 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full px-5 py-3.5 text-gray-900 placeholder-gray-300 focus:outline-none transition-all"
-                style={inputStyle}
+                className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
                 placeholder="Your full name"
               />
             </div>
 
-            <div className="mb-3.5">
-              <label className="block text-sm font-medium mb-2" style={{ color: "#0f2a4a" }}>
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
                 Email
               </label>
               <input
@@ -150,16 +182,16 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-5 py-3.5 text-gray-900 placeholder-gray-300 focus:outline-none transition-all"
-                style={inputStyle}
+                className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
                 placeholder="your@email.com"
               />
             </div>
 
-            <div className="mb-3.5">
-              <label className="block text-sm font-medium mb-2" style={{ color: "#0f2a4a" }}>
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
                 Password
               </label>
               <input
@@ -167,16 +199,16 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-5 py-3.5 text-gray-900 placeholder-gray-300 focus:outline-none transition-all"
-                style={inputStyle}
+                className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
                 placeholder="At least 6 characters"
               />
             </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2" style={{ color: "#0f2a4a" }}>
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
                 Confirm Password
               </label>
               <input
@@ -184,34 +216,23 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full px-5 py-3.5 text-gray-900 placeholder-gray-300 focus:outline-none transition-all"
-                style={inputStyle}
+                className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
                 placeholder="Confirm password"
               />
             </div>
 
-            {/* Create Account button — Crimson Red */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full text-white py-3.5 font-semibold active:scale-[0.98] disabled:opacity-50 transition-all shadow-md"
+              className="w-full h-12 text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-2"
               style={{
                 borderRadius: "var(--bubble-radius-input)",
                 background: "var(--crimson)",
                 fontFamily: "'Poppins', sans-serif",
-                boxShadow: "0 4px 14px rgba(192,57,43,0.25)",
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.currentTarget.style.background = "var(--crimson-hover)";
-                  e.currentTarget.style.boxShadow = "0 6px 20px rgba(192,57,43,0.35)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "var(--crimson)";
-                e.currentTarget.style.boxShadow = "0 4px 14px rgba(192,57,43,0.25)";
+                boxShadow: "0 4px 20px rgba(192,57,43,0.35)",
               }}
             >
               {loading ? (
@@ -226,35 +247,30 @@ export default function RegisterPage() {
                 "Create Account"
               )}
             </button>
-
-            <p className="text-center text-sm mt-5" style={{ color: "#94a3b8" }}>
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="font-semibold transition-colors"
-                style={{ color: "#0f2a4a" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--crimson)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "#0f2a4a")}
-              >
-                Sign In
-              </Link>
-            </p>
           </form>
 
-          <div className="h-4" />
+          <p className="text-center text-sm mt-5" style={{ color: "rgba(255,255,255,0.45)" }}>
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-semibold transition-colors"
+              style={{ color: "var(--crimson-light)" }}
+            >
+              Sign In
+            </Link>
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-10 text-center">
+          <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.25)" }}>
+            slspecialty.org
+          </p>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.15)" }}>
+            4252 Birkhill Blvd, Murray, UT 84107
+          </p>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="relative text-center pb-6 pt-4 px-6">
-        <div className="h-px mx-auto max-w-[200px] mb-4" style={{ background: "linear-gradient(to right, transparent, #e2e8f0, transparent)" }} />
-        <p className="text-xs font-medium" style={{ color: "#94a3b8" }}>
-          slspecialty.org
-        </p>
-        <p className="text-xs mt-1" style={{ color: "#cbd5e1" }}>
-          4252 Birkhill Blvd, Murray, UT 84107
-        </p>
-      </footer>
-    </div>
+    </main>
   );
 }
