@@ -9,6 +9,8 @@ import {
   signOut as firebaseSignOut,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -32,6 +34,12 @@ function friendlyAuthError(err: unknown): string {
     return "Too many failed attempts. Please wait a moment and try again.";
   if (msg.includes("auth/network-request-failed"))
     return "Network error. Please check your internet connection.";
+  if (msg.includes("auth/popup-blocked"))
+    return "Popup was blocked by your browser. Trying redirect sign-in instead...";
+  if (msg.includes("auth/popup-closed-by-user"))
+    return "Sign-in popup was closed. Please try again.";
+  if (msg.includes("auth/cancelled-popup-request"))
+    return "Sign-in was cancelled. Please try again.";
   return "Something went wrong. Please try again.";
 }
 
@@ -65,6 +73,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    // Handle Google redirect result (from signInWithRedirect fallback)
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result?.user) {
+          const docRef = doc(db, "users", result.user.uid);
+          const snap = await getDoc(docRef);
+          if (!snap.exists()) {
+            const newProfile: UserProfile = {
+              uid: result.user.uid,
+              email: result.user.email || "",
+              name: result.user.displayName || "",
+              phone: result.user.phoneNumber || "",
+              title: "",
+              profilePicUrl: result.user.photoURL || "",
+            };
+            await setDoc(docRef, newProfile);
+            setProfile(newProfile);
+          } else {
+            setProfile(snap.data() as UserProfile);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("Redirect sign-in error:", err);
+      });
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
@@ -88,22 +122,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signInWithGoogle() {
     const provider = new GoogleAuthProvider();
-    const cred = await signInWithPopup(auth, provider);
-    const docRef = doc(db, "users", cred.user.uid);
-    const snap = await getDoc(docRef);
-    if (!snap.exists()) {
-      const newProfile: UserProfile = {
-        uid: cred.user.uid,
-        email: cred.user.email || "",
-        name: cred.user.displayName || "",
-        phone: cred.user.phoneNumber || "",
-        title: "",
-        profilePicUrl: cred.user.photoURL || "",
-      };
-      await setDoc(docRef, newProfile);
-      setProfile(newProfile);
-    } else {
-      setProfile(snap.data() as UserProfile);
+    try {
+      const cred = await signInWithPopup(auth, provider);
+      const docRef = doc(db, "users", cred.user.uid);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) {
+        const newProfile: UserProfile = {
+          uid: cred.user.uid,
+          email: cred.user.email || "",
+          name: cred.user.displayName || "",
+          phone: cred.user.phoneNumber || "",
+          title: "",
+          profilePicUrl: cred.user.photoURL || "",
+        };
+        await setDoc(docRef, newProfile);
+        setProfile(newProfile);
+      } else {
+        setProfile(snap.data() as UserProfile);
+      }
+    } catch (err: unknown) {
+      // If popup fails (common on mobile), fall back to redirect
+      const msg = err instanceof Error ? err.message : "";
+      if (
+        msg.includes("auth/popup-blocked") ||
+        msg.includes("auth/popup-closed-by-user") ||
+        msg.includes("auth/cancelled-popup-request")
+      ) {
+        await signInWithRedirect(auth, provider);
+        return; // Page will redirect; profile handled by getRedirectResult on return
+      }
+      throw err;
     }
   }
 

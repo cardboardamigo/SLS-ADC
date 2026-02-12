@@ -57,30 +57,31 @@ export default function RegisterPage() {
 
   const glassCard = {
     borderRadius: "var(--bubble-radius)",
-    background: "rgba(255,255,255,0.07)",
+    background: "rgba(255,255,255,0.65)",
     backdropFilter: "blur(24px)",
     WebkitBackdropFilter: "blur(24px)",
-    border: "1px solid rgba(255,255,255,0.12)",
+    border: "1px solid rgba(15,42,74,0.12)",
+    boxShadow: "0 8px 32px rgba(15,42,74,0.08)",
   };
 
   const inputBase: React.CSSProperties = {
     borderRadius: "var(--bubble-radius-input)",
-    background: "rgba(255,255,255,0.08)",
-    border: "1.5px solid rgba(255,255,255,0.15)",
+    background: "rgba(255,255,255,0.7)",
+    border: "1.5px solid var(--navy)",
     fontFamily: "'Poppins', sans-serif",
-    color: "#ffffff",
+    color: "var(--navy)",
   };
 
   function handleInputFocus(e: React.FocusEvent<HTMLInputElement>) {
-    e.target.style.borderColor = "rgba(255,255,255,0.35)";
-    e.target.style.boxShadow = "0 0 0 3px rgba(255,255,255,0.08)";
-    e.target.style.background = "rgba(255,255,255,0.12)";
+    e.target.style.borderColor = "var(--crimson)";
+    e.target.style.boxShadow = "0 0 0 3px rgba(192,57,43,0.12)";
+    e.target.style.background = "rgba(255,255,255,0.9)";
   }
 
   function handleInputBlur(e: React.FocusEvent<HTMLInputElement>) {
-    e.target.style.borderColor = "rgba(255,255,255,0.15)";
+    e.target.style.borderColor = "var(--navy)";
     e.target.style.boxShadow = "none";
-    e.target.style.background = "rgba(255,255,255,0.08)";
+    e.target.style.background = "rgba(255,255,255,0.7)";
   }
 
   const spinner = (
@@ -95,7 +96,7 @@ export default function RegisterPage() {
       className="min-h-[100svh] flex flex-col items-center justify-center px-5 py-10"
       style={{
         fontFamily: "'Poppins', sans-serif",
-        background: "linear-gradient(165deg, #0a1f38 0%, #0f2a4a 40%, #162d4a 70%, #1a3352 100%)",
+        background: "linear-gradient(165deg, #c5ddf5 0%, #d4e6f9 40%, #ddeafa 70%, #e5eefb 100%)",
       }}
     >
       {/* Decorative glow orbs */}
@@ -105,7 +106,7 @@ export default function RegisterPage() {
           style={{
             top: "-10%",
             right: "-15%",
-            background: "radial-gradient(circle, rgba(192,57,43,0.08) 0%, transparent 65%)",
+            background: "radial-gradient(circle, rgba(192,57,43,0.06) 0%, transparent 65%)",
           }}
         />
         <div
@@ -113,7 +114,7 @@ export default function RegisterPage() {
           style={{
             bottom: "-5%",
             left: "-10%",
-            background: "radial-gradient(circle, rgba(30,58,95,0.25) 0%, transparent 65%)",
+            background: "radial-gradient(circle, rgba(30,58,95,0.1) 0%, transparent 65%)",
           }}
         />
       </div>
@@ -126,10 +127,10 @@ export default function RegisterPage() {
             className="w-20 h-20 flex items-center justify-center mb-4 shadow-lg"
             style={{
               borderRadius: "var(--bubble-radius-sm)",
-              background: "rgba(255,255,255,0.1)",
-              border: "1.5px solid rgba(255,255,255,0.15)",
+              background: "rgba(255,255,255,0.7)",
+              border: "1.5px solid rgba(15,42,74,0.12)",
               backdropFilter: "blur(12px)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)",
+              boxShadow: "0 8px 32px rgba(15,42,74,0.08), inset 0 1px 0 rgba(255,255,255,0.5)",
             }}
           >
             <Image
@@ -145,13 +146,13 @@ export default function RegisterPage() {
           </div>
           <h1
             className="text-2xl font-bold tracking-tight text-center"
-            style={{ color: "#ffffff" }}
+            style={{ color: "var(--navy)" }}
           >
             Create Account
           </h1>
           <p
             className="text-sm mt-1 font-light tracking-wide"
-            style={{ color: "rgba(255,255,255,0.5)" }}
+            style={{ color: "rgba(15,42,74,0.5)" }}
           >
             Census Tracker
           </p>
@@ -164,9 +165,9 @@ export default function RegisterPage() {
               className="text-sm p-3.5 mb-4 flex items-start gap-2.5"
               style={{
                 borderRadius: "var(--bubble-radius-input)",
-                background: "rgba(220,38,38,0.15)",
+                background: "rgba(220,38,38,0.08)",
                 border: "1px solid rgba(220,38,38,0.3)",
-                color: "#fca5a5",
+                color: "#b91c1c",
               }}
             >
               <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -209,16 +210,16 @@ export default function RegisterPage() {
 
           {/* Divider */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.1)" }} />
-            <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.25)" }}>
+            <div className="h-px flex-1" style={{ background: "rgba(15,42,74,0.15)" }} />
+            <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "rgba(15,42,74,0.35)" }}>
               or
             </span>
-            <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.1)" }} />
+            <div className="h-px flex-1" style={{ background: "rgba(15,42,74,0.15)" }} />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                 Full Name
               </label>
               <input
@@ -226,7 +227,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                 style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
@@ -235,7 +236,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                 Email
               </label>
               <input
@@ -243,7 +244,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                 style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
@@ -252,7 +253,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                 Password
               </label>
               <input
@@ -260,7 +261,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                 style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
@@ -269,7 +270,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+              <label className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                 Confirm Password
               </label>
               <input
@@ -277,7 +278,7 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                 style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
@@ -307,7 +308,7 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p className="text-center text-sm mt-5" style={{ color: "rgba(255,255,255,0.45)" }}>
+          <p className="text-center text-sm mt-5" style={{ color: "rgba(15,42,74,0.55)" }}>
             Already have an account?{" "}
             <Link
               href="/login"
