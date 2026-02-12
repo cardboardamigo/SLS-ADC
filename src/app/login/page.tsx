@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +27,27 @@ export default function LoginPage() {
   const [resetSent, setResetSent] = useState(false);
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const router = useRouter();
+
+  // PWA install prompt
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    function handleBeforeInstallPrompt(e: Event) {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    }
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+  }, []);
+
+  async function handleInstallClick() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+    }
+  }
 
   function navigateTo(next: ViewState) {
     setError("");
@@ -230,29 +251,9 @@ export default function LoginPage() {
       className="min-h-[100svh] flex flex-col items-center justify-center px-5 py-10"
       style={{
         fontFamily: "'Poppins', sans-serif",
-        background: "linear-gradient(165deg, #c5ddf5 0%, #d4e6f9 40%, #ddeafa 70%, #e5eefb 100%)",
+        background: "linear-gradient(165deg, #0a1e36 0%, #0f2a4a 40%, #143252 70%, #1e3a5f 100%)",
       }}
     >
-      {/* Decorative glow orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div
-          className="absolute w-[500px] h-[500px] rounded-full"
-          style={{
-            top: "-10%",
-            right: "-15%",
-            background: "radial-gradient(circle, rgba(192,57,43,0.08) 0%, transparent 65%)",
-          }}
-        />
-        <div
-          className="absolute w-[400px] h-[400px] rounded-full"
-          style={{
-            bottom: "-5%",
-            left: "-10%",
-            background: "radial-gradient(circle, rgba(30,58,95,0.25) 0%, transparent 65%)",
-          }}
-        />
-      </div>
-
       <div className="relative w-full max-w-[380px] flex flex-col items-center">
 
         {/* ── Welcome View ── */}
@@ -296,6 +297,28 @@ export default function LoginPage() {
                 Create Account
               </button>
             </div>
+
+            {/* Download App Button */}
+            <button
+              onClick={handleInstallClick}
+              className="flex items-center gap-3 px-6 py-3 mt-10 text-sm font-semibold"
+              style={{
+                borderRadius: "var(--bubble-radius-input)",
+                background: "rgba(255,255,255,0.1)",
+                border: "1.5px solid rgba(255,255,255,0.2)",
+                color: "rgba(255,255,255,0.85)",
+                fontFamily: "'Poppins', sans-serif",
+              }}
+            >
+              <Image
+                src="/CT_App_Icon.png"
+                alt="Census Tracker App"
+                width={32}
+                height={32}
+                className="rounded-xl"
+              />
+              Download App
+            </button>
           </>
         )}
 
