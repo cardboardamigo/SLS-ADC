@@ -80,8 +80,8 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-[#38b2ac] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-500">Loading census data...</p>
+          <div className="w-10 h-10 border-4 border-[#38b2ac] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-500 text-base">Loading census data...</p>
         </div>
       </div>
     );
@@ -100,46 +100,46 @@ export default function DashboardPage() {
   })();
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 pt-14">
+    <div className="min-h-screen bg-gray-50 pb-24 pt-20">
       <Header />
 
-      <div className="max-w-lg mx-auto px-4 py-4">
+      <div className="max-w-2xl mx-auto px-5 py-5">
         {/* ADC Hero Card */}
-        <div className="bg-gradient-to-br from-[#1e3a5f] to-[#2c5282] rounded-2xl p-6 text-white mb-4 shadow-lg">
+        <div className="bg-gradient-to-br from-[#1e3a5f] to-[#2c5282] rounded-2xl p-8 text-white mb-5 shadow-lg">
           <div className="text-center">
-            <p className="text-white/70 text-sm mb-1">{format(now, "MMMM yyyy")} ADC</p>
-            <p className="text-5xl font-bold mb-1">{adc.toFixed(1)}</p>
-            <p className="text-white/60 text-xs">
+            <p className="text-white/70 text-base mb-1">{format(now, "MMMM yyyy")} ADC</p>
+            <p className="text-6xl font-bold mb-2">{adc.toFixed(1)}</p>
+            <p className="text-white/60 text-sm">
               {monthlyData?.daysInMonth ?? 0} days tracked
             </p>
           </div>
 
-          <div className="flex justify-between mt-4 pt-4 border-t border-white/20">
+          <div className="flex justify-between mt-6 pt-5 border-t border-white/20">
             <div className="text-center flex-1">
-              <p className="text-2xl font-semibold">{currentCensus}</p>
-              <p className="text-white/60 text-xs">Current</p>
+              <p className="text-3xl font-semibold">{currentCensus}</p>
+              <p className="text-white/60 text-sm">Current</p>
             </div>
             <div className="text-center flex-1">
-              <p className="text-2xl font-semibold text-green-300">+{admissions.length}</p>
-              <p className="text-white/60 text-xs">Admits</p>
+              <p className="text-3xl font-semibold text-green-300">+{admissions.length}</p>
+              <p className="text-white/60 text-sm">Admits</p>
             </div>
             <div className="text-center flex-1">
-              <p className="text-2xl font-semibold text-orange-300">-{discharges.length}</p>
-              <p className="text-white/60 text-xs">D/C</p>
+              <p className="text-3xl font-semibold text-orange-300">-{discharges.length}</p>
+              <p className="text-white/60 text-sm">D/C</p>
             </div>
             <div className="text-center flex-1">
-              <p className="text-2xl font-semibold text-red-300">-{rtas.length}</p>
-              <p className="text-white/60 text-xs">RTA</p>
+              <p className="text-3xl font-semibold text-red-300">-{rtas.length}</p>
+              <p className="text-white/60 text-sm">RTA</p>
             </div>
           </div>
         </div>
 
         {/* Starting Census */}
-        <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-5 mb-5 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Starting Census (Month)</p>
-              <p className="text-lg font-semibold">{startCensus}</p>
+              <p className="text-base text-gray-500">Starting Census (Month)</p>
+              <p className="text-2xl font-semibold">{startCensus}</p>
             </div>
             {!editingCensus ? (
               <button
@@ -147,7 +147,7 @@ export default function DashboardPage() {
                   setCensusInput(String(startCensus));
                   setEditingCensus(true);
                 }}
-                className="text-sm text-[#38b2ac] font-medium"
+                className="text-base text-[#38b2ac] font-medium px-4 py-2"
               >
                 Edit
               </button>
@@ -157,17 +157,17 @@ export default function DashboardPage() {
                   type="number"
                   value={censusInput}
                   onChange={(e) => setCensusInput(e.target.value)}
-                  className="w-20 px-2 py-1 border rounded-lg text-center"
+                  className="w-24 px-3 py-2 border rounded-lg text-center text-lg"
                 />
                 <button
                   onClick={handleSetStartingCensus}
-                  className="text-sm bg-[#38b2ac] text-white px-3 py-1 rounded-lg"
+                  className="text-base bg-[#38b2ac] text-white px-4 py-2 rounded-lg"
                 >
                   Save
                 </button>
                 <button
                   onClick={() => setEditingCensus(false)}
-                  className="text-sm text-gray-400"
+                  className="text-base text-gray-400 px-2 py-2"
                 >
                   Cancel
                 </button>
@@ -179,16 +179,16 @@ export default function DashboardPage() {
         {/* Bonus Hint - subtle */}
         {nextTier && (
           <div
-            className="bg-amber-50 rounded-xl p-3 mb-4 border border-amber-100 cursor-pointer"
+            className="bg-amber-50 rounded-xl p-4 mb-5 border border-amber-100 cursor-pointer"
             onClick={() => setShowBonusHint(!showBonusHint)}
           >
-            <p className="text-sm text-amber-700">
+            <p className="text-base text-amber-700">
               {adc >= 20
                 ? `Current tier: ${formatCurrency(calculateBonus(adc).amount)}`
                 : `${(nextTier.adcThreshold - adc).toFixed(1)} ADC to next milestone`}
             </p>
             {showBonusHint && (
-              <p className="text-xs text-amber-600 mt-1">
+              <p className="text-sm text-amber-600 mt-2">
                 Next: {nextTier.adcThreshold} ADC = {formatCurrency(nextTier.bonusAmount)}
               </p>
             )}
@@ -196,48 +196,48 @@ export default function DashboardPage() {
         )}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-3 gap-4 mb-5">
           <button
             onClick={() => router.push("/admissions")}
-            className="bg-green-50 border border-green-200 rounded-xl p-3 text-center hover:bg-green-100 transition"
+            className="bg-green-50 border border-green-200 rounded-xl p-5 text-center hover:bg-green-100 transition"
           >
-            <div className="text-green-600 font-bold text-lg">+</div>
-            <p className="text-xs text-green-700 font-medium">Admission</p>
+            <div className="text-green-600 font-bold text-2xl">+</div>
+            <p className="text-sm text-green-700 font-medium mt-1">Admission</p>
           </button>
           <button
             onClick={() => router.push("/discharges")}
-            className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-center hover:bg-orange-100 transition"
+            className="bg-orange-50 border border-orange-200 rounded-xl p-5 text-center hover:bg-orange-100 transition"
           >
-            <div className="text-orange-600 font-bold text-lg">-</div>
-            <p className="text-xs text-orange-700 font-medium">Discharge</p>
+            <div className="text-orange-600 font-bold text-2xl">-</div>
+            <p className="text-sm text-orange-700 font-medium mt-1">Discharge</p>
           </button>
           <button
             onClick={() => router.push("/rta")}
-            className="bg-red-50 border border-red-200 rounded-xl p-3 text-center hover:bg-red-100 transition"
+            className="bg-red-50 border border-red-200 rounded-xl p-5 text-center hover:bg-red-100 transition"
           >
-            <div className="text-red-600 font-bold text-lg">&larr;</div>
-            <p className="text-xs text-red-700 font-medium">RTA</p>
+            <div className="text-red-600 font-bold text-2xl">&larr;</div>
+            <p className="text-sm text-red-700 font-medium mt-1">RTA</p>
           </button>
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-gray-800">Recent Activity</h2>
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-800">Recent Activity</h2>
             <button
               onClick={() => router.push("/history")}
-              className="text-sm text-[#38b2ac]"
+              className="text-base text-[#38b2ac] font-medium"
             >
               View All
             </button>
           </div>
 
           {admissions.length === 0 && discharges.length === 0 && rtas.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-4">
+            <p className="text-gray-400 text-base text-center py-6">
               No entries this month. Tap a button above to start tracking.
             </p>
           ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div className="space-y-3">
               {[
                 ...admissions.slice(0, 5).map((a) => ({
                   type: "admit" as const,
@@ -263,10 +263,10 @@ export default function DashboardPage() {
                 .map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0"
+                    className="flex items-center gap-3 py-3 border-b border-gray-50 last:border-0"
                   >
                     <div
-                      className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      className={`w-3 h-3 rounded-full flex-shrink-0 ${
                         item.type === "admit"
                           ? "bg-green-400"
                           : item.type === "dc"
@@ -275,14 +275,14 @@ export default function DashboardPage() {
                       }`}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-800 truncate">{item.label}</p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-base text-gray-800 truncate">{item.label}</p>
+                      <p className="text-sm text-gray-400">
                         {item.date}
                         {item.sub ? ` \u00b7 ${item.sub}` : ""}
                       </p>
                     </div>
                     <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                      className={`text-sm font-medium px-3 py-1 rounded-full ${
                         item.type === "admit"
                           ? "bg-green-100 text-green-700"
                           : item.type === "dc"
@@ -314,7 +314,7 @@ export default function DashboardPage() {
             }
           }}
         >
-          <p className="text-xs text-gray-300 select-none">v1.0 - SLS Census Tracker</p>
+          <p className="text-sm text-gray-300 select-none">v1.0 - SLS Census Tracker</p>
         </div>
       </div>
 

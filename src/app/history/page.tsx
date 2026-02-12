@@ -69,19 +69,19 @@ export default function HistoryPage() {
   if (loading || dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-4 border-[#38b2ac] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-[#38b2ac] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 pt-14">
+    <div className="min-h-screen bg-gray-50 pb-24 pt-20">
       <Header />
 
-      <div className="max-w-lg mx-auto px-4 py-4">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Monthly History</h2>
+      <div className="max-w-2xl mx-auto px-5 py-5">
+        <h2 className="text-xl font-semibold text-gray-800 mb-5">Monthly History</h2>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {months.map((m) => {
             const bonus = calculateBonus(m.adc.averageDailyCensus);
             const isExpanded = expandedMonth === m.adc.month;
@@ -93,47 +93,47 @@ export default function HistoryPage() {
               >
                 <button
                   onClick={() => setExpandedMonth(isExpanded ? null : m.adc.month)}
-                  className="w-full p-4 flex items-center justify-between text-left"
+                  className="w-full p-5 flex items-center justify-between text-left"
                 >
                   <div>
-                    <p className="font-semibold text-gray-800">{m.adc.monthName}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-base font-semibold text-gray-800">{m.adc.monthName}</p>
+                    <p className="text-sm text-gray-400">
                       {m.admissions.length} admits &middot; {m.discharges.length} D/C &middot;{" "}
                       {m.rtas.length} RTA
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-[#1e3a5f]">
+                    <p className="text-xl font-bold text-[#1e3a5f]">
                       {m.adc.averageDailyCensus.toFixed(1)}
                     </p>
-                    <p className="text-xs text-gray-400">ADC</p>
+                    <p className="text-sm text-gray-400">ADC</p>
                   </div>
                 </button>
 
                 {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-gray-50">
-                    <div className="grid grid-cols-3 gap-3 mt-3 mb-3">
-                      <div className="bg-green-50 rounded-lg p-2 text-center">
-                        <p className="text-lg font-bold text-green-600">
+                  <div className="px-5 pb-5 border-t border-gray-50">
+                    <div className="grid grid-cols-3 gap-3 mt-4 mb-4">
+                      <div className="bg-green-50 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold text-green-600">
                           {m.admissions.length}
                         </p>
-                        <p className="text-xs text-green-700">Admits</p>
+                        <p className="text-sm text-green-700">Admits</p>
                       </div>
-                      <div className="bg-orange-50 rounded-lg p-2 text-center">
-                        <p className="text-lg font-bold text-orange-600">
+                      <div className="bg-orange-50 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold text-orange-600">
                           {m.discharges.length}
                         </p>
-                        <p className="text-xs text-orange-700">D/C</p>
+                        <p className="text-sm text-orange-700">D/C</p>
                       </div>
-                      <div className="bg-red-50 rounded-lg p-2 text-center">
-                        <p className="text-lg font-bold text-red-600">{m.rtas.length}</p>
-                        <p className="text-xs text-red-700">RTA</p>
+                      <div className="bg-red-50 rounded-lg p-3 text-center">
+                        <p className="text-xl font-bold text-red-600">{m.rtas.length}</p>
+                        <p className="text-sm text-red-700">RTA</p>
                       </div>
                     </div>
 
                     {bonus.amount > 0 && (
-                      <div className="bg-amber-50 rounded-lg p-3 text-center">
-                        <p className="text-sm text-amber-700">
+                      <div className="bg-amber-50 rounded-lg p-4 text-center mb-4">
+                        <p className="text-base text-amber-700">
                           Bonus: <span className="font-bold">{formatCurrency(bonus.amount)}</span>
                           {bonus.tier && ` (${bonus.tier.adcThreshold}+ tier)`}
                         </p>
@@ -142,10 +142,10 @@ export default function HistoryPage() {
 
                     {/* Admission details */}
                     {m.admissions.length > 0 && (
-                      <div className="mt-3">
-                        <p className="text-xs font-semibold text-gray-500 mb-1">Admissions</p>
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold text-gray-500 mb-2">Admissions</p>
                         {m.admissions.map((a) => (
-                          <p key={a.id} className="text-xs text-gray-600 py-0.5">
+                          <p key={a.id} className="text-sm text-gray-600 py-1">
                             {a.date} - {a.hospitalName} ({a.patientType}, CL: {a.clinicalLiaison})
                           </p>
                         ))}
@@ -154,10 +154,10 @@ export default function HistoryPage() {
 
                     {/* Discharge details */}
                     {m.discharges.length > 0 && (
-                      <div className="mt-3">
-                        <p className="text-xs font-semibold text-gray-500 mb-1">Discharges</p>
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold text-gray-500 mb-2">Discharges</p>
                         {m.discharges.map((d) => (
-                          <p key={d.id} className="text-xs text-gray-600 py-0.5">
+                          <p key={d.id} className="text-sm text-gray-600 py-1">
                             {d.date} - {d.dischargeName} ({d.dischargeType})
                           </p>
                         ))}
@@ -166,12 +166,12 @@ export default function HistoryPage() {
 
                     {/* RTA details */}
                     {m.rtas.length > 0 && (
-                      <div className="mt-3">
-                        <p className="text-xs font-semibold text-gray-500 mb-1">
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold text-gray-500 mb-2">
                           Returns to Acute
                         </p>
                         {m.rtas.map((r) => (
-                          <p key={r.id} className="text-xs text-gray-600 py-0.5">
+                          <p key={r.id} className="text-sm text-gray-600 py-1">
                             {r.date} - {r.hospital} ({r.reason})
                           </p>
                         ))}

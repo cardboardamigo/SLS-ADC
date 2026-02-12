@@ -9,6 +9,7 @@ import {
   orderBy,
   getDoc,
   setDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { Admission, Discharge, RTA, MonthlyADC } from "./types";
@@ -40,6 +41,10 @@ export async function deleteAdmission(id: string): Promise<void> {
   await deleteDoc(doc(db, "admissions", id));
 }
 
+export async function updateAdmission(id: string, data: Partial<Omit<Admission, "id">>): Promise<void> {
+  await updateDoc(doc(db, "admissions", id), data);
+}
+
 // --- Discharges ---
 export async function addDischarge(data: Omit<Discharge, "id">): Promise<string> {
   const ref = await addDoc(collection(db, "discharges"), data);
@@ -65,6 +70,10 @@ export async function deleteDischarge(id: string): Promise<void> {
   await deleteDoc(doc(db, "discharges", id));
 }
 
+export async function updateDischarge(id: string, data: Partial<Omit<Discharge, "id">>): Promise<void> {
+  await updateDoc(doc(db, "discharges", id), data);
+}
+
 // --- RTAs ---
 export async function addRTA(data: Omit<RTA, "id">): Promise<string> {
   const ref = await addDoc(collection(db, "rtas"), data);
@@ -88,6 +97,10 @@ export async function getRTAsForMonth(year: number, month: number): Promise<RTA[
 
 export async function deleteRTA(id: string): Promise<void> {
   await deleteDoc(doc(db, "rtas", id));
+}
+
+export async function updateRTA(id: string, data: Partial<Omit<RTA, "id">>): Promise<void> {
+  await updateDoc(doc(db, "rtas", id), data);
 }
 
 // --- Census Calculation ---
