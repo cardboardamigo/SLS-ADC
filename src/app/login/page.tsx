@@ -129,30 +129,31 @@ export default function LoginPage() {
   /* ── Shared Styles ── */
   const glassCard = {
     borderRadius: "var(--bubble-radius)",
-    background: "rgba(255,255,255,0.07)",
+    background: "rgba(255,255,255,0.65)",
     backdropFilter: "blur(24px)",
     WebkitBackdropFilter: "blur(24px)",
-    border: "1px solid rgba(255,255,255,0.12)",
+    border: "1px solid rgba(15,42,74,0.12)",
+    boxShadow: "0 8px 32px rgba(15,42,74,0.08)",
   };
 
   const inputBase: React.CSSProperties = {
     borderRadius: "var(--bubble-radius-input)",
-    background: "rgba(255,255,255,0.08)",
-    border: "1.5px solid rgba(255,255,255,0.15)",
+    background: "rgba(255,255,255,0.7)",
+    border: "1.5px solid var(--navy)",
     fontFamily: "'Poppins', sans-serif",
-    color: "#ffffff",
+    color: "var(--navy)",
   };
 
   function handleInputFocus(e: React.FocusEvent<HTMLInputElement>) {
-    e.target.style.borderColor = "rgba(255,255,255,0.35)";
-    e.target.style.boxShadow = "0 0 0 3px rgba(255,255,255,0.08)";
-    e.target.style.background = "rgba(255,255,255,0.12)";
+    e.target.style.borderColor = "var(--crimson)";
+    e.target.style.boxShadow = "0 0 0 3px rgba(192,57,43,0.12)";
+    e.target.style.background = "rgba(255,255,255,0.9)";
   }
 
   function handleInputBlur(e: React.FocusEvent<HTMLInputElement>) {
-    e.target.style.borderColor = "rgba(255,255,255,0.15)";
+    e.target.style.borderColor = "var(--navy)";
     e.target.style.boxShadow = "none";
-    e.target.style.background = "rgba(255,255,255,0.08)";
+    e.target.style.background = "rgba(255,255,255,0.7)";
   }
 
   const spinner = (
@@ -175,9 +176,9 @@ export default function LoginPage() {
     <button
       onClick={handleBack}
       className="flex items-center gap-2 transition mb-5"
-      style={{ color: "rgba(255,255,255,0.5)" }}
-      onMouseEnter={(e) => (e.currentTarget.style.color = "#ffffff")}
-      onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
+      style={{ color: "rgba(15,42,74,0.5)" }}
+      onMouseEnter={(e) => (e.currentTarget.style.color = "var(--navy)")}
+      onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(15,42,74,0.5)")}
     >
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -191,9 +192,9 @@ export default function LoginPage() {
       className="text-sm p-3.5 mb-5 flex items-start gap-2.5"
       style={{
         borderRadius: "var(--bubble-radius-input)",
-        background: "rgba(220,38,38,0.15)",
+        background: "rgba(220,38,38,0.08)",
         border: "1px solid rgba(220,38,38,0.3)",
-        color: "#fca5a5",
+        color: "#b91c1c",
       }}
     >
       <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -297,7 +298,7 @@ export default function LoginPage() {
           <div className="w-full">
             {backButton}
             <div className="flex flex-col items-center mb-6">
-              <h2 className="text-xl font-bold" style={{ color: "#ffffff" }}>
+              <h2 className="text-xl font-bold" style={{ color: "var(--navy)" }}>
                 Sign In with Email
               </h2>
             </div>
@@ -306,12 +307,12 @@ export default function LoginPage() {
               {errorBanner}
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label htmlFor="login-email" className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  <label htmlFor="login-email" className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                     Email
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <svg className="w-5 h-5" style={{ color: "rgba(255,255,255,0.3)" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <svg className="w-5 h-5" style={{ color: "rgba(15,42,74,0.4)" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                       </svg>
                     </div>
@@ -323,7 +324,7 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="h-12 w-full pl-12 pr-4 text-sm placeholder-white/30 focus:outline-none transition-all"
+                      className="h-12 w-full pl-12 pr-4 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                       style={inputBase}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
@@ -334,7 +335,7 @@ export default function LoginPage() {
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label htmlFor="login-password" className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    <label htmlFor="login-password" className="text-sm font-medium" style={{ color: "rgba(15,42,74,0.7)" }}>
                       Password
                     </label>
                     <button
@@ -348,7 +349,7 @@ export default function LoginPage() {
                   </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <svg className="w-5 h-5" style={{ color: "rgba(255,255,255,0.3)" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <svg className="w-5 h-5" style={{ color: "rgba(15,42,74,0.4)" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                       </svg>
                     </div>
@@ -360,7 +361,7 @@ export default function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="h-12 w-full pl-12 pr-12 text-sm placeholder-white/30 focus:outline-none transition-all"
+                      className="h-12 w-full pl-12 pr-12 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                       style={inputBase}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
@@ -370,9 +371,9 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute inset-y-0 right-0 pr-4 flex items-center transition-colors"
-                      style={{ color: "rgba(255,255,255,0.3)" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+                      style={{ color: "rgba(15,42,74,0.4)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "var(--navy)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(15,42,74,0.4)")}
                       tabIndex={-1}
                     >
                       {showPassword ? (
@@ -419,7 +420,7 @@ export default function LoginPage() {
           <div className="w-full">
             {backButton}
             <div className="flex flex-col items-center mb-6">
-              <h2 className="text-xl font-bold" style={{ color: "#ffffff" }}>
+              <h2 className="text-xl font-bold" style={{ color: "var(--navy)" }}>
                 Create Account
               </h2>
             </div>
@@ -428,7 +429,7 @@ export default function LoginPage() {
               {errorBanner}
               <form onSubmit={handleRegister} className="space-y-3.5">
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                     Full Name
                   </label>
                   <input
@@ -436,7 +437,7 @@ export default function LoginPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                    className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                     style={inputBase}
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
@@ -445,7 +446,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                     Email
                   </label>
                   <input
@@ -453,7 +454,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                    className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                     style={inputBase}
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
@@ -462,7 +463,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                     Password
                   </label>
                   <input
@@ -470,7 +471,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                    className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                     style={inputBase}
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
@@ -479,7 +480,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                     Confirm Password
                   </label>
                   <input
@@ -487,7 +488,7 @@ export default function LoginPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full h-12 px-5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                    className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                     style={inputBase}
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
@@ -527,17 +528,17 @@ export default function LoginPage() {
             <div className="p-7" style={glassCard}>
               <div
                 className="w-12 h-12 flex items-center justify-center mb-5"
-                style={{ borderRadius: "16px", background: "rgba(255,255,255,0.1)" }}
+                style={{ borderRadius: "16px", background: "rgba(15,42,74,0.08)" }}
               >
-                <svg className="w-6 h-6" style={{ color: "rgba(255,255,255,0.8)" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <svg className="w-6 h-6" style={{ color: "var(--navy)" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                 </svg>
               </div>
 
-              <h2 className="text-xl font-bold mb-1" style={{ color: "#ffffff" }}>
+              <h2 className="text-xl font-bold mb-1" style={{ color: "var(--navy)" }}>
                 Reset Password
               </h2>
-              <p className="text-sm mb-6 leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
+              <p className="text-sm mb-6 leading-relaxed" style={{ color: "rgba(15,42,74,0.5)" }}>
                 Enter your email and we&apos;ll send you a reset link.
               </p>
 
@@ -551,12 +552,12 @@ export default function LoginPage() {
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "#34d399" }} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "#059669" }} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                      <p className="font-semibold text-sm" style={{ color: "#34d399" }}>Email Sent!</p>
-                      <p className="text-sm mt-1 leading-relaxed" style={{ color: "rgba(52,211,153,0.7)" }}>
+                      <p className="font-semibold text-sm" style={{ color: "#059669" }}>Email Sent!</p>
+                      <p className="text-sm mt-1 leading-relaxed" style={{ color: "rgba(5,150,105,0.8)" }}>
                         Check your inbox for a password reset link.
                       </p>
                     </div>
@@ -567,7 +568,7 @@ export default function LoginPage() {
                   {errorBanner}
 
                   <div className="mb-5">
-                    <label className="block text-sm font-medium mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    <label className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                       Email Address
                     </label>
                     <input
@@ -575,7 +576,7 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full px-5 py-3.5 text-sm placeholder-white/30 focus:outline-none transition-all"
+                      className="w-full px-5 py-3.5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                       style={inputBase}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
@@ -611,20 +612,34 @@ export default function LoginPage() {
       </div>
 
       {/* Download App Link */}
-      <button
-        onClick={handleInstallClick}
-        className="mt-auto pt-10 pb-4 text-sm font-medium"
-        style={{
-          color: "var(--navy)",
-          fontFamily: "'Poppins', sans-serif",
-          background: "none",
-          border: "none",
-          textDecoration: "underline",
-          textUnderlineOffset: "3px",
-        }}
-      >
-        Download App
-      </button>
+      {deferredPrompt ? (
+        <button
+          onClick={handleInstallClick}
+          className="mt-auto pt-10 pb-4 text-sm font-medium"
+          style={{
+            color: "var(--navy)",
+            fontFamily: "'Poppins', sans-serif",
+            background: "none",
+            border: "none",
+            textDecoration: "underline",
+            textUnderlineOffset: "3px",
+          }}
+        >
+          Download App
+        </button>
+      ) : (
+        <p
+          className="mt-auto pt-10 pb-4 text-xs text-center leading-relaxed"
+          style={{
+            color: "rgba(15,42,74,0.4)",
+            fontFamily: "'Poppins', sans-serif",
+            maxWidth: "280px",
+          }}
+        >
+          To install, open this site in your browser and tap{" "}
+          <strong>&quot;Add to Home Screen&quot;</strong> from the menu.
+        </p>
+      )}
     </main>
   );
 }
