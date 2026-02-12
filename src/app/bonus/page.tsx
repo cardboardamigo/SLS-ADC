@@ -71,7 +71,7 @@ export default function BonusPage() {
   if (loading || dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-4 border-[#38b2ac] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-[#38b2ac] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -79,19 +79,19 @@ export default function BonusPage() {
   const currentBonus = currentMonth ? calculateBonus(currentMonth.averageDailyCensus) : { tier: null, amount: 0 };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 pt-14">
+    <div className="min-h-screen bg-gray-50 pb-24 pt-20">
       <Header />
 
-      <div className="max-w-lg mx-auto px-4 py-4">
+      <div className="max-w-2xl mx-auto px-5 py-5">
         {/* Current Month Bonus */}
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-6 text-white mb-4 shadow-lg">
-          <p className="text-white/80 text-sm mb-1">
+        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-8 text-white mb-5 shadow-lg">
+          <p className="text-white/80 text-base mb-1">
             {currentMonth?.monthName} Projected Bonus
           </p>
-          <p className="text-4xl font-bold mb-1">
+          <p className="text-5xl font-bold mb-2">
             {formatCurrency(currentBonus.amount)}
           </p>
-          <p className="text-white/70 text-sm">
+          <p className="text-white/70 text-base">
             ADC: {currentMonth?.averageDailyCensus.toFixed(1)}
             {currentBonus.tier && ` (${currentBonus.tier.adcThreshold}+ tier)`}
           </p>
@@ -99,7 +99,7 @@ export default function BonusPage() {
             <button
               onClick={() => handleGeneratePDF(currentMonth)}
               disabled={generatingPDF}
-              className="mt-4 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-medium transition w-full"
+              className="mt-5 bg-white/20 hover:bg-white/30 text-white px-5 py-3 rounded-xl text-base font-medium transition w-full"
             >
               {generatingPDF ? "Generating..." : "Generate Bonus Submission Form (PDF)"}
             </button>
@@ -107,9 +107,9 @@ export default function BonusPage() {
         </div>
 
         {/* Tier Chart */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
-          <h2 className="font-semibold text-gray-800 mb-3">Bonus Tiers</h2>
-          <div className="space-y-2">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-5">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Bonus Tiers</h2>
+          <div className="space-y-3">
             {[...BONUS_TIERS].reverse().map((tier) => {
               const isActive =
                 currentMonth &&
@@ -118,7 +118,7 @@ export default function BonusPage() {
               return (
                 <div
                   key={tier.adcThreshold}
-                  className={`flex items-center justify-between p-3 rounded-xl transition ${
+                  className={`flex items-center justify-between p-4 rounded-xl transition ${
                     isCurrent
                       ? "bg-amber-50 border-2 border-amber-300"
                       : isActive
@@ -126,9 +126,9 @@ export default function BonusPage() {
                       : "bg-gray-50 border border-gray-100"
                   }`}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <div
-                      className={`w-3 h-3 rounded-full ${
+                      className={`w-4 h-4 rounded-full ${
                         isCurrent
                           ? "bg-amber-500"
                           : isActive
@@ -137,7 +137,7 @@ export default function BonusPage() {
                       }`}
                     />
                     <span
-                      className={`text-sm font-medium ${
+                      className={`text-base font-medium ${
                         isActive ? "text-gray-800" : "text-gray-400"
                       }`}
                     >
@@ -145,7 +145,7 @@ export default function BonusPage() {
                     </span>
                   </div>
                   <span
-                    className={`text-sm font-semibold ${
+                    className={`text-base font-semibold ${
                       isCurrent
                         ? "text-amber-600"
                         : isActive
@@ -162,26 +162,26 @@ export default function BonusPage() {
         </div>
 
         {/* Previous Months */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <h2 className="font-semibold text-gray-800 mb-3">Previous Months</h2>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Previous Months</h2>
           {previousMonths.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-4">No previous data</p>
+            <p className="text-gray-400 text-base text-center py-6">No previous data</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {previousMonths.map((m) => {
                 const bonus = calculateBonus(m.averageDailyCensus);
                 return (
                   <div
                     key={m.month}
-                    className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0"
+                    className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0"
                   >
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{m.monthName}</p>
-                      <p className="text-xs text-gray-400">ADC: {m.averageDailyCensus.toFixed(1)}</p>
+                      <p className="text-base font-medium text-gray-800">{m.monthName}</p>
+                      <p className="text-sm text-gray-400">ADC: {m.averageDailyCensus.toFixed(1)}</p>
                     </div>
                     <div className="text-right">
                       <p
-                        className={`text-sm font-semibold ${
+                        className={`text-base font-semibold ${
                           bonus.amount > 0 ? "text-green-600" : "text-gray-400"
                         }`}
                       >
@@ -190,7 +190,7 @@ export default function BonusPage() {
                       {bonus.amount > 0 && (
                         <button
                           onClick={() => handleGeneratePDF(m)}
-                          className="text-xs text-[#38b2ac] mt-0.5"
+                          className="text-sm text-[#38b2ac] mt-1"
                         >
                           Get PDF
                         </button>
