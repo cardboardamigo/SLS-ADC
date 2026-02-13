@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import { doc, updateDoc } from "firebase/firestore";
@@ -12,6 +13,7 @@ import Image from "next/image";
 
 export default function ProfilePage() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth();
+  const { isInstallable, isInstalled, promptInstall } = useInstallPrompt();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -202,6 +204,24 @@ export default function ProfilePage() {
             {saving ? "Saving..." : "Save Profile"}
           </button>
         </form>
+
+        {/* Install App */}
+        {isInstallable && (
+          <button
+            onClick={promptInstall}
+            className="w-full bg-[#1e3a5f] text-white py-4 rounded-xl text-lg font-semibold hover:bg-[#16314f] transition mb-3 flex items-center justify-center gap-3"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Install App
+          </button>
+        )}
+        {isInstalled && (
+          <div className="w-full bg-green-50 text-green-700 py-4 rounded-xl text-base font-medium border border-green-200 text-center mb-3">
+            App is installed
+          </div>
+        )}
 
         {/* Sign Out */}
         <button
