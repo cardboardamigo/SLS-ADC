@@ -7,39 +7,26 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types";
 
+// Known app users for auto-provisioning on first login
+const APP_USERS: Record<string, { name: string; email: string; phone: string }> = {
+  "jbrewer@slspecialty.org": { name: "West Brewer", email: "jbrewer@slspecialty.org", phone: "801-643-6775" },
+  "twebb@slspecialty.org": { name: "Thad Webb", email: "twebb@slspecialty.org", phone: "801-680-9075" },
+};
+
 function friendlyAuthError(err: unknown): string {
   if (!(err instanceof Error)) return "Something went wrong. Please try again.";
   const msg = err.message;
-  if (msg.includes("auth/operation-not-allowed"))
-    return "Email/password sign-in is not enabled. Please contact the administrator to enable it in the Firebase console.";
-  if (msg.includes("auth/user-not-found") || msg.includes("auth/wrong-password") || msg.includes("auth/invalid-credential"))
-    return "Invalid email or password. Please try again.";
-  if (msg.includes("auth/email-already-in-use"))
-    return "An account with this email already exists. Try signing in instead.";
-  if (msg.includes("auth/weak-password"))
-    return "Password is too weak. Please use at least 6 characters.";
-  if (msg.includes("auth/invalid-email"))
-    return "Please enter a valid email address.";
+  if (msg.includes("auth/invalid-credential") || msg.includes("auth/wrong-password"))
+    return "Incorrect PIN. Please try again.";
   if (msg.includes("auth/too-many-requests"))
     return "Too many failed attempts. Please wait a moment and try again.";
   if (msg.includes("auth/network-request-failed"))
     return "Network error. Please check your internet connection.";
-  if (msg.includes("auth/popup-blocked"))
-    return "Popup was blocked by your browser. Trying redirect sign-in instead...";
-  if (msg.includes("auth/popup-closed-by-user"))
-    return "Sign-in popup was closed. Please try again.";
-  if (msg.includes("auth/cancelled-popup-request"))
-    return "Sign-in was cancelled. Please try again.";
   return "Something went wrong. Please try again.";
 }
 
@@ -49,10 +36,7 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signIn: (email: string, pin: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -73,32 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    // Handle Google redirect result (from signInWithRedirect fallback)
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result?.user) {
-          const docRef = doc(db, "users", result.user.uid);
-          const snap = await getDoc(docRef);
-          if (!snap.exists()) {
-            const newProfile: UserProfile = {
-              uid: result.user.uid,
-              email: result.user.email || "",
-              name: result.user.displayName || "",
-              phone: result.user.phoneNumber || "",
-              title: "",
-              profilePicUrl: result.user.photoURL || "",
-            };
-            await setDoc(docRef, newProfile);
-            setProfile(newProfile);
-          } else {
-            setProfile(snap.data() as UserProfile);
-          }
-        }
-      })
-      .catch((err) => {
-        console.error("Redirect sign-in error:", err);
-      });
-
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
@@ -115,95 +73,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  async function signIn(email: string, password: string) {
-    console.log("Attempting email/password sign-in for:", email);
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    console.log("Sign-in successful, fetching profile...");
-    try {
-      await fetchProfile(cred.user.uid);
-      console.log("Profile loaded successfully");
-    } catch (err) {
-      // Profile fetch failure should not block sign-in — the user IS authenticated.
-      // The profile will be loaded by onAuthStateChanged listener.
-      console.warn("Profile fetch after sign-in failed (non-fatal):", err);
-    }
-  }
-
-  async function signInWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    console.log("Starting Google sign-in...");
-
-    // Detect standalone PWA mode — popups never work here, go straight to redirect
-    const isStandalone =
-      typeof window !== "undefined" &&
-      (window.matchMedia("(display-mode: standalone)").matches ||
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window.navigator as any).standalone === true);
-
-    if (isStandalone) {
-      console.log("Standalone PWA detected, using redirect sign-in...");
-      await signInWithRedirect(auth, provider);
-      return; // Page will redirect; profile handled by getRedirectResult on return
-    }
+  async function signIn(email: string, pin: string) {
+    // Pad PIN to meet Firebase's 6-character minimum password requirement
+    const password = "slspin_" + pin;
 
     try {
-      console.log("Attempting sign-in with popup...");
-      const cred = await signInWithPopup(auth, provider);
-      console.log("Popup sign-in successful, user:", cred.user.email);
-      const docRef = doc(db, "users", cred.user.uid);
-      const snap = await getDoc(docRef);
-      if (!snap.exists()) {
-        console.log("Creating new user profile...");
-        const newProfile: UserProfile = {
-          uid: cred.user.uid,
-          email: cred.user.email || "",
-          name: cred.user.displayName || "",
-          phone: cred.user.phoneNumber || "",
-          title: "",
-          profilePicUrl: cred.user.photoURL || "",
-        };
-        await setDoc(docRef, newProfile);
-        setProfile(newProfile);
-        console.log("User profile created successfully");
-      } else {
-        console.log("User profile already exists, loading...");
-        setProfile(snap.data() as UserProfile);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      try {
+        await fetchProfile(cred.user.uid);
+      } catch (err) {
+        console.warn("Profile fetch after sign-in failed (non-fatal):", err);
       }
     } catch (err: unknown) {
-      // If popup fails for any reason, fall back to redirect
-      const msg = err instanceof Error ? err.message : "";
-      console.error("Google sign-in popup error:", msg);
-      if (
-        msg.includes("auth/popup-blocked") ||
-        msg.includes("auth/popup-closed-by-user") ||
-        msg.includes("auth/cancelled-popup-request") ||
-        msg.includes("auth/internal-error") ||
-        msg.includes("auth/network-request-failed")
-      ) {
-        console.log("Popup failed, falling back to redirect...");
-        await signInWithRedirect(auth, provider);
-        return; // Page will redirect; profile handled by getRedirectResult on return
+      const code = err instanceof Error ? err.message : "";
+      // If user doesn't exist, auto-create the account
+      if (code.includes("auth/user-not-found") || code.includes("auth/invalid-credential")) {
+        try {
+          const cred = await createUserWithEmailAndPassword(auth, email, password);
+          const userData = APP_USERS[email];
+          const newProfile: UserProfile = {
+            uid: cred.user.uid,
+            email,
+            name: userData?.name || "",
+            phone: userData?.phone || "",
+            title: "",
+            profilePicUrl: "",
+          };
+          await setDoc(doc(db, "users", cred.user.uid), newProfile);
+          setProfile(newProfile);
+        } catch (createErr: unknown) {
+          const createCode = createErr instanceof Error ? createErr.message : "";
+          if (createCode.includes("auth/email-already-in-use")) {
+            // Account exists with a different password (from old system)
+            throw new Error("auth/invalid-credential");
+          }
+          throw createErr;
+        }
+      } else {
+        throw err;
       }
-      throw err;
     }
-  }
-
-  async function resetPassword(email: string) {
-    await sendPasswordResetEmail(auth, email);
-  }
-
-  async function signUp(email: string, password: string, name: string) {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    const newProfile: UserProfile = {
-      uid: cred.user.uid,
-      email,
-      name,
-      phone: "",
-      title: "",
-      profilePicUrl: "",
-    };
-    await setDoc(doc(db, "users", cred.user.uid), newProfile);
-    setProfile(newProfile);
   }
 
   async function signOut() {
@@ -220,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, signIn, signInWithGoogle, resetPassword, signUp, signOut, refreshProfile }}
+      value={{ user, profile, loading, signIn, signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>
