@@ -7,15 +7,11 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
-  GoogleAuthProvider,
-  signInWithPopup,
-  updatePassword,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types";
 
-// Known app users for auto-provisioning on first login
 const APP_USERS: Record<string, { name: string; email: string; phone: string }> = {
   "jbrewer@slspecialty.org": { name: "West Brewer", email: "jbrewer@slspecialty.org", phone: "801-643-6775" },
   "twebb@slspecialty.org": { name: "Thad Webb", email: "twebb@slspecialty.org", phone: "801-680-9075" },
@@ -24,8 +20,6 @@ const APP_USERS: Record<string, { name: string; email: string; phone: string }> 
 function friendlyAuthError(err: unknown): string {
   if (!(err instanceof Error)) return "Something went wrong. Please try again.";
   const msg = err.message;
-  if (msg.includes("auth/account-password-mismatch"))
-    return "Your account needs to be recovered. Please use the Google sign-in option below to restore access.";
   if (msg.includes("auth/invalid-credential") || msg.includes("auth/wrong-password"))
     return "Incorrect PIN. Please try again.";
   if (msg.includes("auth/too-many-requests"))
@@ -42,7 +36,6 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, pin: string) => Promise<void>;
-  recoverWithGoogle: (email: string, pin: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -80,108 +73,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signIn(email: string, pin: string) {
-    // Pad PIN to meet Firebase's 6-character minimum password requirement
     const password = "slspin_" + pin;
 
-    // Step 1: Try to sign in with the current password format
+    // Try to sign in
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      try {
-        await fetchProfile(cred.user.uid);
-      } catch (err) {
-        console.warn("Profile fetch after sign-in failed (non-fatal):", err);
-      }
+      try { await fetchProfile(cred.user.uid); } catch {}
       return;
     } catch (err: unknown) {
       const code = err instanceof Error ? err.message : "";
-      // If it's not an auth/credential issue, rethrow immediately
       if (!code.includes("auth/user-not-found") && !code.includes("auth/invalid-credential")) {
         throw err;
       }
     }
 
-    // Step 2: Sign-in failed — try to create a new account
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
-      const userData = APP_USERS[email];
-      const newProfile: UserProfile = {
-        uid: cred.user.uid,
-        email,
-        name: userData?.name || "",
-        phone: userData?.phone || "",
-        title: "",
-        profilePicUrl: "",
-      };
-      await setDoc(doc(db, "users", cred.user.uid), newProfile);
-      setProfile(newProfile);
-      return;
-    } catch (createErr: unknown) {
-      const createCode = createErr instanceof Error ? createErr.message : "";
-      if (!createCode.includes("auth/email-already-in-use")) {
-        throw createErr;
-      }
-    }
-
-    // Step 3: Account exists but password doesn't match the current PIN.
-    // Try to sign in via the API route that resets the password.
-    try {
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, newPassword: password }),
-      });
-      if (res.ok) {
-        // Password was reset — retry sign-in
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        try {
-          await fetchProfile(cred.user.uid);
-        } catch (err) {
-          console.warn("Profile fetch after sign-in failed (non-fatal):", err);
-        }
-        return;
-      }
-    } catch {
-      // API route not available or failed — fall through to error
-    }
-
-    throw new Error(
-      "auth/account-password-mismatch"
-    );
-  }
-
-  async function recoverWithGoogle(email: string, pin: string) {
-    const password = "slspin_" + pin;
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ login_hint: email });
-    const cred = await signInWithPopup(auth, provider);
-
-    // Sync password so PIN login works in the future
-    try {
-      await updatePassword(cred.user, password);
-    } catch (err) {
-      console.warn("Password sync after Google recovery failed (non-fatal):", err);
-    }
-
-    // Fetch or create profile
-    const docRef = doc(db, "users", cred.user.uid);
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-      setProfile(snap.data() as UserProfile);
-    } else {
-      const userData = APP_USERS[email];
-      if (userData) {
-        const newProfile: UserProfile = {
-          uid: cred.user.uid,
-          email,
-          name: userData.name,
-          phone: userData.phone,
-          title: "",
-          profilePicUrl: "",
-        };
-        await setDoc(docRef, newProfile);
-        setProfile(newProfile);
-      }
-    }
+    // Account doesn't exist yet — create it
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const userData = APP_USERS[email];
+    const newProfile: UserProfile = {
+      uid: cred.user.uid,
+      email,
+      name: userData?.name || "",
+      phone: userData?.phone || "",
+      title: "",
+      profilePicUrl: "",
+    };
+    await setDoc(doc(db, "users", cred.user.uid), newProfile);
+    setProfile(newProfile);
   }
 
   async function signOut() {
@@ -197,9 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider
-      value={{ user, profile, loading, signIn, recoverWithGoogle, signOut, refreshProfile }}
-    >
+    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
