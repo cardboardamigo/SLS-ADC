@@ -117,20 +117,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string) {
     console.log("Attempting email/password sign-in for:", email);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    console.log("Sign-in successful, fetching profile...");
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-      console.log("Sign-in successful, fetching profile...");
       await fetchProfile(cred.user.uid);
       console.log("Profile loaded successfully");
     } catch (err) {
-      console.error("Email/password sign-in error:", err);
-      throw err;
+      // Profile fetch failure should not block sign-in — the user IS authenticated.
+      // The profile will be loaded by onAuthStateChanged listener.
+      console.warn("Profile fetch after sign-in failed (non-fatal):", err);
     }
   }
 
   async function signInWithGoogle() {
     const provider = new GoogleAuthProvider();
     console.log("Starting Google sign-in...");
+
+    // Detect standalone PWA mode — popups never work here, go straight to redirect
+    const isStandalone =
+      typeof window !== "undefined" &&
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window.navigator as any).standalone === true);
+
+    if (isStandalone) {
+      console.log("Standalone PWA detected, using redirect sign-in...");
+      await signInWithRedirect(auth, provider);
+      return; // Page will redirect; profile handled by getRedirectResult on return
+    }
+
     try {
       console.log("Attempting sign-in with popup...");
       const cred = await signInWithPopup(auth, provider);
@@ -155,14 +170,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(snap.data() as UserProfile);
       }
     } catch (err: unknown) {
-      // If popup fails (common on mobile), fall back to redirect
+      // If popup fails for any reason, fall back to redirect
       const msg = err instanceof Error ? err.message : "";
-      console.error("Google sign-in error:", err);
-      console.error("Error message:", msg);
+      console.error("Google sign-in popup error:", msg);
       if (
         msg.includes("auth/popup-blocked") ||
         msg.includes("auth/popup-closed-by-user") ||
-        msg.includes("auth/cancelled-popup-request")
+        msg.includes("auth/cancelled-popup-request") ||
+        msg.includes("auth/internal-error") ||
+        msg.includes("auth/network-request-failed")
       ) {
         console.log("Popup failed, falling back to redirect...");
         await signInWithRedirect(auth, provider);

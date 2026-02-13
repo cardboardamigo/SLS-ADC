@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -15,8 +15,15 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signUp, signInWithGoogle } = useAuth();
+  const { user, loading: authLoading, signUp, signInWithGoogle } = useAuth();
   const router = useRouter();
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/dashboard");
+    }
+  }, [user, authLoading, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,7 +41,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await signUp(email, password, name);
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err: unknown) {
       setError(friendlyAuthError(err));
     } finally {
@@ -47,7 +54,7 @@ export default function RegisterPage() {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err: unknown) {
       setError(friendlyAuthError(err));
     } finally {
@@ -159,7 +166,7 @@ export default function RegisterPage() {
         </div>
 
         {/* ── Glass Card ── */}
-        <div className="w-full p-7" style={glassCard}>
+        <div className="w-full px-5 py-7 sm:px-7" style={glassCard}>
           {error && (
             <div
               className="text-sm p-3.5 mb-4 flex items-start gap-2.5"
@@ -182,7 +189,7 @@ export default function RegisterPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={googleLoading}
-            className="flex h-12 w-full items-center justify-center gap-3 text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mb-4"
+            className="flex h-14 w-full items-center justify-center gap-3 text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mb-4"
             style={{
               borderRadius: "var(--bubble-radius-input)",
               background: "rgba(255,255,255,0.95)",
@@ -217,7 +224,7 @@ export default function RegisterPage() {
             <div className="h-px flex-1" style={{ background: "rgba(15,42,74,0.15)" }} />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                 Full Name
@@ -227,7 +234,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
+                className="w-full h-14 px-6 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all truncate"
                 style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
@@ -244,7 +251,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
+                className="w-full h-14 px-6 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all truncate"
                 style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
@@ -261,7 +268,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
+                className="w-full h-14 px-6 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all truncate"
                 style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
@@ -278,7 +285,7 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
+                className="w-full h-14 px-6 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all truncate"
                 style={inputBase}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
@@ -289,7 +296,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-2"
+              className="w-full h-14 text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-2"
               style={{
                 borderRadius: "var(--bubble-radius-input)",
                 background: "var(--crimson)",

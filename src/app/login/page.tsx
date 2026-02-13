@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,8 +23,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const router = useRouter();
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/dashboard");
+    }
+  }, [user, authLoading, router]);
 
   function navigateTo(next: ViewState) {
     setError("");
@@ -48,7 +55,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signIn(email, password);
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err: unknown) {
       setError(friendlyAuthError(err));
     } finally {
@@ -70,7 +77,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signUp(email, password, name);
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err: unknown) {
       setError(friendlyAuthError(err));
     } finally {
@@ -83,7 +90,7 @@ export default function LoginPage() {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err: unknown) {
       setError(friendlyAuthError(err));
     } finally {
@@ -282,15 +289,15 @@ export default function LoginPage() {
               </h2>
             </div>
 
-            <div className="p-7" style={glassCard}>
+            <div className="px-5 py-7 sm:px-7" style={glassCard}>
               {errorBanner}
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-5">
                 <div>
                   <label htmlFor="login-email" className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                     Email
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                       <svg className="w-5 h-5" style={{ color: "rgba(15,42,74,0.4)" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                       </svg>
@@ -303,7 +310,7 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="h-12 w-full pl-12 pr-4 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
+                      className="h-14 w-full pl-14 pr-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all truncate"
                       style={inputBase}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
@@ -327,7 +334,7 @@ export default function LoginPage() {
                     </button>
                   </div>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                       <svg className="w-5 h-5" style={{ color: "rgba(15,42,74,0.4)" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                       </svg>
@@ -340,7 +347,7 @@ export default function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="h-12 w-full pl-12 pr-12 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
+                      className="h-14 w-full pl-14 pr-14 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all truncate"
                       style={inputBase}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
@@ -349,7 +356,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center transition-colors"
+                      className="absolute inset-y-0 right-0 pr-5 flex items-center transition-colors"
                       style={{ color: "rgba(15,42,74,0.4)" }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = "var(--navy)")}
                       onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(15,42,74,0.4)")}
@@ -372,7 +379,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="h-12 w-full text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-2"
+                  className="h-14 w-full text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-2"
                   style={{
                     borderRadius: "var(--bubble-radius-input)",
                     background: "var(--crimson)",
@@ -404,9 +411,9 @@ export default function LoginPage() {
               </h2>
             </div>
 
-            <div className="p-7" style={glassCard}>
+            <div className="px-5 py-7 sm:px-7" style={glassCard}>
               {errorBanner}
-              <form onSubmit={handleRegister} className="space-y-3.5">
+              <form onSubmit={handleRegister} className="space-y-5">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                     Full Name
@@ -416,7 +423,7 @@ export default function LoginPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
+                    className="w-full h-14 px-6 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all truncate"
                     style={inputBase}
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
@@ -433,7 +440,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
+                    className="w-full h-14 px-6 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all truncate"
                     style={inputBase}
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
@@ -450,7 +457,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
+                    className="w-full h-14 px-6 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all truncate"
                     style={inputBase}
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
@@ -467,7 +474,7 @@ export default function LoginPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full h-12 px-5 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
+                    className="w-full h-14 px-6 text-sm placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all truncate"
                     style={inputBase}
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
@@ -478,7 +485,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-12 text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-2"
+                  className="w-full h-14 text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-2"
                   style={{
                     borderRadius: "var(--bubble-radius-input)",
                     background: "var(--crimson)",
