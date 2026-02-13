@@ -21,6 +21,8 @@ const APP_USERS: Record<string, { name: string; email: string; phone: string }> 
 function friendlyAuthError(err: unknown): string {
   if (!(err instanceof Error)) return "Something went wrong. Please try again.";
   const msg = err.message;
+  if (msg.includes("auth/account-password-mismatch"))
+    return "Your account needs to be reset. Please ask your administrator to delete your account in the Firebase console, then try again.";
   if (msg.includes("auth/invalid-credential") || msg.includes("auth/wrong-password"))
     return "Incorrect PIN. Please try again.";
   if (msg.includes("auth/too-many-requests"))
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Pad PIN to meet Firebase's 6-character minimum password requirement
     const password = "slspin_" + pin;
 
+    // Step 1: Try to sign in with the current password format
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       try {
@@ -84,35 +87,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.warn("Profile fetch after sign-in failed (non-fatal):", err);
       }
+      return;
     } catch (err: unknown) {
       const code = err instanceof Error ? err.message : "";
-      // If user doesn't exist, auto-create the account
-      if (code.includes("auth/user-not-found") || code.includes("auth/invalid-credential")) {
-        try {
-          const cred = await createUserWithEmailAndPassword(auth, email, password);
-          const userData = APP_USERS[email];
-          const newProfile: UserProfile = {
-            uid: cred.user.uid,
-            email,
-            name: userData?.name || "",
-            phone: userData?.phone || "",
-            title: "",
-            profilePicUrl: "",
-          };
-          await setDoc(doc(db, "users", cred.user.uid), newProfile);
-          setProfile(newProfile);
-        } catch (createErr: unknown) {
-          const createCode = createErr instanceof Error ? createErr.message : "";
-          if (createCode.includes("auth/email-already-in-use")) {
-            // Account exists with a different password (from old system)
-            throw new Error("auth/invalid-credential");
-          }
-          throw createErr;
-        }
-      } else {
+      // If it's not an auth/credential issue, rethrow immediately
+      if (!code.includes("auth/user-not-found") && !code.includes("auth/invalid-credential")) {
         throw err;
       }
     }
+
+    // Step 2: Sign-in failed — try to create a new account
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const userData = APP_USERS[email];
+      const newProfile: UserProfile = {
+        uid: cred.user.uid,
+        email,
+        name: userData?.name || "",
+        phone: userData?.phone || "",
+        title: "",
+        profilePicUrl: "",
+      };
+      await setDoc(doc(db, "users", cred.user.uid), newProfile);
+      setProfile(newProfile);
+      return;
+    } catch (createErr: unknown) {
+      const createCode = createErr instanceof Error ? createErr.message : "";
+      if (!createCode.includes("auth/email-already-in-use")) {
+        throw createErr;
+      }
+    }
+
+    // Step 3: Account exists but password doesn't match the current PIN.
+    // Try to sign in via the API route that resets the password.
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, newPassword: password }),
+      });
+      if (res.ok) {
+        // Password was reset — retry sign-in
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        try {
+          await fetchProfile(cred.user.uid);
+        } catch (err) {
+          console.warn("Profile fetch after sign-in failed (non-fatal):", err);
+        }
+        return;
+      }
+    } catch {
+      // API route not available or failed — fall through to error
+    }
+
+    throw new Error(
+      "auth/account-password-mismatch"
+    );
   }
 
   async function signOut() {
