@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,27 +25,6 @@ export default function LoginPage() {
   const [resetSent, setResetSent] = useState(false);
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const router = useRouter();
-
-  // PWA install prompt
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-
-  useEffect(() => {
-    function handleBeforeInstallPrompt(e: Event) {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    }
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-  }, []);
-
-  async function handleInstallClick() {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
-    }
-  }
 
   function navigateTo(next: ViewState) {
     setError("");
@@ -297,8 +276,8 @@ export default function LoginPage() {
         {view === "login-email" && (
           <div className="w-full">
             {backButton}
-            <div className="flex flex-col items-center mb-6">
-              <h2 className="text-xl font-bold" style={{ color: "var(--navy)" }}>
+            <div className="flex flex-col items-center mb-8 mt-4">
+              <h2 className="text-2xl font-bold" style={{ color: "var(--navy)" }}>
                 Sign In with Email
               </h2>
             </div>
@@ -419,8 +398,8 @@ export default function LoginPage() {
         {view === "register-email" && (
           <div className="w-full">
             {backButton}
-            <div className="flex flex-col items-center mb-6">
-              <h2 className="text-xl font-bold" style={{ color: "var(--navy)" }}>
+            <div className="flex flex-col items-center mb-8 mt-4">
+              <h2 className="text-2xl font-bold" style={{ color: "var(--navy)" }}>
                 Create Account
               </h2>
             </div>
@@ -525,7 +504,7 @@ export default function LoginPage() {
         {view === "reset-password" && (
           <div className="w-full">
             {backButton}
-            <div className="p-7" style={glassCard}>
+            <div className="p-8 mt-4" style={glassCard}>
               <div
                 className="w-12 h-12 flex items-center justify-center mb-5"
                 style={{ borderRadius: "16px", background: "rgba(15,42,74,0.08)" }}
@@ -610,36 +589,6 @@ export default function LoginPage() {
           </div>
         )}
       </div>
-
-      {/* Download App Link */}
-      {deferredPrompt ? (
-        <button
-          onClick={handleInstallClick}
-          className="mt-auto pt-10 pb-4 text-sm font-medium"
-          style={{
-            color: "var(--navy)",
-            fontFamily: "'Poppins', sans-serif",
-            background: "none",
-            border: "none",
-            textDecoration: "underline",
-            textUnderlineOffset: "3px",
-          }}
-        >
-          Download App
-        </button>
-      ) : (
-        <p
-          className="mt-auto pt-10 pb-4 text-xs text-center leading-relaxed"
-          style={{
-            color: "rgba(15,42,74,0.4)",
-            fontFamily: "'Poppins', sans-serif",
-            maxWidth: "280px",
-          }}
-        >
-          To install, open this site in your browser and tap{" "}
-          <strong>&quot;Add to Home Screen&quot;</strong> from the menu.
-        </p>
-      )}
     </main>
   );
 }

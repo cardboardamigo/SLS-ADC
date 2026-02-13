@@ -116,17 +116,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signIn(email: string, password: string) {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    await fetchProfile(cred.user.uid);
+    console.log("Attempting email/password sign-in for:", email);
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Sign-in successful, fetching profile...");
+      await fetchProfile(cred.user.uid);
+      console.log("Profile loaded successfully");
+    } catch (err) {
+      console.error("Email/password sign-in error:", err);
+      throw err;
+    }
   }
 
   async function signInWithGoogle() {
     const provider = new GoogleAuthProvider();
+    console.log("Starting Google sign-in...");
     try {
+      console.log("Attempting sign-in with popup...");
       const cred = await signInWithPopup(auth, provider);
+      console.log("Popup sign-in successful, user:", cred.user.email);
       const docRef = doc(db, "users", cred.user.uid);
       const snap = await getDoc(docRef);
       if (!snap.exists()) {
+        console.log("Creating new user profile...");
         const newProfile: UserProfile = {
           uid: cred.user.uid,
           email: cred.user.email || "",
@@ -137,17 +149,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         await setDoc(docRef, newProfile);
         setProfile(newProfile);
+        console.log("User profile created successfully");
       } else {
+        console.log("User profile already exists, loading...");
         setProfile(snap.data() as UserProfile);
       }
     } catch (err: unknown) {
       // If popup fails (common on mobile), fall back to redirect
       const msg = err instanceof Error ? err.message : "";
+      console.error("Google sign-in error:", err);
+      console.error("Error message:", msg);
       if (
         msg.includes("auth/popup-blocked") ||
         msg.includes("auth/popup-closed-by-user") ||
         msg.includes("auth/cancelled-popup-request")
       ) {
+        console.log("Popup failed, falling back to redirect...");
         await signInWithRedirect(auth, provider);
         return; // Page will redirect; profile handled by getRedirectResult on return
       }
