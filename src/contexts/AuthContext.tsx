@@ -7,6 +7,9 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  updatePassword,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -22,7 +25,7 @@ function friendlyAuthError(err: unknown): string {
   if (!(err instanceof Error)) return "Something went wrong. Please try again.";
   const msg = err.message;
   if (msg.includes("auth/account-password-mismatch"))
-    return "Your account needs to be reset. Please ask your administrator to delete your account in the Firebase console, then try again.";
+    return "Your account needs to be recovered. Please use the Google sign-in option below to restore access.";
   if (msg.includes("auth/invalid-credential") || msg.includes("auth/wrong-password"))
     return "Incorrect PIN. Please try again.";
   if (msg.includes("auth/too-many-requests"))
@@ -39,6 +42,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, pin: string) => Promise<void>;
+  recoverWithGoogle: (email: string, pin: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -145,6 +149,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  async function recoverWithGoogle(email: string, pin: string) {
+    const password = "slspin_" + pin;
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ login_hint: email });
+    const cred = await signInWithPopup(auth, provider);
+
+    // Sync password so PIN login works in the future
+    try {
+      await updatePassword(cred.user, password);
+    } catch (err) {
+      console.warn("Password sync after Google recovery failed (non-fatal):", err);
+    }
+
+    // Fetch or create profile
+    const docRef = doc(db, "users", cred.user.uid);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      setProfile(snap.data() as UserProfile);
+    } else {
+      const userData = APP_USERS[email];
+      if (userData) {
+        const newProfile: UserProfile = {
+          uid: cred.user.uid,
+          email,
+          name: userData.name,
+          phone: userData.phone,
+          title: "",
+          profilePicUrl: "",
+        };
+        await setDoc(docRef, newProfile);
+        setProfile(newProfile);
+      }
+    }
+  }
+
   async function signOut() {
     await firebaseSignOut(auth);
     setUser(null);
@@ -159,7 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, signIn, signOut, refreshProfile }}
+      value={{ user, profile, loading, signIn, recoverWithGoogle, signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>
