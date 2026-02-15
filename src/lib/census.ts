@@ -12,7 +12,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Admission, Discharge, RTA, MonthlyADC, ActivityType } from "./types";
+import { Admission, Discharge, RTA, MonthlyADC, ActivityType, ActivityEntry } from "./types";
 import { calculateBonus } from "./bonus";
 import { format, getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
 
@@ -118,6 +118,22 @@ export async function recordActivity(data: {
     userUID: data.userUID,
   });
   return ref.id;
+}
+
+// --- Fetch Activity for Month ---
+export async function getActivityForMonth(year: number, month: number): Promise<ActivityEntry[]> {
+  const startTimestamp = new Date(year, month - 1, 1).toISOString();
+  const endTimestamp = new Date(year, month, 1).toISOString();
+
+  const q = query(
+    collection(db, "activity"),
+    where("timestamp", ">=", startTimestamp),
+    where("timestamp", "<", endTimestamp),
+    orderBy("timestamp", "desc")
+  );
+
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityEntry));
 }
 
 // --- Census Calculation ---
