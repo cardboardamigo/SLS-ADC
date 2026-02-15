@@ -10,6 +10,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { Admission, Discharge, RTA, MonthlyADC, ActivityType, ActivityEntry } from "./types";
@@ -134,6 +135,28 @@ export async function getActivityForMonth(year: number, month: number): Promise<
 
   const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityEntry));
+}
+
+// --- Real-time Activity Subscription ---
+export function subscribeToActivityForMonth(
+  year: number,
+  month: number,
+  callback: (entries: ActivityEntry[]) => void
+): () => void {
+  const startTimestamp = new Date(year, month - 1, 1).toISOString();
+  const endTimestamp = new Date(year, month, 1).toISOString();
+
+  const q = query(
+    collection(db, "activity"),
+    where("timestamp", ">=", startTimestamp),
+    where("timestamp", "<", endTimestamp),
+    orderBy("timestamp", "desc")
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const entries = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityEntry));
+    callback(entries);
+  });
 }
 
 // --- Census Calculation ---

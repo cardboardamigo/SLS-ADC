@@ -29,6 +29,14 @@ export default function AdmissionsPage() {
   const listYear = listDate.getFullYear();
   const listMonth = listDate.getMonth() + 1;
 
+  // Default Clinical Liaison to the current user's name from their profile
+  useEffect(() => {
+    if (profile?.name && !editingId) {
+      const match = CLINICAL_LIAISONS.find((cl) => profile.name.startsWith(cl));
+      if (match) setClinicalLiaison(match);
+    }
+  }, [profile, editingId]);
+
   const loadRecent = useCallback(async () => {
     const data = await getAdmissionsForMonth(listYear, listMonth);
     setRecentAdmissions(data);
@@ -51,12 +59,14 @@ export default function AdmissionsPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  const defaultLiaison = CLINICAL_LIAISONS.find((cl) => profile?.name?.startsWith(cl)) ?? "Thad";
+
   function cancelEdit() {
     setEditingId(null);
     setDate(format(new Date(), "yyyy-MM-dd"));
     setHospitalName("");
     setPatientType("Resp Complex");
-    setClinicalLiaison("Thad");
+    setClinicalLiaison(defaultLiaison);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -91,7 +101,7 @@ export default function AdmissionsPage() {
       setSuccess(true);
       setHospitalName("");
       setPatientType("Resp Complex");
-      setClinicalLiaison("Thad");
+      setClinicalLiaison(defaultLiaison);
       setDate(format(new Date(), "yyyy-MM-dd"));
       setTimeout(() => setSuccess(false), 2000);
       loadRecent();

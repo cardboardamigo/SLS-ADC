@@ -7,9 +7,9 @@ import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import {
   calculateMonthlyADC,
-  getActivityForMonth,
   getStartingCensus,
   setStartingCensus,
+  subscribeToActivityForMonth,
 } from "@/lib/census";
 import { MonthlyADC, ActivityEntry } from "@/lib/types";
 import { calculateBonus, formatCurrency, BONUS_TIERS } from "@/lib/bonus";
@@ -37,13 +37,11 @@ export default function DashboardPage() {
   const loadData = useCallback(async () => {
     try {
       setDataLoading(true);
-      const [adc, activityData, sc] = await Promise.all([
+      const [adc, sc] = await Promise.all([
         calculateMonthlyADC(year, month),
-        getActivityForMonth(year, month),
         getStartingCensus(year, month),
       ]);
       setMonthlyData(adc);
-      setActivities(activityData);
       setStartCensus(sc);
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -59,6 +57,15 @@ export default function DashboardPage() {
     }
     if (user) loadData();
   }, [user, loading, router, loadData]);
+
+  // Real-time listener for activity entries (keeps Current Census up-to-date)
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = subscribeToActivityForMonth(year, month, (entries) => {
+      setActivities(entries);
+    });
+    return unsubscribe;
+  }, [user, year, month]);
 
   async function handleSetStartingCensus() {
     const val = parseInt(censusInput, 10);
