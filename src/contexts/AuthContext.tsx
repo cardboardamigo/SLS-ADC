@@ -12,9 +12,9 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db, withTimeout } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types";
 
-const APP_USERS: Record<string, { name: string; email: string; phone: string }> = {
-  "jbrewer@slspecialty.org": { name: "West Brewer", email: "jbrewer@slspecialty.org", phone: "801-643-6775" },
-  "twebb@slspecialty.org": { name: "Thad Webb", email: "twebb@slspecialty.org", phone: "801-680-9075" },
+const APP_USERS: Record<string, { name: string; email: string }> = {
+  "jbrewer@slspecialty.org": { name: "West Brewer", email: "jbrewer@slspecialty.org" },
+  "twebb@slspecialty.org": { name: "Thad Webb", email: "twebb@slspecialty.org" },
 };
 
 function friendlyAuthError(err: unknown): string {
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       uid: cred.user.uid,
       email,
       name: userData?.name || "",
-      phone: userData?.phone || "",
+      phone: "",
       title: "",
       profilePicUrl: "",
     };

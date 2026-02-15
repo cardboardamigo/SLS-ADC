@@ -6,8 +6,8 @@ import Image from "next/image";
 import { useAuth, friendlyAuthError } from "@/contexts/AuthContext";
 
 const USERS = [
-  { initials: "WB", name: "West Brewer", email: "jbrewer@slspecialty.org", pin: "6775" },
-  { initials: "TW", name: "Thad Webb", email: "twebb@slspecialty.org", pin: "9075" },
+  { initials: "WB", name: "West Brewer", email: "jbrewer@slspecialty.org" },
+  { initials: "TW", name: "Thad Webb", email: "twebb@slspecialty.org" },
 ] as const;
 
 type SelectedUser = (typeof USERS)[number] | null;
@@ -52,11 +52,6 @@ export default function LoginPage() {
 
     if (pin.length !== 4) {
       setError("Please enter a 4-digit PIN.");
-      return;
-    }
-
-    if (pin !== selectedUser.pin) {
-      setError("Incorrect PIN. Please try again.");
       return;
     }
 
