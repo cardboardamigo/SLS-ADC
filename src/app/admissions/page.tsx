@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import { addAdmission, getAdmissionsForMonth, deleteAdmission, updateAdmission, recordActivity } from "@/lib/census";
-import { auth } from "@/lib/firebase";
 import { Admission, PatientType, ClinicalLiaison } from "@/lib/types";
 import { format, subMonths, addMonths } from "date-fns";
 
@@ -25,15 +24,6 @@ export default function AdmissionsPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [recentAdmissions, setRecentAdmissions] = useState<Admission[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
-  const [showDebug, setShowDebug] = useState(false);
-  const debugEndRef = useRef<HTMLDivElement>(null);
-
-  function addDebugLog(msg: string) {
-    const ts = new Date().toLocaleTimeString();
-    setDebugLogs((prev) => [...prev, `[${ts}] ${msg}`]);
-    setTimeout(() => debugEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-  }
 
   // Month navigation for the list
   const [listDate, setListDate] = useState(new Date());
@@ -90,14 +80,6 @@ export default function AdmissionsPage() {
     setSubmitting(true);
     setSaveError(null);
 
-    // DEBUG: Check Firebase auth state
-    const authState = auth.currentUser ? `EXISTS (uid: ${auth.currentUser.uid})` : "NULL";
-    const userState = user ? `EXISTS (uid: ${user.uid})` : "NULL";
-    console.log("[DEBUG Admissions] auth.currentUser:", authState);
-    console.log("[DEBUG Admissions] useAuth user:", userState);
-    addDebugLog(`Auth: ${authState}`);
-    addDebugLog(`User: ${userState}`);
-
     try {
       if (editingId) {
         const updateData = {
@@ -106,11 +88,7 @@ export default function AdmissionsPage() {
           patientType,
           clinicalLiaison,
         };
-        addDebugLog(`Updating ID: ${editingId} data: ${JSON.stringify(updateData)}`);
-        console.log("[DEBUG Admissions] Updating admission ID:", editingId, "with data:", JSON.stringify(updateData));
         await updateAdmission(editingId, updateData);
-        console.log("[DEBUG Admissions] Update succeeded");
-        addDebugLog("UPDATE SUCCESS");
         setEditingId(null);
       } else {
         const admissionData = {
@@ -121,22 +99,15 @@ export default function AdmissionsPage() {
           createdBy: user.uid,
           createdAt: new Date().toISOString(),
         };
-        addDebugLog(`Adding admission: ${JSON.stringify(admissionData)}`);
-        console.log("[DEBUG Admissions] Adding new admission with data:", JSON.stringify(admissionData));
         const newId = await addAdmission(admissionData);
-        console.log("[DEBUG Admissions] addAdmission succeeded, new doc ID:", newId);
-        addDebugLog(`addAdmission OK, docID: ${newId}`);
         await recordActivity({
           type: "Admit",
           patientName: hospitalName.trim(),
           liaisonName: profile?.name ?? clinicalLiaison,
           userUID: user.uid,
         });
-        console.log("[DEBUG Admissions] recordActivity succeeded");
-        addDebugLog("recordActivity OK");
       }
       setSuccess(true);
-      addDebugLog("SAVE COMPLETE - SUCCESS");
       setHospitalName("");
       setPatientType("Resp Complex");
       setClinicalLiaison(defaultLiaison);
@@ -145,13 +116,7 @@ export default function AdmissionsPage() {
       loadRecent();
     } catch (err: unknown) {
       const error = err as Error;
-      const errCode = (error as { code?: string })?.code;
-      console.error("[DEBUG Admissions] SAVE FAILED — error name:", error?.name);
-      console.error("[DEBUG Admissions] SAVE FAILED — error message:", error?.message);
-      console.error("[DEBUG Admissions] SAVE FAILED — error code:", errCode);
-      console.error("[DEBUG Admissions] SAVE FAILED — full error:", err);
-      addDebugLog(`SAVE FAILED: ${error?.name}: ${error?.message}`);
-      addDebugLog(`Error code: ${errCode || "none"}`);
+      console.error("Failed to save admission:", err);
       setSaveError(error?.message?.includes("timed out")
         ? "Save timed out. Please check your connection and try again."
         : "Failed to save. Please try again.");
@@ -338,30 +303,6 @@ export default function AdmissionsPage() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Debug Panel */}
-      <div className="max-w-2xl mx-auto px-5 pb-4">
-        <button
-          onClick={() => setShowDebug(!showDebug)}
-          className="w-full text-xs text-gray-400 py-2 text-center border border-dashed border-gray-300 rounded-lg mb-2"
-        >
-          {showDebug ? "Hide" : "Show"} Debug Panel ({debugLogs.length} logs)
-        </button>
-        {showDebug && (
-          <div className="bg-gray-900 text-green-400 rounded-lg p-3 max-h-60 overflow-y-auto text-xs font-mono">
-            {debugLogs.length === 0 ? (
-              <p className="text-gray-500">No logs yet. Tap &quot;Record Admission&quot; to see debug output.</p>
-            ) : (
-              debugLogs.map((log, i) => (
-                <div key={i} className={`py-0.5 ${log.includes("FAILED") ? "text-red-400" : log.includes("SUCCESS") || log.includes(" OK") ? "text-emerald-400" : ""}`}>
-                  {log}
-                </div>
-              ))
-            )}
-            <div ref={debugEndRef} />
-          </div>
-        )}
       </div>
 
       <BottomNav />

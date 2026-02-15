@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
@@ -8,7 +8,7 @@ import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import { doc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { auth, db, storage, withTimeout } from "@/lib/firebase";
+import { db, storage, withTimeout } from "@/lib/firebase";
 import Image from "next/image";
 
 export default function ProfilePage() {
@@ -25,15 +25,6 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
-  const [showDebug, setShowDebug] = useState(false);
-  const debugEndRef = useRef<HTMLDivElement>(null);
-
-  const addDebugLog = useCallback((msg: string) => {
-    const ts = new Date().toLocaleTimeString();
-    setDebugLogs((prev) => [...prev, `[${ts}] ${msg}`]);
-    setTimeout(() => debugEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-  }, []);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -54,14 +45,6 @@ export default function ProfilePage() {
     setSaving(true);
     setSaveError(null);
 
-    // DEBUG: Check Firebase auth state
-    const authState = auth.currentUser ? `EXISTS (uid: ${auth.currentUser.uid})` : "NULL";
-    const userState = user ? `EXISTS (uid: ${user.uid})` : "NULL";
-    console.log("[DEBUG Profile] auth.currentUser:", authState);
-    console.log("[DEBUG Profile] useAuth user:", userState);
-    addDebugLog(`Auth: ${authState}`);
-    addDebugLog(`User: ${userState}`);
-
     try {
       const profileData = {
         name: name.trim(),
@@ -69,24 +52,13 @@ export default function ProfilePage() {
         phone: phone.trim(),
         title: title.trim(),
       };
-      addDebugLog(`Saving profile for uid: ${user.uid} data: ${JSON.stringify(profileData)}`);
-      console.log("[DEBUG Profile] Saving profile for uid:", user.uid, "with data:", JSON.stringify(profileData));
       await withTimeout(setDoc(doc(db, "users", user.uid), profileData, { merge: true }));
-      console.log("[DEBUG Profile] setDoc succeeded");
-      addDebugLog("setDoc OK");
       setSuccess(true);
-      addDebugLog("SAVE COMPLETE - SUCCESS");
       setTimeout(() => setSuccess(false), 2000);
       await refreshProfile();
     } catch (err: unknown) {
       const error = err as Error;
-      const errCode = (error as { code?: string })?.code;
-      console.error("[DEBUG Profile] SAVE FAILED — error name:", error?.name);
-      console.error("[DEBUG Profile] SAVE FAILED — error message:", error?.message);
-      console.error("[DEBUG Profile] SAVE FAILED — error code:", errCode);
-      console.error("[DEBUG Profile] SAVE FAILED — full error:", err);
-      addDebugLog(`SAVE FAILED: ${error?.name}: ${error?.message}`);
-      addDebugLog(`Error code: ${errCode || "none"}`);
+      console.error("Failed to save profile:", err);
       setSaveError(error?.message?.includes("timed out")
         ? "Save timed out. Please check your connection and try again."
         : "Failed to save. Please try again.");
@@ -105,20 +77,14 @@ export default function ProfilePage() {
     }
 
     setUploading(true);
-    addDebugLog(`Uploading photo: ${file.name} (${file.size} bytes)`);
     try {
       const storageRef = ref(storage, `profilePics/${user.uid}`);
       await withTimeout(uploadBytes(storageRef, file), 30000);
-      addDebugLog("uploadBytes OK");
       const url = await withTimeout(getDownloadURL(storageRef));
-      addDebugLog(`getDownloadURL OK: ${url.substring(0, 60)}...`);
       await withTimeout(setDoc(doc(db, "users", user.uid), { profilePicUrl: url }, { merge: true }));
-      addDebugLog("Photo URL saved to Firestore OK");
       await refreshProfile();
     } catch (err) {
       console.error("Failed to upload photo:", err);
-      const error = err as Error;
-      addDebugLog(`PHOTO UPLOAD FAILED: ${error?.name}: ${error?.message}`);
     } finally {
       setUploading(false);
     }
@@ -431,33 +397,6 @@ export default function ProfilePage() {
           Sign Out
         </button>
 
-        {/* Debug Panel */}
-        <div className="mt-6">
-          <button
-            onClick={() => setShowDebug(!showDebug)}
-            className="w-full text-xs py-2 text-center rounded-lg mb-2"
-            style={{
-              color: "rgba(15,42,74,0.4)",
-              border: "1px dashed rgba(15,42,74,0.2)",
-            }}
-          >
-            {showDebug ? "Hide" : "Show"} Debug Panel ({debugLogs.length} logs)
-          </button>
-          {showDebug && (
-            <div className="bg-gray-900 text-green-400 rounded-lg p-3 max-h-60 overflow-y-auto text-xs font-mono">
-              {debugLogs.length === 0 ? (
-                <p className="text-gray-500">No logs yet. Tap &quot;Save Profile&quot; to see debug output.</p>
-              ) : (
-                debugLogs.map((log, i) => (
-                  <div key={i} className={`py-0.5 ${log.includes("FAILED") ? "text-red-400" : log.includes("SUCCESS") || log.includes(" OK") ? "text-emerald-400" : ""}`}>
-                    {log}
-                  </div>
-                ))
-              )}
-              <div ref={debugEndRef} />
-            </div>
-          )}
-        </div>
       </div>
 
       <BottomNav />

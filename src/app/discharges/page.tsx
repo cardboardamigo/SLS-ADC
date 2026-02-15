@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import { addDischarge, getDischargesForMonth, deleteDischarge, updateDischarge, recordActivity } from "@/lib/census";
-import { auth } from "@/lib/firebase";
 import { Discharge, DischargeType } from "@/lib/types";
 import { format, subMonths, addMonths } from "date-fns";
 
@@ -23,15 +22,6 @@ export default function DischargesPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [recentDischarges, setRecentDischarges] = useState<Discharge[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
-  const [showDebug, setShowDebug] = useState(false);
-  const debugEndRef = useRef<HTMLDivElement>(null);
-
-  function addDebugLog(msg: string) {
-    const ts = new Date().toLocaleTimeString();
-    setDebugLogs((prev) => [...prev, `[${ts}] ${msg}`]);
-    setTimeout(() => debugEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-  }
 
   // Month navigation for the list
   const [listDate, setListDate] = useState(new Date());
@@ -76,14 +66,6 @@ export default function DischargesPage() {
     setSubmitting(true);
     setSaveError(null);
 
-    // DEBUG: Check Firebase auth state
-    const authState = auth.currentUser ? `EXISTS (uid: ${auth.currentUser.uid})` : "NULL";
-    const userState = user ? `EXISTS (uid: ${user.uid})` : "NULL";
-    console.log("[DEBUG Discharges] auth.currentUser:", authState);
-    console.log("[DEBUG Discharges] useAuth user:", userState);
-    addDebugLog(`Auth: ${authState}`);
-    addDebugLog(`User: ${userState}`);
-
     try {
       if (editingId) {
         const updateData = {
@@ -91,11 +73,7 @@ export default function DischargesPage() {
           dischargeType,
           dischargeName: dischargeName.trim(),
         };
-        addDebugLog(`Updating ID: ${editingId} data: ${JSON.stringify(updateData)}`);
-        console.log("[DEBUG Discharges] Updating discharge ID:", editingId, "with data:", JSON.stringify(updateData));
         await updateDischarge(editingId, updateData);
-        console.log("[DEBUG Discharges] Update succeeded");
-        addDebugLog("UPDATE SUCCESS");
         setEditingId(null);
       } else {
         const dischargeData = {
@@ -105,22 +83,15 @@ export default function DischargesPage() {
           createdBy: user.uid,
           createdAt: new Date().toISOString(),
         };
-        addDebugLog(`Adding discharge: ${JSON.stringify(dischargeData)}`);
-        console.log("[DEBUG Discharges] Adding new discharge with data:", JSON.stringify(dischargeData));
-        const newId = await addDischarge(dischargeData);
-        console.log("[DEBUG Discharges] addDischarge succeeded, new doc ID:", newId);
-        addDebugLog(`addDischarge OK, docID: ${newId}`);
+        await addDischarge(dischargeData);
         await recordActivity({
           type: "DC",
           patientName: dischargeName.trim(),
           liaisonName: profile?.name ?? "",
           userUID: user.uid,
         });
-        console.log("[DEBUG Discharges] recordActivity succeeded");
-        addDebugLog("recordActivity OK");
       }
       setSuccess(true);
-      addDebugLog("SAVE COMPLETE - SUCCESS");
       setDischargeName("");
       setDischargeType("IRF");
       setDate(format(new Date(), "yyyy-MM-dd"));
@@ -128,13 +99,7 @@ export default function DischargesPage() {
       loadRecent();
     } catch (err: unknown) {
       const error = err as Error;
-      const errCode = (error as { code?: string })?.code;
-      console.error("[DEBUG Discharges] SAVE FAILED — error name:", error?.name);
-      console.error("[DEBUG Discharges] SAVE FAILED — error message:", error?.message);
-      console.error("[DEBUG Discharges] SAVE FAILED — error code:", errCode);
-      console.error("[DEBUG Discharges] SAVE FAILED — full error:", err);
-      addDebugLog(`SAVE FAILED: ${error?.name}: ${error?.message}`);
-      addDebugLog(`Error code: ${errCode || "none"}`);
+      console.error("Failed to save discharge:", err);
       setSaveError(error?.message?.includes("timed out")
         ? "Save timed out. Please check your connection and try again."
         : "Failed to save. Please try again.");
@@ -305,30 +270,6 @@ export default function DischargesPage() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Debug Panel */}
-      <div className="max-w-2xl mx-auto px-5 pb-4">
-        <button
-          onClick={() => setShowDebug(!showDebug)}
-          className="w-full text-xs text-gray-400 py-2 text-center border border-dashed border-gray-300 rounded-lg mb-2"
-        >
-          {showDebug ? "Hide" : "Show"} Debug Panel ({debugLogs.length} logs)
-        </button>
-        {showDebug && (
-          <div className="bg-gray-900 text-green-400 rounded-lg p-3 max-h-60 overflow-y-auto text-xs font-mono">
-            {debugLogs.length === 0 ? (
-              <p className="text-gray-500">No logs yet. Tap &quot;Record Discharge&quot; to see debug output.</p>
-            ) : (
-              debugLogs.map((log, i) => (
-                <div key={i} className={`py-0.5 ${log.includes("FAILED") ? "text-red-400" : log.includes("SUCCESS") || log.includes(" OK") ? "text-emerald-400" : ""}`}>
-                  {log}
-                </div>
-              ))
-            )}
-            <div ref={debugEndRef} />
-          </div>
-        )}
       </div>
 
       <BottomNav />
