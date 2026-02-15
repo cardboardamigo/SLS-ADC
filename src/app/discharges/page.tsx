@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import { addDischarge, getDischargesForMonth, deleteDischarge, updateDischarge } from "@/lib/census";
+import { addDischarge, getDischargesForMonth, deleteDischarge, updateDischarge, recordActivity } from "@/lib/census";
 import { Discharge, DischargeType } from "@/lib/types";
 import { format, subMonths, addMonths } from "date-fns";
 
 const DISCHARGE_TYPES: DischargeType[] = ["IRF", "SNF", "HH", "ALF", "Passed"];
 
 export default function DischargesPage() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [dischargeName, setDischargeName] = useState("");
@@ -75,9 +75,16 @@ export default function DischargesPage() {
           createdBy: user.uid,
           createdAt: new Date().toISOString(),
         });
+        await recordActivity({
+          type: "DC",
+          patientName: dischargeName.trim(),
+          liaisonName: profile?.name ?? "",
+          userUID: user.uid,
+        });
       }
       setSuccess(true);
       setDischargeName("");
+      setDischargeType("IRF");
       setDate(format(new Date(), "yyyy-MM-dd"));
       setTimeout(() => setSuccess(false), 2000);
       loadRecent();

@@ -89,3 +89,14 @@ export interface BonusSubmission {
   signatureDate: string;
   createdAt: string;
 }
+
+export type ActivityType = "Admit" | "DC" | "RTA";
+
+export interface ActivityEntry {
+  id: string;
+  type: ActivityType;
+  patientName: string;
+  timestamp: string;
+  liaisonName: string;
+  userUID: string;
+}

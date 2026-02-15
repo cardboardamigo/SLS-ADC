@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import { addAdmission, getAdmissionsForMonth, deleteAdmission, updateAdmission } from "@/lib/census";
+import { addAdmission, getAdmissionsForMonth, deleteAdmission, updateAdmission, recordActivity } from "@/lib/census";
 import { Admission, PatientType, ClinicalLiaison } from "@/lib/types";
 import { format, subMonths, addMonths } from "date-fns";
 
@@ -13,7 +13,7 @@ const PATIENT_TYPES: PatientType[] = ["Resp Complex", "Trach Vent", "Wound", "Me
 const CLINICAL_LIAISONS: ClinicalLiaison[] = ["Thad", "West"];
 
 export default function AdmissionsPage() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [hospitalName, setHospitalName] = useState("");
@@ -81,9 +81,17 @@ export default function AdmissionsPage() {
           createdBy: user.uid,
           createdAt: new Date().toISOString(),
         });
+        await recordActivity({
+          type: "Admit",
+          patientName: hospitalName.trim(),
+          liaisonName: profile?.name ?? clinicalLiaison,
+          userUID: user.uid,
+        });
       }
       setSuccess(true);
       setHospitalName("");
+      setPatientType("Resp Complex");
+      setClinicalLiaison("Thad");
       setDate(format(new Date(), "yyyy-MM-dd"));
       setTimeout(() => setSuccess(false), 2000);
       loadRecent();
