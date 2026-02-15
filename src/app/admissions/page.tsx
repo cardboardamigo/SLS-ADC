@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import { addAdmission, getAdmissionsForMonth, deleteAdmission, updateAdmission, recordActivity } from "@/lib/census";
+import { auth } from "@/lib/firebase";
 import { Admission, PatientType, ClinicalLiaison } from "@/lib/types";
 import { format, subMonths, addMonths } from "date-fns";
 
@@ -73,30 +74,42 @@ export default function AdmissionsPage() {
     e.preventDefault();
     if (!user) return;
     setSubmitting(true);
+
+    // DEBUG: Check Firebase auth state
+    console.log("[DEBUG Admissions] auth.currentUser:", auth.currentUser ? `EXISTS (uid: ${auth.currentUser.uid})` : "NULL");
+    console.log("[DEBUG Admissions] useAuth user:", user ? `EXISTS (uid: ${user.uid})` : "NULL");
+
     try {
       if (editingId) {
-        await updateAdmission(editingId, {
+        const updateData = {
           date,
           hospitalName: hospitalName.trim(),
           patientType,
           clinicalLiaison,
-        });
+        };
+        console.log("[DEBUG Admissions] Updating admission ID:", editingId, "with data:", JSON.stringify(updateData));
+        await updateAdmission(editingId, updateData);
+        console.log("[DEBUG Admissions] Update succeeded");
         setEditingId(null);
       } else {
-        await addAdmission({
+        const admissionData = {
           date,
           hospitalName: hospitalName.trim(),
           patientType,
           clinicalLiaison,
           createdBy: user.uid,
           createdAt: new Date().toISOString(),
-        });
+        };
+        console.log("[DEBUG Admissions] Adding new admission with data:", JSON.stringify(admissionData));
+        const newId = await addAdmission(admissionData);
+        console.log("[DEBUG Admissions] addAdmission succeeded, new doc ID:", newId);
         await recordActivity({
           type: "Admit",
           patientName: hospitalName.trim(),
           liaisonName: profile?.name ?? clinicalLiaison,
           userUID: user.uid,
         });
+        console.log("[DEBUG Admissions] recordActivity succeeded");
       }
       setSuccess(true);
       setHospitalName("");
@@ -105,8 +118,12 @@ export default function AdmissionsPage() {
       setDate(format(new Date(), "yyyy-MM-dd"));
       setTimeout(() => setSuccess(false), 2000);
       loadRecent();
-    } catch (err) {
-      console.error("Failed to save admission:", err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("[DEBUG Admissions] SAVE FAILED — error name:", error?.name);
+      console.error("[DEBUG Admissions] SAVE FAILED — error message:", error?.message);
+      console.error("[DEBUG Admissions] SAVE FAILED — error code:", (error as { code?: string })?.code);
+      console.error("[DEBUG Admissions] SAVE FAILED — full error:", err);
     } finally {
       setSubmitting(false);
     }

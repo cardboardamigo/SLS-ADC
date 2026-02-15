@@ -19,8 +19,15 @@ import { format, getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
 
 // --- Admissions ---
 export async function addAdmission(data: Omit<Admission, "id">): Promise<string> {
-  const ref = await addDoc(collection(db, "admissions"), data);
-  return ref.id;
+  console.log("[DEBUG census.ts] addAdmission called with:", JSON.stringify(data));
+  try {
+    const ref = await addDoc(collection(db, "admissions"), data);
+    console.log("[DEBUG census.ts] addAdmission SUCCESS — doc ID:", ref.id);
+    return ref.id;
+  } catch (err) {
+    console.error("[DEBUG census.ts] addAdmission FAILED:", (err as Error)?.message, err);
+    throw err;
+  }
 }
 
 export async function getAdmissionsForMonth(year: number, month: number): Promise<Admission[]> {
@@ -48,8 +55,15 @@ export async function updateAdmission(id: string, data: Partial<Omit<Admission, 
 
 // --- Discharges ---
 export async function addDischarge(data: Omit<Discharge, "id">): Promise<string> {
-  const ref = await addDoc(collection(db, "discharges"), data);
-  return ref.id;
+  console.log("[DEBUG census.ts] addDischarge called with:", JSON.stringify(data));
+  try {
+    const ref = await addDoc(collection(db, "discharges"), data);
+    console.log("[DEBUG census.ts] addDischarge SUCCESS — doc ID:", ref.id);
+    return ref.id;
+  } catch (err) {
+    console.error("[DEBUG census.ts] addDischarge FAILED:", (err as Error)?.message, err);
+    throw err;
+  }
 }
 
 export async function getDischargesForMonth(year: number, month: number): Promise<Discharge[]> {
@@ -111,14 +125,22 @@ export async function recordActivity(data: {
   liaisonName: string;
   userUID: string;
 }): Promise<string> {
-  const ref = await addDoc(collection(db, "activity"), {
+  const activityDoc = {
     type: data.type,
     patientName: data.patientName,
     timestamp: new Date().toISOString(),
     liaisonName: data.liaisonName,
     userUID: data.userUID,
-  });
-  return ref.id;
+  };
+  console.log("[DEBUG census.ts] recordActivity called with:", JSON.stringify(activityDoc));
+  try {
+    const ref = await addDoc(collection(db, "activity"), activityDoc);
+    console.log("[DEBUG census.ts] recordActivity SUCCESS — doc ID:", ref.id);
+    return ref.id;
+  } catch (err) {
+    console.error("[DEBUG census.ts] recordActivity FAILED:", (err as Error)?.message, err);
+    throw err;
+  }
 }
 
 // --- Fetch Activity for Month ---

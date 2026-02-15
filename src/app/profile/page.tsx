@@ -8,7 +8,7 @@ import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import { doc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase";
 import Image from "next/image";
 
 export default function ProfilePage() {
@@ -42,18 +42,30 @@ export default function ProfilePage() {
     e.preventDefault();
     if (!user) return;
     setSaving(true);
+
+    // DEBUG: Check Firebase auth state
+    console.log("[DEBUG Profile] auth.currentUser:", auth.currentUser ? `EXISTS (uid: ${auth.currentUser.uid})` : "NULL");
+    console.log("[DEBUG Profile] useAuth user:", user ? `EXISTS (uid: ${user.uid})` : "NULL");
+
     try {
-      await setDoc(doc(db, "users", user.uid), {
+      const profileData = {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
         title: title.trim(),
-      }, { merge: true });
+      };
+      console.log("[DEBUG Profile] Saving profile for uid:", user.uid, "with data:", JSON.stringify(profileData));
+      await setDoc(doc(db, "users", user.uid), profileData, { merge: true });
+      console.log("[DEBUG Profile] setDoc succeeded");
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2000);
       await refreshProfile();
-    } catch (err) {
-      console.error("Failed to save profile:", err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("[DEBUG Profile] SAVE FAILED — error name:", error?.name);
+      console.error("[DEBUG Profile] SAVE FAILED — error message:", error?.message);
+      console.error("[DEBUG Profile] SAVE FAILED — error code:", (error as { code?: string })?.code);
+      console.error("[DEBUG Profile] SAVE FAILED — full error:", err);
     } finally {
       setSaving(false);
     }
