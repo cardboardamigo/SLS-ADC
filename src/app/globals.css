@@ -2,8 +2,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary: #1e3a5f;
-  --primary-light: #2c5282;
+  --primary: #1a365d;
+  --primary-light: #2a4a7f;
   --accent: #38b2ac;
   --accent-light: #4fd1c5;
   --danger: #e53e3e;
@@ -15,15 +15,27 @@
   --text-muted: #718096;
   --border: #e2e8f0;
 
-  /* Bubbly branding */
-  --navy: #0f2a4a;
-  --navy-light: #1e3a5f;
+  /* Status colors */
+  --status-admit: #059669;
+  --status-admit-bg: #ecfdf5;
+  --status-discharge: #e11d48;
+  --status-discharge-bg: #fff1f2;
+  --status-rta: #d97706;
+  --status-rta-bg: #fffbeb;
+
+  /* Branding */
+  --navy: #1a365d;
+  --navy-light: #1a365d;
   --crimson: #c0392b;
   --crimson-hover: #a93226;
   --crimson-light: #e74c3c;
   --bubble-radius: 40px;
   --bubble-radius-sm: 28px;
   --bubble-radius-input: 20px;
+
+  /* Card tokens */
+  --card-radius: 12px;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
 }
 
 * {
@@ -65,10 +77,34 @@ textarea {
   font-size: 16px; /* Prevent iOS zoom on focus */
 }
 
+/* Card utility */
+.card {
+  background: var(--card);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border);
+}
+
 /* PWA safe area */
 .safe-area-top {
   padding-top: env(safe-area-inset-top);
 }
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* FAB animation */
+@keyframes fab-item-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.fab-item-enter {
+  animation: fab-item-in 0.15s ease-out forwards;
+}
+
+/* FAB backdrop */
+.fab-backdrop {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }

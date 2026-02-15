@@ -110,12 +110,12 @@ export default function DischargesPage() {
 
       <div className="max-w-2xl mx-auto px-5 py-5">
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse">
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse">
             {editingId ? "Discharge updated successfully" : "Discharge recorded successfully"}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-5">
+        <form onSubmit={handleSubmit} className="card p-6 mb-5">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-gray-800">
               {editingId ? "Edit Discharge" : "Record Discharge"}
@@ -138,7 +138,7 @@ export default function DischargesPage() {
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
-              className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition text-base"
+              className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-400 transition text-base"
             />
           </div>
 
@@ -149,7 +149,7 @@ export default function DischargesPage() {
             <select
               value={dischargeType}
               onChange={(e) => setDischargeType(e.target.value as DischargeType)}
-              className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition bg-white text-base"
+              className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-400 transition bg-white text-base"
             >
               {DISCHARGE_TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -169,21 +169,21 @@ export default function DischargesPage() {
               onChange={(e) => setDischargeName(e.target.value)}
               required
               placeholder="Enter name"
-              className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition text-base"
+              className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-400 transition text-base"
             />
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-orange-500 text-white py-4 rounded-xl text-lg font-semibold hover:bg-orange-600 disabled:opacity-50 transition"
+            className="w-full bg-rose-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-rose-700 disabled:opacity-50 transition"
           >
             {submitting ? "Saving..." : editingId ? "Update Discharge" : "Record Discharge"}
           </button>
         </form>
 
         {/* Recent Discharges */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="card p-6">
           {/* Month Navigation */}
           <div className="flex items-center justify-between mb-4">
             <button

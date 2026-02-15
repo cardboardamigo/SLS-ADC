@@ -19,7 +19,7 @@ export default function Header() {
   const title = pageTitles[pathname] || "Census Tracker";
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-[#1e3a5f] text-white z-50 safe-area-top">
+    <header className="fixed top-0 left-0 right-0 bg-[#1a365d] text-white z-50 safe-area-top">
       <div className="flex items-center justify-between h-20 px-5 max-w-2xl mx-auto">
         <div className="flex items-center gap-3">
           <Image
