@@ -175,7 +175,7 @@ export default function DischargesPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !dischargeName.trim()}
             className="w-full bg-rose-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-rose-700 disabled:opacity-50 transition"
           >
             {submitting ? "Saving..." : editingId ? "Update Discharge" : "Record Discharge"}
