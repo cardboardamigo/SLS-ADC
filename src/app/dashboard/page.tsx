@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
@@ -14,7 +14,6 @@ import {
 import { MonthlyADC, ActivityEntry } from "@/lib/types";
 import { calculateBonus, formatCurrency, BONUS_TIERS } from "@/lib/bonus";
 import { format } from "date-fns";
-import { useRef } from "react";
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
