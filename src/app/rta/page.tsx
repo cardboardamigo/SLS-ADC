@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import { addRTA, getRTAsForMonth, deleteRTA, updateRTA } from "@/lib/census";
+import { addRTA, getRTAsForMonth, deleteRTA, updateRTA, recordActivity } from "@/lib/census";
 import { RTA, RTAHospital, RTAReason } from "@/lib/types";
 import { format, subMonths, addMonths } from "date-fns";
 
@@ -22,7 +22,7 @@ const RTA_REASONS: RTAReason[] = [
 ];
 
 export default function RTAPage() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [hospital, setHospital] = useState<RTAHospital>("UofU");
@@ -85,9 +85,17 @@ export default function RTAPage() {
           createdBy: user.uid,
           createdAt: new Date().toISOString(),
         });
+        await recordActivity({
+          type: "RTA",
+          patientName: hospital,
+          liaisonName: profile?.name ?? "",
+          userUID: user.uid,
+        });
       }
       setSuccess(true);
       setDate(format(new Date(), "yyyy-MM-dd"));
+      setHospital("UofU");
+      setReason("Sepsis");
       setTimeout(() => setSuccess(false), 2000);
       loadRecent();
     } catch (err) {

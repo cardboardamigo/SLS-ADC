@@ -12,7 +12,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Admission, Discharge, RTA, MonthlyADC } from "./types";
+import { Admission, Discharge, RTA, MonthlyADC, ActivityType } from "./types";
 import { calculateBonus } from "./bonus";
 import { format, getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
 
@@ -101,6 +101,23 @@ export async function deleteRTA(id: string): Promise<void> {
 
 export async function updateRTA(id: string, data: Partial<Omit<RTA, "id">>): Promise<void> {
   await updateDoc(doc(db, "rtas", id), data);
+}
+
+// --- Activity Log ---
+export async function recordActivity(data: {
+  type: ActivityType;
+  patientName: string;
+  liaisonName: string;
+  userUID: string;
+}): Promise<string> {
+  const ref = await addDoc(collection(db, "activity"), {
+    type: data.type,
+    patientName: data.patientName,
+    timestamp: new Date().toISOString(),
+    liaisonName: data.liaisonName,
+    userUID: data.userUID,
+  });
+  return ref.id;
 }
 
 // --- Census Calculation ---
