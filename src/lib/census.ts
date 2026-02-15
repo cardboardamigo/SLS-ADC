@@ -91,8 +91,15 @@ export async function updateDischarge(id: string, data: Partial<Omit<Discharge, 
 
 // --- RTAs ---
 export async function addRTA(data: Omit<RTA, "id">): Promise<string> {
-  const ref = await addDoc(collection(db, "rtas"), data);
-  return ref.id;
+  console.log("[DEBUG census.ts] addRTA called with:", JSON.stringify(data));
+  try {
+    const ref = await addDoc(collection(db, "rtas"), data);
+    console.log("[DEBUG census.ts] addRTA SUCCESS — doc ID:", ref.id);
+    return ref.id;
+  } catch (err) {
+    console.error("[DEBUG census.ts] addRTA FAILED:", (err as Error)?.message, err);
+    throw err;
+  }
 }
 
 export async function getRTAsForMonth(year: number, month: number): Promise<RTA[]> {
