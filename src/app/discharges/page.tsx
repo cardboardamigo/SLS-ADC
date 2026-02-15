@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import { addDischarge, getDischargesForMonth, deleteDischarge, updateDischarge, recordActivity } from "@/lib/census";
+import { auth } from "@/lib/firebase";
 import { Discharge, DischargeType } from "@/lib/types";
 import { format, subMonths, addMonths } from "date-fns";
 
@@ -59,28 +60,40 @@ export default function DischargesPage() {
     e.preventDefault();
     if (!user) return;
     setSubmitting(true);
+
+    // DEBUG: Check Firebase auth state
+    console.log("[DEBUG Discharges] auth.currentUser:", auth.currentUser ? `EXISTS (uid: ${auth.currentUser.uid})` : "NULL");
+    console.log("[DEBUG Discharges] useAuth user:", user ? `EXISTS (uid: ${user.uid})` : "NULL");
+
     try {
       if (editingId) {
-        await updateDischarge(editingId, {
+        const updateData = {
           date,
           dischargeType,
           dischargeName: dischargeName.trim(),
-        });
+        };
+        console.log("[DEBUG Discharges] Updating discharge ID:", editingId, "with data:", JSON.stringify(updateData));
+        await updateDischarge(editingId, updateData);
+        console.log("[DEBUG Discharges] Update succeeded");
         setEditingId(null);
       } else {
-        await addDischarge({
+        const dischargeData = {
           date,
           dischargeType,
           dischargeName: dischargeName.trim(),
           createdBy: user.uid,
           createdAt: new Date().toISOString(),
-        });
+        };
+        console.log("[DEBUG Discharges] Adding new discharge with data:", JSON.stringify(dischargeData));
+        const newId = await addDischarge(dischargeData);
+        console.log("[DEBUG Discharges] addDischarge succeeded, new doc ID:", newId);
         await recordActivity({
           type: "DC",
           patientName: dischargeName.trim(),
           liaisonName: profile?.name ?? "",
           userUID: user.uid,
         });
+        console.log("[DEBUG Discharges] recordActivity succeeded");
       }
       setSuccess(true);
       setDischargeName("");
@@ -88,8 +101,12 @@ export default function DischargesPage() {
       setDate(format(new Date(), "yyyy-MM-dd"));
       setTimeout(() => setSuccess(false), 2000);
       loadRecent();
-    } catch (err) {
-      console.error("Failed to save discharge:", err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("[DEBUG Discharges] SAVE FAILED — error name:", error?.name);
+      console.error("[DEBUG Discharges] SAVE FAILED — error message:", error?.message);
+      console.error("[DEBUG Discharges] SAVE FAILED — error code:", (error as { code?: string })?.code);
+      console.error("[DEBUG Discharges] SAVE FAILED — full error:", err);
     } finally {
       setSubmitting(false);
     }
