@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useAuth, friendlyAuthError } from "@/contexts/AuthContext";
@@ -13,6 +13,14 @@ const USERS = [
 type SelectedUser = (typeof USERS)[number] | null;
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const [selectedUser, setSelectedUser] = useState<SelectedUser>(null);
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
