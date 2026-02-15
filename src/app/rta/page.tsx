@@ -120,12 +120,12 @@ export default function RTAPage() {
 
       <div className="max-w-2xl mx-auto px-5 py-5">
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse">
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse">
             {editingId ? "RTA updated successfully" : "RTA recorded successfully"}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-5">
+        <form onSubmit={handleSubmit} className="card p-6 mb-5">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-gray-800">
               {editingId ? "Edit Return to Acute" : "Record Return to Acute"}
@@ -194,7 +194,7 @@ export default function RTAPage() {
         </form>
 
         {/* Recent RTAs */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="card p-6">
           {/* Month Navigation */}
           <div className="flex items-center justify-between mb-4">
             <button

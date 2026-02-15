@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const [editingCensus, setEditingCensus] = useState(false);
   const [censusInput, setCensusInput] = useState("");
   const [showBonusHint, setShowBonusHint] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
   const tapCountRef = useRef(0);
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -100,7 +101,7 @@ export default function DashboardPage() {
 
       <div className="max-w-2xl mx-auto px-5 py-5">
         {/* ADC Hero Card */}
-        <div className="bg-gradient-to-br from-[#1e3a5f] to-[#2c5282] rounded-2xl p-8 text-white mb-5 shadow-lg">
+        <div className="bg-gradient-to-br from-[#1a365d] to-[#2a4a7f] rounded-xl p-8 text-white mb-5 shadow-lg">
           <div className="text-center">
             <p className="text-white/70 text-base mb-1">{format(now, "MMMM yyyy")} ADC</p>
             <p className="text-6xl font-bold mb-2">{adc.toFixed(1)}</p>
@@ -115,22 +116,22 @@ export default function DashboardPage() {
               <p className="text-white/60 text-sm">Current</p>
             </div>
             <div className="text-center flex-1">
-              <p className="text-3xl font-semibold text-green-300">+{totalAdmits}</p>
+              <p className="text-3xl font-semibold text-emerald-300">+{totalAdmits}</p>
               <p className="text-white/60 text-sm">Admits</p>
             </div>
             <div className="text-center flex-1">
-              <p className="text-3xl font-semibold text-orange-300">-{totalDischarges}</p>
+              <p className="text-3xl font-semibold text-rose-300">-{totalDischarges}</p>
               <p className="text-white/60 text-sm">D/C</p>
             </div>
             <div className="text-center flex-1">
-              <p className="text-3xl font-semibold text-red-300">-{totalRTAs}</p>
+              <p className="text-3xl font-semibold text-amber-300">-{totalRTAs}</p>
               <p className="text-white/60 text-sm">RTA</p>
             </div>
           </div>
         </div>
 
         {/* Starting Census */}
-        <div className="bg-white rounded-xl p-5 mb-5 shadow-sm border border-gray-100">
+        <div className="card p-5 mb-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-base text-gray-500">Starting Census (Month)</p>
@@ -190,33 +191,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-3 gap-4 mb-5">
-          <button
-            onClick={() => router.push("/admissions")}
-            className="bg-green-50 border border-green-200 rounded-xl p-5 text-center hover:bg-green-100 transition"
-          >
-            <div className="text-green-600 font-bold text-2xl">+</div>
-            <p className="text-sm text-green-700 font-medium mt-1">Admission</p>
-          </button>
-          <button
-            onClick={() => router.push("/discharges")}
-            className="bg-orange-50 border border-orange-200 rounded-xl p-5 text-center hover:bg-orange-100 transition"
-          >
-            <div className="text-orange-600 font-bold text-2xl">-</div>
-            <p className="text-sm text-orange-700 font-medium mt-1">Discharge</p>
-          </button>
-          <button
-            onClick={() => router.push("/rta")}
-            className="bg-red-50 border border-red-200 rounded-xl p-5 text-center hover:bg-red-100 transition"
-          >
-            <div className="text-red-600 font-bold text-2xl">&larr;</div>
-            <p className="text-sm text-red-700 font-medium mt-1">RTA</p>
-          </button>
-        </div>
-
         {/* Recent Activity */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+        <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-800">Recent Activity</h2>
             <button
@@ -229,7 +205,7 @@ export default function DashboardPage() {
 
           {activities.length === 0 ? (
             <p className="text-gray-400 text-base text-center py-6">
-              No entries this month. Tap a button above to start tracking.
+              No entries this month. Tap + to start tracking.
             </p>
           ) : (
             <div className="space-y-3">
@@ -241,10 +217,10 @@ export default function DashboardPage() {
                   <div
                     className={`w-3 h-3 rounded-full flex-shrink-0 ${
                       item.type === "Admit"
-                        ? "bg-green-400"
+                        ? "bg-emerald-400"
                         : item.type === "DC"
-                        ? "bg-orange-400"
-                        : "bg-red-400"
+                        ? "bg-rose-400"
+                        : "bg-amber-400"
                     }`}
                   />
                   <div className="flex-1 min-w-0">
@@ -257,10 +233,10 @@ export default function DashboardPage() {
                   <span
                     className={`text-sm font-medium px-3 py-1 rounded-full ${
                       item.type === "Admit"
-                        ? "bg-green-100 text-green-700"
+                        ? "bg-emerald-50 text-emerald-700"
                         : item.type === "DC"
-                        ? "bg-orange-100 text-orange-700"
-                        : "bg-red-100 text-red-700"
+                        ? "bg-rose-50 text-rose-700"
+                        : "bg-amber-50 text-amber-700"
                     }`}
                   >
                     {item.type === "Admit" ? "ADM" : item.type === "DC" ? "D/C" : "RTA"}
@@ -289,6 +265,65 @@ export default function DashboardPage() {
         >
           <p className="text-sm text-gray-300 select-none">v1.0 - SLS Census Tracker</p>
         </div>
+      </div>
+
+      {/* Floating Action Button */}
+      {fabOpen && (
+        <div
+          className="fixed inset-0 fab-backdrop z-40"
+          onClick={() => setFabOpen(false)}
+        />
+      )}
+      <div className="fixed bottom-20 right-5 z-50 flex flex-col items-end">
+        {fabOpen && (
+          <div className="flex flex-col gap-3 mb-4">
+            <button
+              onClick={() => { router.push("/admissions"); setFabOpen(false); }}
+              className="fab-item-enter flex items-center gap-2.5 bg-white rounded-full pl-4 pr-2 py-2 shadow-lg border border-gray-100"
+              style={{ animationDelay: "0ms" }}
+            >
+              <span className="text-sm font-medium text-[#1a365d]">Admit</span>
+              <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-emerald-600">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+                </svg>
+              </div>
+            </button>
+            <button
+              onClick={() => { router.push("/discharges"); setFabOpen(false); }}
+              className="fab-item-enter flex items-center gap-2.5 bg-white rounded-full pl-4 pr-2 py-2 shadow-lg border border-gray-100"
+              style={{ animationDelay: "50ms" }}
+            >
+              <span className="text-sm font-medium text-[#1a365d]">Discharge</span>
+              <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-rose-600">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                </svg>
+              </div>
+            </button>
+            <button
+              onClick={() => { router.push("/rta"); setFabOpen(false); }}
+              className="fab-item-enter flex items-center gap-2.5 bg-white rounded-full pl-4 pr-2 py-2 shadow-lg border border-gray-100"
+              style={{ animationDelay: "100ms" }}
+            >
+              <span className="text-sm font-medium text-[#1a365d]">RTA</span>
+              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-amber-600">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                </svg>
+              </div>
+            </button>
+          </div>
+        )}
+        <button
+          onClick={() => setFabOpen(!fabOpen)}
+          className="w-14 h-14 rounded-full bg-[#1a365d] text-white shadow-lg flex items-center justify-center transition-transform duration-200 hover:shadow-xl active:scale-95"
+          style={{ transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)" }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </button>
       </div>
 
       <BottomNav />

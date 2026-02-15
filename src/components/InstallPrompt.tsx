@@ -14,7 +14,7 @@ export default function InstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 bg-[#1e3a5f] text-white rounded-2xl p-4 shadow-xl z-50 max-w-lg mx-auto">
+    <div className="fixed bottom-20 left-4 right-4 bg-[#1a365d] text-white rounded-xl p-4 shadow-xl z-50 max-w-lg mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="font-semibold text-sm">Install Census Tracker</p>

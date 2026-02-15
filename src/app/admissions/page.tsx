@@ -118,13 +118,13 @@ export default function AdmissionsPage() {
       <div className="max-w-2xl mx-auto px-5 py-5">
         {/* Success Banner */}
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse">
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse">
             {editingId ? "Admission updated successfully" : "Admission recorded successfully"}
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-5">
+        <form onSubmit={handleSubmit} className="card p-6 mb-5">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-gray-800">
               {editingId ? "Edit Admission" : "Record Admission"}
@@ -198,14 +198,14 @@ export default function AdmissionsPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-green-500 text-white py-4 rounded-xl text-lg font-semibold hover:bg-green-600 disabled:opacity-50 transition"
+            className="w-full bg-emerald-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-emerald-700 disabled:opacity-50 transition"
           >
             {submitting ? "Saving..." : editingId ? "Update Admission" : "Record Admission"}
           </button>
         </form>
 
         {/* Recent Admissions */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="card p-6">
           {/* Month Navigation */}
           <div className="flex items-center justify-between mb-4">
             <button

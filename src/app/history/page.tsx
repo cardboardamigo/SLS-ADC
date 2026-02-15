@@ -89,7 +89,7 @@ export default function HistoryPage() {
             return (
               <div
                 key={m.adc.month}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                className="card overflow-hidden"
               >
                 <button
                   onClick={() => setExpandedMonth(isExpanded ? null : m.adc.month)}
@@ -103,7 +103,7 @@ export default function HistoryPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-[#1e3a5f]">
+                    <p className="text-xl font-bold text-[#1a365d]">
                       {m.adc.averageDailyCensus.toFixed(1)}
                     </p>
                     <p className="text-sm text-gray-400">ADC</p>
@@ -113,21 +113,21 @@ export default function HistoryPage() {
                 {isExpanded && (
                   <div className="px-5 pb-5 border-t border-gray-50">
                     <div className="grid grid-cols-3 gap-3 mt-4 mb-4">
-                      <div className="bg-green-50 rounded-lg p-3 text-center">
-                        <p className="text-xl font-bold text-green-600">
+                      <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                        <p className="text-xl font-bold text-emerald-600">
                           {m.admissions.length}
                         </p>
-                        <p className="text-sm text-green-700">Admits</p>
+                        <p className="text-sm text-emerald-700">Admits</p>
                       </div>
-                      <div className="bg-orange-50 rounded-lg p-3 text-center">
-                        <p className="text-xl font-bold text-orange-600">
+                      <div className="bg-rose-50 rounded-xl p-3 text-center">
+                        <p className="text-xl font-bold text-rose-600">
                           {m.discharges.length}
                         </p>
-                        <p className="text-sm text-orange-700">D/C</p>
+                        <p className="text-sm text-rose-700">D/C</p>
                       </div>
-                      <div className="bg-red-50 rounded-lg p-3 text-center">
-                        <p className="text-xl font-bold text-red-600">{m.rtas.length}</p>
-                        <p className="text-sm text-red-700">RTA</p>
+                      <div className="bg-amber-50 rounded-xl p-3 text-center">
+                        <p className="text-xl font-bold text-amber-600">{m.rtas.length}</p>
+                        <p className="text-sm text-amber-700">RTA</p>
                       </div>
                     </div>
 

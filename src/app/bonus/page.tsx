@@ -84,7 +84,7 @@ export default function BonusPage() {
 
       <div className="max-w-2xl mx-auto px-5 py-5">
         {/* Current Month Bonus */}
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-8 text-white mb-5 shadow-lg">
+        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-8 text-white mb-5 shadow-lg">
           <p className="text-white/80 text-base mb-1">
             {currentMonth?.monthName} Projected Bonus
           </p>
@@ -107,7 +107,7 @@ export default function BonusPage() {
         </div>
 
         {/* Tier Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-5">
+        <div className="card p-6 mb-5">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Bonus Tiers</h2>
           <div className="space-y-3">
             {[...BONUS_TIERS].reverse().map((tier) => {
@@ -162,7 +162,7 @@ export default function BonusPage() {
         </div>
 
         {/* Previous Months */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="card p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Previous Months</h2>
           {previousMonths.length === 0 ? (
             <p className="text-gray-400 text-base text-center py-6">No previous data</p>
