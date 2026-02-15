@@ -23,16 +23,14 @@ export default function BonusPage() {
     try {
       setDataLoading(true);
       const now = new Date();
-      const current = await calculateMonthlyADC(now.getFullYear(), now.getMonth() + 1);
-      setCurrentMonth(current);
 
-      // Load previous 6 months
-      const prev: MonthlyADC[] = [];
-      for (let i = 1; i <= 6; i++) {
-        const d = subMonths(now, i);
-        const monthData = await calculateMonthlyADC(d.getFullYear(), d.getMonth() + 1);
-        prev.push(monthData);
-      }
+      // Load current + previous 6 months in parallel
+      const months = Array.from({ length: 7 }, (_, i) => {
+        const d = i === 0 ? now : subMonths(now, i);
+        return calculateMonthlyADC(d.getFullYear(), d.getMonth() + 1);
+      });
+      const [current, ...prev] = await Promise.all(months);
+      setCurrentMonth(current);
       setPreviousMonths(prev);
     } catch (err) {
       console.error("Failed to load bonus data:", err);

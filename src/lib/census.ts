@@ -203,14 +203,14 @@ export async function setEndingCensus(
   await withTimeout(setDoc(docRef, { endingCensus: census }, { merge: true }));
 }
 
-export async function calculateMonthlyADC(year: number, month: number): Promise<MonthlyADC> {
-  const [admissions, discharges, rtas, startingCensus] = await Promise.all([
-    getAdmissionsForMonth(year, month),
-    getDischargesForMonth(year, month),
-    getRTAsForMonth(year, month),
-    getStartingCensus(year, month),
-  ]);
-
+function computeADC(
+  year: number,
+  month: number,
+  admissions: Admission[],
+  discharges: Discharge[],
+  rtas: RTA[],
+  startingCensus: number
+): MonthlyADC {
   const daysInMonth = getDaysInMonth(new Date(year, month - 1));
   const monthDate = new Date(year, month - 1);
 
@@ -242,7 +242,6 @@ export async function calculateMonthlyADC(year: number, month: number): Promise<
     const dateStr = format(new Date(year, month - 1, d), "yyyy-MM-dd");
     if (dateStr > today) break;
     const day = dailyCensus[dateStr];
-    // Net change: admissions add, discharges and RTAs subtract
     runningCensus = runningCensus + day.admissions - day.discharges - day.rtas;
     totalCensusDays += runningCensus;
     daysElapsed++;
@@ -261,6 +260,17 @@ export async function calculateMonthlyADC(year: number, month: number): Promise<
     bonusTier: tier,
     bonusAmount: amount,
   };
+}
+
+export async function calculateMonthlyADC(year: number, month: number): Promise<MonthlyADC> {
+  const [admissions, discharges, rtas, startingCensus] = await Promise.all([
+    getAdmissionsForMonth(year, month),
+    getDischargesForMonth(year, month),
+    getRTAsForMonth(year, month),
+    getStartingCensus(year, month),
+  ]);
+
+  return computeADC(year, month, admissions, discharges, rtas, startingCensus);
 }
 
 // --- Check if entries exist for a date ---
@@ -292,47 +302,8 @@ export async function getMonthSummary(year: number, month: number): Promise<{
     getStartingCensus(year, month),
   ]);
 
-  const daysInMonth = getDaysInMonth(new Date(year, month - 1));
-  const monthDate = new Date(year, month - 1);
-
-  const dailyCensus: Record<string, { admissions: number; discharges: number; rtas: number }> = {};
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = format(new Date(year, month - 1, d), "yyyy-MM-dd");
-    dailyCensus[dateStr] = { admissions: 0, discharges: 0, rtas: 0 };
-  }
-
-  for (const a of admissions) if (dailyCensus[a.date]) dailyCensus[a.date].admissions++;
-  for (const d of discharges) if (dailyCensus[d.date]) dailyCensus[d.date].discharges++;
-  for (const r of rtas) if (dailyCensus[r.date]) dailyCensus[r.date].rtas++;
-
-  let runningCensus = startingCensus;
-  let totalCensusDays = 0;
-  const today = format(new Date(), "yyyy-MM-dd");
-  let daysElapsed = 0;
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = format(new Date(year, month - 1, d), "yyyy-MM-dd");
-    if (dateStr > today) break;
-    const day = dailyCensus[dateStr];
-    runningCensus = runningCensus + day.admissions - day.discharges - day.rtas;
-    totalCensusDays += runningCensus;
-    daysElapsed++;
-  }
-
-  const averageDailyCensus = daysElapsed > 0 ? totalCensusDays / daysElapsed : 0;
-  const { tier, amount } = calculateBonus(averageDailyCensus);
-
   return {
-    adc: {
-      month: `${year}-${String(month).padStart(2, "0")}`,
-      year,
-      monthName: format(monthDate, "MMMM yyyy"),
-      totalCensusDays,
-      daysInMonth: daysElapsed,
-      averageDailyCensus: Math.round(averageDailyCensus * 100) / 100,
-      bonusTier: tier,
-      bonusAmount: amount,
-    },
+    adc: computeADC(year, month, admissions, discharges, rtas, startingCensus),
     admissions,
     discharges,
     rtas,
