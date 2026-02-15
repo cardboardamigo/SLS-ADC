@@ -60,12 +60,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(firebaseUser);
       setLoading(false);
       if (firebaseUser) {
+        // Set session cookie so the server-side middleware knows the user is
+        // authenticated.  "__session" is the cookie name Firebase Hosting
+        // allows through its CDN, making it a safe default.
+        document.cookie = "__session=1; path=/; max-age=604800; SameSite=Lax";
         try {
           await fetchProfile(firebaseUser.uid);
         } catch (err) {
           console.error("Failed to fetch user profile:", err);
         }
       } else {
+        document.cookie = "__session=; path=/; max-age=0";
         setProfile(null);
       }
     });
