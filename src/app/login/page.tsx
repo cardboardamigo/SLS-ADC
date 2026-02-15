@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useAuth, friendlyAuthError } from "@/contexts/AuthContext";
 
@@ -19,13 +19,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { user, loading: authLoading, signIn } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const pinInputRef = useRef<HTMLInputElement>(null);
+
+  const redirectTo = searchParams.get("redirect") || "/dashboard";
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace("/dashboard");
+      router.replace(redirectTo);
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, redirectTo]);
 
   useEffect(() => {
     if (selectedUser) {
@@ -58,7 +61,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signIn(selectedUser.email, pin);
-      router.replace("/dashboard");
+      router.replace(redirectTo);
     } catch (err: unknown) {
       setError(friendlyAuthError(err));
     } finally {

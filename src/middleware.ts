@@ -3,14 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * Server-side route protection middleware.
  *
- * Firebase Auth persists its session on the client via IndexedDB, but the
- * Firebase JS SDK also stores a lightweight cookie that the browser sends
- * with every request.  We check for that cookie here so unauthenticated
- * users are redirected before any page JS even loads.
+ * Firebase Auth v9+ stores sessions in IndexedDB — it does NOT set cookies.
+ * To bridge this gap, the AuthContext sets a lightweight "__session" cookie
+ * when the user signs in and clears it on sign-out.  The middleware checks
+ * for that cookie so unauthenticated users are redirected before any page
+ * JS loads.
  *
- * Cookie name format used by Firebase Auth persistence (v9+ modular SDK):
- *   firebase:authUser:<apiKey>:<appName>
+ * This is a first-layer guard.  Client-side useAuth() still runs as a
+ * second check once the app hydrates.
  */
+
+const SESSION_COOKIE = "__session";
 
 const PUBLIC_PATHS = ["/login", "/register"];
 
@@ -23,18 +26,13 @@ function isPublicPath(pathname: string): boolean {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public paths through without auth check
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
-  // Look for any Firebase auth session cookie.
-  // The cookie name varies by project, so we match the prefix pattern.
-  const hasFirebaseSession = request.cookies
-    .getAll()
-    .some((cookie) => cookie.name.startsWith("firebase:authUser:"));
+  const session = request.cookies.get(SESSION_COOKIE);
 
-  if (!hasFirebaseSession) {
+  if (!session?.value) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("redirect", pathname);
