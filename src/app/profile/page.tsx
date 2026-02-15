@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import Image from "next/image";
@@ -43,12 +43,12 @@ export default function ProfilePage() {
     if (!user) return;
     setSaving(true);
     try {
-      await updateDoc(doc(db, "users", user.uid), {
+      await setDoc(doc(db, "users", user.uid), {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
         title: title.trim(),
-      });
+      }, { merge: true });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2000);
       await refreshProfile();
@@ -73,7 +73,7 @@ export default function ProfilePage() {
       const storageRef = ref(storage, `profilePics/${user.uid}`);
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
-      await updateDoc(doc(db, "users", user.uid), { profilePicUrl: url });
+      await setDoc(doc(db, "users", user.uid), { profilePicUrl: url }, { merge: true });
       await refreshProfile();
     } catch (err) {
       console.error("Failed to upload photo:", err);
