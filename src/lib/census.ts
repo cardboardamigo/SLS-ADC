@@ -12,7 +12,7 @@ import {
   updateDoc,
   onSnapshot,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { db, withTimeout } from "./firebase";
 import { Admission, Discharge, RTA, MonthlyADC, ActivityType, ActivityEntry } from "./types";
 import { calculateBonus } from "./bonus";
 import { format, getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
@@ -21,7 +21,7 @@ import { format, getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
 export async function addAdmission(data: Omit<Admission, "id">): Promise<string> {
   console.log("[DEBUG census.ts] addAdmission called with:", JSON.stringify(data));
   try {
-    const ref = await addDoc(collection(db, "admissions"), data);
+    const ref = await withTimeout(addDoc(collection(db, "admissions"), data));
     console.log("[DEBUG census.ts] addAdmission SUCCESS — doc ID:", ref.id);
     return ref.id;
   } catch (err) {
@@ -41,7 +41,7 @@ export async function getAdmissionsForMonth(year: number, month: number): Promis
     orderBy("date", "desc")
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot = await withTimeout(getDocs(q));
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Admission));
 }
 
@@ -57,7 +57,7 @@ export async function updateAdmission(id: string, data: Partial<Omit<Admission, 
 export async function addDischarge(data: Omit<Discharge, "id">): Promise<string> {
   console.log("[DEBUG census.ts] addDischarge called with:", JSON.stringify(data));
   try {
-    const ref = await addDoc(collection(db, "discharges"), data);
+    const ref = await withTimeout(addDoc(collection(db, "discharges"), data));
     console.log("[DEBUG census.ts] addDischarge SUCCESS — doc ID:", ref.id);
     return ref.id;
   } catch (err) {
@@ -77,7 +77,7 @@ export async function getDischargesForMonth(year: number, month: number): Promis
     orderBy("date", "desc")
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot = await withTimeout(getDocs(q));
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Discharge));
 }
 
@@ -93,7 +93,7 @@ export async function updateDischarge(id: string, data: Partial<Omit<Discharge, 
 export async function addRTA(data: Omit<RTA, "id">): Promise<string> {
   console.log("[DEBUG census.ts] addRTA called with:", JSON.stringify(data));
   try {
-    const ref = await addDoc(collection(db, "rtas"), data);
+    const ref = await withTimeout(addDoc(collection(db, "rtas"), data));
     console.log("[DEBUG census.ts] addRTA SUCCESS — doc ID:", ref.id);
     return ref.id;
   } catch (err) {
@@ -113,7 +113,7 @@ export async function getRTAsForMonth(year: number, month: number): Promise<RTA[
     orderBy("date", "desc")
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot = await withTimeout(getDocs(q));
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as RTA));
 }
 
@@ -141,7 +141,7 @@ export async function recordActivity(data: {
   };
   console.log("[DEBUG census.ts] recordActivity called with:", JSON.stringify(activityDoc));
   try {
-    const ref = await addDoc(collection(db, "activity"), activityDoc);
+    const ref = await withTimeout(addDoc(collection(db, "activity"), activityDoc));
     console.log("[DEBUG census.ts] recordActivity SUCCESS — doc ID:", ref.id);
     return ref.id;
   } catch (err) {
@@ -162,7 +162,7 @@ export async function getActivityForMonth(year: number, month: number): Promise<
     orderBy("timestamp", "desc")
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot = await withTimeout(getDocs(q));
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityEntry));
 }
 
@@ -182,16 +182,23 @@ export function subscribeToActivityForMonth(
     orderBy("timestamp", "desc")
   );
 
-  return onSnapshot(q, (snapshot) => {
-    const entries = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityEntry));
-    callback(entries);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const entries = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityEntry));
+      callback(entries);
+    },
+    (error) => {
+      console.error("[census.ts] Activity subscription error:", error);
+      callback([]);
+    }
+  );
 }
 
 // --- Census Calculation ---
 export async function getStartingCensus(year: number, month: number): Promise<number> {
   const docRef = doc(db, "censusConfig", `${year}-${String(month).padStart(2, "0")}`);
-  const snap = await getDoc(docRef);
+  const snap = await withTimeout(getDoc(docRef));
   if (snap.exists()) {
     return snap.data().startingCensus ?? 0;
   }
@@ -199,7 +206,7 @@ export async function getStartingCensus(year: number, month: number): Promise<nu
   const prevMonth = month === 1 ? 12 : month - 1;
   const prevYear = month === 1 ? year - 1 : year;
   const prevDocRef = doc(db, "censusConfig", `${prevYear}-${String(prevMonth).padStart(2, "0")}`);
-  const prevSnap = await getDoc(prevDocRef);
+  const prevSnap = await withTimeout(getDoc(prevDocRef));
   if (prevSnap.exists() && prevSnap.data().endingCensus !== undefined) {
     return prevSnap.data().endingCensus;
   }

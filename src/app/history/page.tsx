@@ -27,11 +27,13 @@ export default function HistoryPage() {
   const router = useRouter();
   const [months, setMonths] = useState<MonthDetail[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
       setDataLoading(true);
+      setDataError(null);
       const now = new Date();
       const results: MonthDetail[] = [];
 
@@ -53,6 +55,7 @@ export default function HistoryPage() {
       setMonths(results);
     } catch (err) {
       console.error("Failed to load history:", err);
+      setDataError("Failed to load history data. Please check your connection and try again.");
     } finally {
       setDataLoading(false);
     }
@@ -70,6 +73,24 @@ export default function HistoryPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="w-10 h-10 border-4 border-[#38b2ac] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (dataError) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-24 pt-20">
+        <Header />
+        <div className="max-w-2xl mx-auto px-5 py-20 text-center">
+          <p className="text-red-500 text-base mb-4">{dataError}</p>
+          <button
+            onClick={loadData}
+            className="bg-[#1a365d] text-white px-6 py-3 rounded-xl text-base font-medium"
+          >
+            Retry
+          </button>
+        </div>
+        <BottomNav />
       </div>
     );
   }
