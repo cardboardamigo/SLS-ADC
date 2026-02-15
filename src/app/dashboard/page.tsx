@@ -7,13 +7,11 @@ import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import {
   calculateMonthlyADC,
-  getAdmissionsForMonth,
-  getDischargesForMonth,
-  getRTAsForMonth,
+  getActivityForMonth,
   getStartingCensus,
   setStartingCensus,
 } from "@/lib/census";
-import { MonthlyADC, Admission, Discharge, RTA } from "@/lib/types";
+import { MonthlyADC, ActivityEntry } from "@/lib/types";
 import { calculateBonus, formatCurrency, BONUS_TIERS } from "@/lib/bonus";
 import { format } from "date-fns";
 import { useRef } from "react";
@@ -22,9 +20,7 @@ export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [monthlyData, setMonthlyData] = useState<MonthlyADC | null>(null);
-  const [admissions, setAdmissions] = useState<Admission[]>([]);
-  const [discharges, setDischarges] = useState<Discharge[]>([]);
-  const [rtas, setRTAs] = useState<RTA[]>([]);
+  const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [startCensus, setStartCensus] = useState<number>(0);
   const [editingCensus, setEditingCensus] = useState(false);
@@ -40,17 +36,13 @@ export default function DashboardPage() {
   const loadData = useCallback(async () => {
     try {
       setDataLoading(true);
-      const [adc, adm, dc, rtaData, sc] = await Promise.all([
+      const [adc, activityData, sc] = await Promise.all([
         calculateMonthlyADC(year, month),
-        getAdmissionsForMonth(year, month),
-        getDischargesForMonth(year, month),
-        getRTAsForMonth(year, month),
+        getActivityForMonth(year, month),
         getStartingCensus(year, month),
       ]);
       setMonthlyData(adc);
-      setAdmissions(adm);
-      setDischarges(dc);
-      setRTAs(rtaData);
+      setActivities(activityData);
       setStartCensus(sc);
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -87,8 +79,11 @@ export default function DashboardPage() {
     );
   }
 
+  const totalAdmits = activities.filter((a) => a.type === "Admit").length;
+  const totalDischarges = activities.filter((a) => a.type === "DC").length;
+  const totalRTAs = activities.filter((a) => a.type === "RTA").length;
   const currentCensus = monthlyData
-    ? startCensus + admissions.length - discharges.length - rtas.length
+    ? startCensus + totalAdmits - totalDischarges
     : 0;
   const adc = monthlyData?.averageDailyCensus ?? 0;
   const { tier: nextTier } = (() => {
@@ -120,15 +115,15 @@ export default function DashboardPage() {
               <p className="text-white/60 text-sm">Current</p>
             </div>
             <div className="text-center flex-1">
-              <p className="text-3xl font-semibold text-green-300">+{admissions.length}</p>
+              <p className="text-3xl font-semibold text-green-300">+{totalAdmits}</p>
               <p className="text-white/60 text-sm">Admits</p>
             </div>
             <div className="text-center flex-1">
-              <p className="text-3xl font-semibold text-orange-300">-{discharges.length}</p>
+              <p className="text-3xl font-semibold text-orange-300">-{totalDischarges}</p>
               <p className="text-white/60 text-sm">D/C</p>
             </div>
             <div className="text-center flex-1">
-              <p className="text-3xl font-semibold text-red-300">-{rtas.length}</p>
+              <p className="text-3xl font-semibold text-red-300">-{totalRTAs}</p>
               <p className="text-white/60 text-sm">RTA</p>
             </div>
           </div>
@@ -232,68 +227,46 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {admissions.length === 0 && discharges.length === 0 && rtas.length === 0 ? (
+          {activities.length === 0 ? (
             <p className="text-gray-400 text-base text-center py-6">
               No entries this month. Tap a button above to start tracking.
             </p>
           ) : (
             <div className="space-y-3">
-              {[
-                ...admissions.slice(0, 5).map((a) => ({
-                  type: "admit" as const,
-                  date: a.date,
-                  label: `${a.hospitalName} - ${a.patientType}`,
-                  sub: a.clinicalLiaison,
-                })),
-                ...discharges.slice(0, 5).map((d) => ({
-                  type: "dc" as const,
-                  date: d.date,
-                  label: `${d.dischargeName} - ${d.dischargeType}`,
-                  sub: "",
-                })),
-                ...rtas.slice(0, 5).map((r) => ({
-                  type: "rta" as const,
-                  date: r.date,
-                  label: `RTA to ${r.hospital}`,
-                  sub: r.reason,
-                })),
-              ]
-                .sort((a, b) => b.date.localeCompare(a.date))
-                .slice(0, 10)
-                .map((item, i) => (
+              {activities.slice(0, 10).map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 py-3 border-b border-gray-50 last:border-0"
+                >
                   <div
-                    key={i}
-                    className="flex items-center gap-3 py-3 border-b border-gray-50 last:border-0"
-                  >
-                    <div
-                      className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                        item.type === "admit"
-                          ? "bg-green-400"
-                          : item.type === "dc"
-                          ? "bg-orange-400"
-                          : "bg-red-400"
-                      }`}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-base text-gray-800 truncate">{item.label}</p>
-                      <p className="text-sm text-gray-400">
-                        {item.date}
-                        {item.sub ? ` \u00b7 ${item.sub}` : ""}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-sm font-medium px-3 py-1 rounded-full ${
-                        item.type === "admit"
-                          ? "bg-green-100 text-green-700"
-                          : item.type === "dc"
-                          ? "bg-orange-100 text-orange-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {item.type === "admit" ? "ADM" : item.type === "dc" ? "D/C" : "RTA"}
-                    </span>
+                    className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                      item.type === "Admit"
+                        ? "bg-green-400"
+                        : item.type === "DC"
+                        ? "bg-orange-400"
+                        : "bg-red-400"
+                    }`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base text-gray-800 truncate">{item.patientName}</p>
+                    <p className="text-sm text-gray-400">
+                      {format(new Date(item.timestamp), "MMM d, h:mm a")}
+                      {item.liaisonName ? ` \u00b7 ${item.liaisonName}` : ""}
+                    </p>
                   </div>
-                ))}
+                  <span
+                    className={`text-sm font-medium px-3 py-1 rounded-full ${
+                      item.type === "Admit"
+                        ? "bg-green-100 text-green-700"
+                        : item.type === "DC"
+                        ? "bg-orange-100 text-orange-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {item.type === "Admit" ? "ADM" : item.type === "DC" ? "D/C" : "RTA"}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </div>
