@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [monthlyData, setMonthlyData] = useState<MonthlyADC | null>(null);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [startCensus, setStartCensus] = useState<number>(0);
   const [editingCensus, setEditingCensus] = useState(false);
   const [censusInput, setCensusInput] = useState("");
@@ -37,6 +38,7 @@ export default function DashboardPage() {
   const loadData = useCallback(async () => {
     try {
       setDataLoading(true);
+      setDataError(null);
       const [adc, sc] = await Promise.all([
         calculateMonthlyADC(year, month),
         getStartingCensus(year, month),
@@ -45,6 +47,7 @@ export default function DashboardPage() {
       setStartCensus(sc);
     } catch (err) {
       console.error("Failed to load data:", err);
+      setDataError("Failed to load census data. Please check your connection and try again.");
     } finally {
       setDataLoading(false);
     }
@@ -83,6 +86,24 @@ export default function DashboardPage() {
           <div className="w-10 h-10 border-4 border-[#38b2ac] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
           <p className="text-gray-500 text-base">Loading census data...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (dataError) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-24 pt-20">
+        <Header />
+        <div className="max-w-2xl mx-auto px-5 py-20 text-center">
+          <p className="text-red-500 text-base mb-4">{dataError}</p>
+          <button
+            onClick={loadData}
+            className="bg-[#1a365d] text-white px-6 py-3 rounded-xl text-base font-medium"
+          >
+            Retry
+          </button>
+        </div>
+        <BottomNav />
       </div>
     );
   }

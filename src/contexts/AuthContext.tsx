@@ -9,7 +9,7 @@ import {
   signOut as firebaseSignOut,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, withTimeout } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types";
 
 const APP_USERS: Record<string, { name: string; email: string; phone: string }> = {
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function fetchProfile(uid: string) {
     const docRef = doc(db, "users", uid);
-    const snap = await getDoc(docRef);
+    const snap = await withTimeout(getDoc(docRef));
     if (snap.exists()) {
       setProfile(snap.data() as UserProfile);
     }
@@ -58,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      setLoading(false);
       if (firebaseUser) {
         try {
           await fetchProfile(firebaseUser.uid);
@@ -67,7 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(null);
       }
-      setLoading(false);
     });
     return unsubscribe;
   }, []);

@@ -20,6 +20,7 @@ export default function DischargesPage() {
   const [dischargeType, setDischargeType] = useState<DischargeType>("IRF");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [recentDischarges, setRecentDischarges] = useState<Discharge[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
@@ -38,8 +39,12 @@ export default function DischargesPage() {
   const listMonth = listDate.getMonth() + 1;
 
   const loadRecent = useCallback(async () => {
-    const data = await getDischargesForMonth(listYear, listMonth);
-    setRecentDischarges(data);
+    try {
+      const data = await getDischargesForMonth(listYear, listMonth);
+      setRecentDischarges(data);
+    } catch (err) {
+      console.error("Failed to load discharges:", err);
+    }
   }, [listYear, listMonth]);
 
   useEffect(() => {
@@ -69,6 +74,7 @@ export default function DischargesPage() {
     e.preventDefault();
     if (!user) return;
     setSubmitting(true);
+    setSaveError(null);
 
     // DEBUG: Check Firebase auth state
     const authState = auth.currentUser ? `EXISTS (uid: ${auth.currentUser.uid})` : "NULL";
@@ -129,6 +135,9 @@ export default function DischargesPage() {
       console.error("[DEBUG Discharges] SAVE FAILED — full error:", err);
       addDebugLog(`SAVE FAILED: ${error?.name}: ${error?.message}`);
       addDebugLog(`Error code: ${errCode || "none"}`);
+      setSaveError(error?.message?.includes("timed out")
+        ? "Save timed out. Please check your connection and try again."
+        : "Failed to save. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -151,6 +160,12 @@ export default function DischargesPage() {
         {success && (
           <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse">
             {editingId ? "Discharge updated successfully" : "Discharge recorded successfully"}
+          </div>
+        )}
+
+        {saveError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-5 text-center text-base font-medium">
+            {saveError}
           </div>
         )}
 

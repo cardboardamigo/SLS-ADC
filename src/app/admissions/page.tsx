@@ -22,6 +22,7 @@ export default function AdmissionsPage() {
   const [clinicalLiaison, setClinicalLiaison] = useState<ClinicalLiaison>("Thad");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [recentAdmissions, setRecentAdmissions] = useState<Admission[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
@@ -48,8 +49,12 @@ export default function AdmissionsPage() {
   }, [profile, editingId]);
 
   const loadRecent = useCallback(async () => {
-    const data = await getAdmissionsForMonth(listYear, listMonth);
-    setRecentAdmissions(data);
+    try {
+      const data = await getAdmissionsForMonth(listYear, listMonth);
+      setRecentAdmissions(data);
+    } catch (err) {
+      console.error("Failed to load admissions:", err);
+    }
   }, [listYear, listMonth]);
 
   useEffect(() => {
@@ -83,6 +88,7 @@ export default function AdmissionsPage() {
     e.preventDefault();
     if (!user) return;
     setSubmitting(true);
+    setSaveError(null);
 
     // DEBUG: Check Firebase auth state
     const authState = auth.currentUser ? `EXISTS (uid: ${auth.currentUser.uid})` : "NULL";
@@ -146,6 +152,9 @@ export default function AdmissionsPage() {
       console.error("[DEBUG Admissions] SAVE FAILED — full error:", err);
       addDebugLog(`SAVE FAILED: ${error?.name}: ${error?.message}`);
       addDebugLog(`Error code: ${errCode || "none"}`);
+      setSaveError(error?.message?.includes("timed out")
+        ? "Save timed out. Please check your connection and try again."
+        : "Failed to save. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -169,6 +178,13 @@ export default function AdmissionsPage() {
         {success && (
           <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse">
             {editingId ? "Admission updated successfully" : "Admission recorded successfully"}
+          </div>
+        )}
+
+        {/* Error Banner */}
+        {saveError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-5 text-center text-base font-medium">
+            {saveError}
           </div>
         )}
 
