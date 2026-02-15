@@ -1,6 +1,11 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  type Firestore,
+} from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -15,10 +20,24 @@ const firebaseConfig = {
 const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// Enable persistent local cache so writes resolve immediately against the
+// local cache instead of hanging when the network connection is slow/stale.
+// This is critical for mobile PWA usage where connections drop frequently.
+let _db: Firestore;
+try {
+  _db = initializeFirestore(app, {
+    localCache: persistentLocalCache({}),
+  });
+} catch {
+  // Already initialized (e.g. hot module reload) — use existing instance
+  _db = getFirestore(app);
+}
+export const db = _db;
+
 export const storage = getStorage(app);
 
-export function withTimeout<T>(promise: Promise<T>, ms: number = 15000): Promise<T> {
+export function withTimeout<T>(promise: Promise<T>, ms: number = 10000): Promise<T> {
   return Promise.race([
     promise,
     new Promise<never>((_, reject) =>

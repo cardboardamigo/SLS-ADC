@@ -8,7 +8,7 @@ import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import { doc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { auth, db, storage } from "@/lib/firebase";
+import { auth, db, storage, withTimeout } from "@/lib/firebase";
 import Image from "next/image";
 
 export default function ProfilePage() {
@@ -23,6 +23,7 @@ export default function ProfilePage() {
   const [title, setTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [showDebug, setShowDebug] = useState(false);
@@ -51,6 +52,7 @@ export default function ProfilePage() {
     e.preventDefault();
     if (!user) return;
     setSaving(true);
+    setSaveError(null);
 
     // DEBUG: Check Firebase auth state
     const authState = auth.currentUser ? `EXISTS (uid: ${auth.currentUser.uid})` : "NULL";
@@ -69,7 +71,7 @@ export default function ProfilePage() {
       };
       addDebugLog(`Saving profile for uid: ${user.uid} data: ${JSON.stringify(profileData)}`);
       console.log("[DEBUG Profile] Saving profile for uid:", user.uid, "with data:", JSON.stringify(profileData));
-      await setDoc(doc(db, "users", user.uid), profileData, { merge: true });
+      await withTimeout(setDoc(doc(db, "users", user.uid), profileData, { merge: true }));
       console.log("[DEBUG Profile] setDoc succeeded");
       addDebugLog("setDoc OK");
       setSuccess(true);
@@ -85,6 +87,9 @@ export default function ProfilePage() {
       console.error("[DEBUG Profile] SAVE FAILED — full error:", err);
       addDebugLog(`SAVE FAILED: ${error?.name}: ${error?.message}`);
       addDebugLog(`Error code: ${errCode || "none"}`);
+      setSaveError(error?.message?.includes("timed out")
+        ? "Save timed out. Please check your connection and try again."
+        : "Failed to save. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -103,11 +108,11 @@ export default function ProfilePage() {
     addDebugLog(`Uploading photo: ${file.name} (${file.size} bytes)`);
     try {
       const storageRef = ref(storage, `profilePics/${user.uid}`);
-      await uploadBytes(storageRef, file);
+      await withTimeout(uploadBytes(storageRef, file), 30000);
       addDebugLog("uploadBytes OK");
-      const url = await getDownloadURL(storageRef);
+      const url = await withTimeout(getDownloadURL(storageRef));
       addDebugLog(`getDownloadURL OK: ${url.substring(0, 60)}...`);
-      await setDoc(doc(db, "users", user.uid), { profilePicUrl: url }, { merge: true });
+      await withTimeout(setDoc(doc(db, "users", user.uid), { profilePicUrl: url }, { merge: true }));
       addDebugLog("Photo URL saved to Firestore OK");
       await refreshProfile();
     } catch (err) {
@@ -202,6 +207,21 @@ export default function ProfilePage() {
             }}
           >
             Profile updated successfully
+          </div>
+        )}
+
+        {/* Error Message */}
+        {saveError && (
+          <div
+            className="text-sm p-3.5 mb-6 text-center font-medium"
+            style={{
+              borderRadius: "var(--bubble-radius-input)",
+              background: "rgba(220,38,38,0.1)",
+              border: "1px solid rgba(220,38,38,0.3)",
+              color: "#dc2626",
+            }}
+          >
+            {saveError}
           </div>
         )}
 

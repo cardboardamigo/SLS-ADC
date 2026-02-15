@@ -5,12 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import {
-  calculateMonthlyADC,
-  getAdmissionsForMonth,
-  getDischargesForMonth,
-  getRTAsForMonth,
-} from "@/lib/census";
+import { getMonthSummary } from "@/lib/census";
 import { MonthlyADC, Admission, Discharge, RTA } from "@/lib/types";
 import { calculateBonus, formatCurrency } from "@/lib/bonus";
 import { subMonths } from "date-fns";
@@ -35,22 +30,14 @@ export default function HistoryPage() {
       setDataLoading(true);
       setDataError(null);
       const now = new Date();
-      const results: MonthDetail[] = [];
 
-      for (let i = 0; i < 12; i++) {
-        const d = subMonths(now, i);
-        const y = d.getFullYear();
-        const m = d.getMonth() + 1;
-
-        const [adc, admissions, discharges, rtas] = await Promise.all([
-          calculateMonthlyADC(y, m),
-          getAdmissionsForMonth(y, m),
-          getDischargesForMonth(y, m),
-          getRTAsForMonth(y, m),
-        ]);
-
-        results.push({ adc, admissions, discharges, rtas });
-      }
+      // Load all 12 months in parallel instead of sequentially
+      const results = await Promise.all(
+        Array.from({ length: 12 }, (_, i) => {
+          const d = subMonths(now, i);
+          return getMonthSummary(d.getFullYear(), d.getMonth() + 1);
+        })
+      );
 
       setMonths(results);
     } catch (err) {
