@@ -46,11 +46,11 @@ export async function getAdmissionsForMonth(year: number, month: number): Promis
 }
 
 export async function deleteAdmission(id: string): Promise<void> {
-  await deleteDoc(doc(db, "admissions", id));
+  await withTimeout(deleteDoc(doc(db, "admissions", id)));
 }
 
 export async function updateAdmission(id: string, data: Partial<Omit<Admission, "id">>): Promise<void> {
-  await updateDoc(doc(db, "admissions", id), data);
+  await withTimeout(updateDoc(doc(db, "admissions", id), data));
 }
 
 // --- Discharges ---
@@ -82,11 +82,11 @@ export async function getDischargesForMonth(year: number, month: number): Promis
 }
 
 export async function deleteDischarge(id: string): Promise<void> {
-  await deleteDoc(doc(db, "discharges", id));
+  await withTimeout(deleteDoc(doc(db, "discharges", id)));
 }
 
 export async function updateDischarge(id: string, data: Partial<Omit<Discharge, "id">>): Promise<void> {
-  await updateDoc(doc(db, "discharges", id), data);
+  await withTimeout(updateDoc(doc(db, "discharges", id), data));
 }
 
 // --- RTAs ---
@@ -118,11 +118,11 @@ export async function getRTAsForMonth(year: number, month: number): Promise<RTA[
 }
 
 export async function deleteRTA(id: string): Promise<void> {
-  await deleteDoc(doc(db, "rtas", id));
+  await withTimeout(deleteDoc(doc(db, "rtas", id)));
 }
 
 export async function updateRTA(id: string, data: Partial<Omit<RTA, "id">>): Promise<void> {
-  await updateDoc(doc(db, "rtas", id), data);
+  await withTimeout(updateDoc(doc(db, "rtas", id), data));
 }
 
 // --- Activity Log ---
@@ -219,7 +219,7 @@ export async function setStartingCensus(
   census: number
 ): Promise<void> {
   const docRef = doc(db, "censusConfig", `${year}-${String(month).padStart(2, "0")}`);
-  await setDoc(docRef, { startingCensus: census }, { merge: true });
+  await withTimeout(setDoc(docRef, { startingCensus: census }, { merge: true }));
 }
 
 export async function setEndingCensus(
@@ -228,14 +228,16 @@ export async function setEndingCensus(
   census: number
 ): Promise<void> {
   const docRef = doc(db, "censusConfig", `${year}-${String(month).padStart(2, "0")}`);
-  await setDoc(docRef, { endingCensus: census }, { merge: true });
+  await withTimeout(setDoc(docRef, { endingCensus: census }, { merge: true }));
 }
 
 export async function calculateMonthlyADC(year: number, month: number): Promise<MonthlyADC> {
-  const admissions = await getAdmissionsForMonth(year, month);
-  const discharges = await getDischargesForMonth(year, month);
-  const rtas = await getRTAsForMonth(year, month);
-  const startingCensus = await getStartingCensus(year, month);
+  const [admissions, discharges, rtas, startingCensus] = await Promise.all([
+    getAdmissionsForMonth(year, month),
+    getDischargesForMonth(year, month),
+    getRTAsForMonth(year, month),
+    getStartingCensus(year, month),
+  ]);
 
   const daysInMonth = getDaysInMonth(new Date(year, month - 1));
   const monthDate = new Date(year, month - 1);
@@ -302,4 +304,65 @@ export async function hasEntriesForDate(dateStr: string): Promise<boolean> {
   ]);
 
   return !admSnap.empty || !dcSnap.empty || !rtaSnap.empty;
+}
+
+// --- Get full month data (ADC + raw records) in a single parallel fetch ---
+export async function getMonthSummary(year: number, month: number): Promise<{
+  adc: MonthlyADC;
+  admissions: Admission[];
+  discharges: Discharge[];
+  rtas: RTA[];
+}> {
+  const [admissions, discharges, rtas, startingCensus] = await Promise.all([
+    getAdmissionsForMonth(year, month),
+    getDischargesForMonth(year, month),
+    getRTAsForMonth(year, month),
+    getStartingCensus(year, month),
+  ]);
+
+  const daysInMonth = getDaysInMonth(new Date(year, month - 1));
+  const monthDate = new Date(year, month - 1);
+
+  const dailyCensus: Record<string, { admissions: number; discharges: number; rtas: number }> = {};
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = format(new Date(year, month - 1, d), "yyyy-MM-dd");
+    dailyCensus[dateStr] = { admissions: 0, discharges: 0, rtas: 0 };
+  }
+
+  for (const a of admissions) if (dailyCensus[a.date]) dailyCensus[a.date].admissions++;
+  for (const d of discharges) if (dailyCensus[d.date]) dailyCensus[d.date].discharges++;
+  for (const r of rtas) if (dailyCensus[r.date]) dailyCensus[r.date].rtas++;
+
+  let runningCensus = startingCensus;
+  let totalCensusDays = 0;
+  const today = format(new Date(), "yyyy-MM-dd");
+  let daysElapsed = 0;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = format(new Date(year, month - 1, d), "yyyy-MM-dd");
+    if (dateStr > today) break;
+    const day = dailyCensus[dateStr];
+    runningCensus = runningCensus + day.admissions - day.discharges - day.rtas;
+    totalCensusDays += runningCensus;
+    daysElapsed++;
+  }
+
+  const averageDailyCensus = daysElapsed > 0 ? totalCensusDays / daysElapsed : 0;
+  const { tier, amount } = calculateBonus(averageDailyCensus);
+
+  return {
+    adc: {
+      month: `${year}-${String(month).padStart(2, "0")}`,
+      year,
+      monthName: format(monthDate, "MMMM yyyy"),
+      totalCensusDays,
+      daysInMonth: daysElapsed,
+      averageDailyCensus: Math.round(averageDailyCensus * 100) / 100,
+      bonusTier: tier,
+      bonusAmount: amount,
+    },
+    admissions,
+    discharges,
+    rtas,
+  };
 }
