@@ -7,7 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "firebase:deploy:rules": "firebase deploy --only firestore:rules,storage",
+    "firebase:emulators": "firebase emulators:start"
   },
   "repository": {
     "type": "git",
