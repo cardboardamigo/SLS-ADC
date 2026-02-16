@@ -8,7 +8,7 @@ import BottomNav from "@/components/BottomNav";
 import { calculateMonthlyADC } from "@/lib/census";
 import { BONUS_TIERS, calculateBonus, formatCurrency } from "@/lib/bonus";
 import { MonthlyADC } from "@/lib/types";
-import { format, subMonths } from "date-fns";
+import { subMonths } from "date-fns";
 import { generateBonusPDF } from "@/lib/pdfGenerator";
 
 export default function BonusPage() {
@@ -17,11 +17,14 @@ export default function BonusPage() {
   const [currentMonth, setCurrentMonth] = useState<MonthlyADC | null>(null);
   const [previousMonths, setPreviousMonths] = useState<MonthlyADC[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
       setDataLoading(true);
+      setDataError(null);
       const now = new Date();
 
       // Load current + previous 6 months in parallel
@@ -34,6 +37,7 @@ export default function BonusPage() {
       setPreviousMonths(prev);
     } catch (err) {
       console.error("Failed to load bonus data:", err);
+      setDataError("Failed to load bonus data. Please check your connection and try again.");
     } finally {
       setDataLoading(false);
     }
@@ -50,6 +54,7 @@ export default function BonusPage() {
   async function handleGeneratePDF(monthData: MonthlyADC) {
     if (!profile) return;
     setGeneratingPDF(true);
+    setPdfError(null);
     try {
       await generateBonusPDF({
         userName: profile.name,
@@ -61,6 +66,7 @@ export default function BonusPage() {
       });
     } catch (err) {
       console.error("Failed to generate PDF:", err);
+      setPdfError("Failed to generate PDF. Please try again.");
     } finally {
       setGeneratingPDF(false);
     }
@@ -74,6 +80,24 @@ export default function BonusPage() {
     );
   }
 
+  if (dataError) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-24 pt-20">
+        <Header />
+        <div className="max-w-2xl mx-auto px-5 py-20 text-center">
+          <p className="text-red-500 text-base mb-4">{dataError}</p>
+          <button
+            onClick={loadData}
+            className="bg-[#1a365d] text-white px-6 py-3 rounded-xl text-base font-medium"
+          >
+            Retry
+          </button>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
   const currentBonus = currentMonth ? calculateBonus(currentMonth.averageDailyCensus) : { tier: null, amount: 0 };
 
   return (
@@ -81,6 +105,12 @@ export default function BonusPage() {
       <Header />
 
       <div className="max-w-2xl mx-auto px-5 py-5">
+        {pdfError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-5 text-center text-base font-medium">
+            {pdfError}
+          </div>
+        )}
+
         {/* Current Month Bonus */}
         <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-8 text-white mb-5 shadow-lg">
           <p className="text-white/80 text-base mb-1">

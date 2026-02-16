@@ -25,12 +25,10 @@ export interface CrudPageConfig<T extends { id: string; date: string }> {
   fields: CrudField[];
   focusRingClass: string;
   buttonClass: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  addItem: (data: any) => Promise<string>;
-  getItemsForMonth: (year: number, month: number) => Promise<T[]>;
-  deleteItem: (id: string) => Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updateItem: (id: string, data: any) => Promise<void>;
+  addItem(data: Record<string, string>): Promise<string>;
+  getItemsForMonth(year: number, month: number): Promise<T[]>;
+  deleteItem(id: string): Promise<void>;
+  updateItem(id: string, data: Record<string, string>): Promise<void>;
   getItemTitle: (item: T) => string;
   getItemSubtitle: (item: T) => string;
   activityType: ActivityType;
@@ -58,6 +56,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
   const [success, setSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [items, setItems] = useState<T[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [listDate, setListDate] = useState(new Date());
@@ -84,10 +83,12 @@ export default function CrudPage<T extends { id: string; date: string }>({
 
   const loadItems = useCallback(async () => {
     try {
+      setLoadError(null);
       const data = await config.getItemsForMonth(listYear, listMonth);
       setItems(data);
     } catch (err) {
       console.error(`Failed to load ${config.entityNamePlural}:`, err);
+      setLoadError(`Failed to load ${config.entityNamePlural}. Please check your connection and try again.`);
     }
   }, [listYear, listMonth, config]);
 
@@ -155,13 +156,11 @@ export default function CrudPage<T extends { id: string; date: string }>({
       setTimeout(() => setSuccess(false), 2000);
       loadItems();
     } catch (err: unknown) {
-      const error = err as Error;
       console.error(`Failed to save ${config.entityName.toLowerCase()}:`, err);
-      setSaveError(
-        error?.message?.includes("timed out")
-          ? "Save timed out. Please check your connection and try again."
-          : "Failed to save. Please try again."
-      );
+      const message = err instanceof Error && err.message.includes("timed out")
+        ? "Save timed out. Please check your connection and try again."
+        : "Failed to save. Please try again.";
+      setSaveError(message);
     } finally {
       setSubmitting(false);
     }
@@ -169,9 +168,14 @@ export default function CrudPage<T extends { id: string; date: string }>({
 
   async function handleDelete(id: string) {
     if (!confirm(`Delete this ${config.entityName.toLowerCase()}?`)) return;
-    await config.deleteItem(id);
-    if (editingId === id) cancelEdit();
-    loadItems();
+    try {
+      await config.deleteItem(id);
+      if (editingId === id) cancelEdit();
+      loadItems();
+    } catch (err) {
+      console.error(`Failed to delete ${config.entityName.toLowerCase()}:`, err);
+      setSaveError("Failed to delete. Please try again.");
+    }
   }
 
   const isCurrentMonth =
@@ -338,7 +342,17 @@ export default function CrudPage<T extends { id: string; date: string }>({
             </button>
           </div>
 
-          {items.length === 0 ? (
+          {loadError ? (
+            <div className="text-center py-6">
+              <p className="text-red-500 text-base mb-3">{loadError}</p>
+              <button
+                onClick={loadItems}
+                className="text-[#38b2ac] text-base font-medium"
+              >
+                Retry
+              </button>
+            </div>
+          ) : items.length === 0 ? (
             <p className="text-gray-400 text-base text-center py-6">
               No {config.entityNamePlural.toLowerCase()} this month
             </p>

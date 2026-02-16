@@ -57,11 +57,11 @@ export default function ProfilePage() {
       setTimeout(() => setSuccess(false), 2000);
       await refreshProfile();
     } catch (err: unknown) {
-      const error = err as Error;
       console.error("Failed to save profile:", err);
-      setSaveError(error?.message?.includes("timed out")
+      const message = err instanceof Error && err.message.includes("timed out")
         ? "Save timed out. Please check your connection and try again."
-        : "Failed to save. Please try again.");
+        : "Failed to save. Please try again.";
+      setSaveError(message);
     } finally {
       setSaving(false);
     }
@@ -77,6 +77,7 @@ export default function ProfilePage() {
     }
 
     setUploading(true);
+    setSaveError(null);
     try {
       const storageRef = ref(storage, `profilePics/${user.uid}`);
       await withTimeout(uploadBytes(storageRef, file), 30000);
@@ -85,6 +86,10 @@ export default function ProfilePage() {
       await refreshProfile();
     } catch (err) {
       console.error("Failed to upload photo:", err);
+      const message = err instanceof Error && err.message.includes("timed out")
+        ? "Photo upload timed out. Please check your connection and try again."
+        : "Failed to upload photo. Please try again.";
+      setSaveError(message);
     } finally {
       setUploading(false);
     }

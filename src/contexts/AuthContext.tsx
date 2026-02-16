@@ -83,7 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Try to sign in
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      try { await fetchProfile(cred.user.uid); } catch {}
+      try {
+        await fetchProfile(cred.user.uid);
+      } catch (err) {
+        console.error("Failed to fetch profile after sign-in:", err);
+      }
       return;
     } catch (err: unknown) {
       const code = err instanceof Error ? err.message : "";
