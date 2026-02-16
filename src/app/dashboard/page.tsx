@@ -27,8 +27,15 @@ export default function DashboardPage() {
   const [censusInput, setCensusInput] = useState("");
   const [showBonusHint, setShowBonusHint] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const tapCountRef = useRef(0);
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Pull-to-refresh state
+  const pullStartY = useRef(0);
+  const pullRef = useRef<HTMLDivElement>(null);
+  const [pullDistance, setPullDistance] = useState(0);
+  const PULL_THRESHOLD = 80;
 
   const now = new Date();
   const year = now.getFullYear();
@@ -52,6 +59,25 @@ export default function DashboardPage() {
     }
   }, [year, month]);
 
+  // Refresh data in the background without showing full-page loading spinner.
+  // Used by pull-to-refresh so stale data stays visible while new data loads.
+  const refreshData = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      const [adc, sc] = await Promise.all([
+        calculateMonthlyADC(year, month),
+        getStartingCensus(year, month),
+      ]);
+      setMonthlyData(adc);
+      setStartCensus(sc);
+      setDataError(null);
+    } catch (err) {
+      console.error("Failed to refresh data:", err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [year, month]);
+
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/login");
@@ -59,6 +85,45 @@ export default function DashboardPage() {
     }
     if (user) loadData();
   }, [user, loading, router, loadData]);
+
+  // Pull-to-refresh touch handlers
+  useEffect(() => {
+    const el = pullRef.current;
+    if (!el) return;
+
+    function onTouchStart(e: TouchEvent) {
+      if (el!.scrollTop === 0) {
+        pullStartY.current = e.touches[0].clientY;
+      } else {
+        pullStartY.current = 0;
+      }
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      if (!pullStartY.current) return;
+      const distance = Math.max(0, e.touches[0].clientY - pullStartY.current);
+      if (distance > 0) {
+        setPullDistance(Math.min(distance, PULL_THRESHOLD * 1.5));
+      }
+    }
+
+    function onTouchEnd() {
+      if (pullDistance >= PULL_THRESHOLD && !refreshing) {
+        refreshData();
+      }
+      setPullDistance(0);
+      pullStartY.current = 0;
+    }
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("touchend", onTouchEnd);
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [pullDistance, refreshing, refreshData]);
 
   // Real-time listener for activity entries (keeps Current Census up-to-date)
   useEffect(() => {
@@ -107,6 +172,8 @@ export default function DashboardPage() {
     );
   }
 
+  const pullProgress = Math.min(pullDistance / PULL_THRESHOLD, 1);
+
   const totalAdmits = activities.filter((a) => a.type === "Admit").length;
   const totalDischarges = activities.filter((a) => a.type === "DC").length;
   const totalRTAs = activities.filter((a) => a.type === "RTA").length;
@@ -123,8 +190,26 @@ export default function DashboardPage() {
   })();
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 content-below-header">
+    <div ref={pullRef} className="min-h-screen bg-gray-50 pb-24 content-below-header overflow-auto">
       <Header />
+
+      {/* Pull-to-refresh indicator */}
+      {(pullDistance > 0 || refreshing) && (
+        <div
+          className="flex items-center justify-center overflow-hidden transition-all"
+          style={{ height: refreshing ? 48 : pullDistance * 0.5 }}
+        >
+          <div
+            className={`w-6 h-6 border-2 border-[#38b2ac] border-t-transparent rounded-full ${
+              refreshing ? "animate-spin" : ""
+            }`}
+            style={{
+              opacity: refreshing ? 1 : pullProgress,
+              transform: `rotate(${pullProgress * 360}deg)`,
+            }}
+          />
+        </div>
+      )}
 
       <div className="max-w-2xl mx-auto px-5 py-5">
         {/* ADC Hero Card */}

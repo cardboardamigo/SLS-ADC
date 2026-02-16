@@ -6,12 +6,11 @@ import {
   deleteDoc,
   doc,
   orderBy,
-  getDoc,
   setDoc,
   updateDoc,
   onSnapshot,
 } from "firebase/firestore";
-import { db, withTimeout, getDocsResilient } from "./firebase";
+import { db, withTimeout, getDocsResilient, getDocResilient } from "./firebase";
 import { Admission, Discharge, RTA, MonthlyADC, ActivityType, ActivityEntry } from "./types";
 import { calculateBonus } from "./bonus";
 import { format, getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
@@ -168,16 +167,22 @@ export function subscribeToActivityForMonth(
 
 // --- Census Calculation ---
 export async function getStartingCensus(year: number, month: number): Promise<number> {
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const prevYear = month === 1 ? year - 1 : year;
+
   const docRef = doc(db, "censusConfig", `${year}-${String(month).padStart(2, "0")}`);
-  const snap = await withTimeout(getDoc(docRef));
+  const prevDocRef = doc(db, "censusConfig", `${prevYear}-${String(prevMonth).padStart(2, "0")}`);
+
+  // Fetch both months in parallel to avoid sequential round-trips.
+  // Uses cache-first reads so this resolves instantly when data exists locally.
+  const [snap, prevSnap] = await Promise.all([
+    getDocResilient(docRef),
+    getDocResilient(prevDocRef),
+  ]);
+
   if (snap.exists()) {
     return snap.data().startingCensus ?? 0;
   }
-  // Try to get from previous month's ending census
-  const prevMonth = month === 1 ? 12 : month - 1;
-  const prevYear = month === 1 ? year - 1 : year;
-  const prevDocRef = doc(db, "censusConfig", `${prevYear}-${String(prevMonth).padStart(2, "0")}`);
-  const prevSnap = await withTimeout(getDoc(prevDocRef));
   if (prevSnap.exists() && prevSnap.data().endingCensus !== undefined) {
     return prevSnap.data().endingCensus;
   }

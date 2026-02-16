@@ -5,11 +5,15 @@ import {
   getFirestore,
   persistentLocalCache,
   getDocs as firestoreGetDocs,
+  getDoc as firestoreGetDoc,
   getDocsFromCache,
+  getDocFromCache,
   type Firestore,
   type Query,
   type QuerySnapshot,
   type DocumentData,
+  type DocumentReference,
+  type DocumentSnapshot,
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -92,6 +96,31 @@ export async function getDocsResilient<AppModelType = DocumentData, DbModelType 
   //    from server with timeout.
   try {
     return await withTimeout(firestoreGetDocs(q));
+  } catch {
+    throw new Error("Unable to load data. Please check your connection and try again.");
+  }
+}
+
+/**
+ * Resilient getDoc: same cache-first strategy as getDocsResilient but for
+ * single-document reads.  Returns cached data instantly when available and
+ * refreshes the cache in the background.
+ */
+export async function getDocResilient<AppModelType = DocumentData, DbModelType extends DocumentData = DocumentData>(ref: DocumentReference<AppModelType, DbModelType>): Promise<DocumentSnapshot<AppModelType, DbModelType>> {
+  // 1. Try local cache first.
+  try {
+    const cached = await getDocFromCache(ref);
+    if (cached.exists()) {
+      withTimeout(firestoreGetDoc(ref)).catch(() => {});
+      return cached;
+    }
+  } catch {
+    // Cache unavailable — fall through to server
+  }
+
+  // 2. Cache empty or unavailable — fetch from server with timeout.
+  try {
+    return await withTimeout(firestoreGetDoc(ref));
   } catch {
     throw new Error("Unable to load data. Please check your connection and try again.");
   }
