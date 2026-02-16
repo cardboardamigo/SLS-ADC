@@ -5,11 +5,15 @@ import {
   getFirestore,
   persistentLocalCache,
   getDocs as firestoreGetDocs,
+  getDoc as firestoreGetDoc,
   getDocsFromCache,
+  getDocFromCache,
   type Firestore,
   type Query,
   type QuerySnapshot,
   type DocumentData,
+  type DocumentReference,
+  type DocumentSnapshot,
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -55,7 +59,7 @@ export const db = _db;
 
 export const storage = getStorage(app);
 
-export function withTimeout<T>(promise: Promise<T>, ms: number = 15000): Promise<T> {
+export function withTimeout<T>(promise: Promise<T>, ms: number = 8000): Promise<T> {
   return Promise.race([
     promise,
     new Promise<never>((_, reject) =>
@@ -75,23 +79,49 @@ export function withTimeout<T>(promise: Promise<T>, ms: number = 15000): Promise
  * fetch so the user still sees real data.
  */
 export async function getDocsResilient<AppModelType = DocumentData, DbModelType extends DocumentData = DocumentData>(q: Query<AppModelType, DbModelType>): Promise<QuerySnapshot<AppModelType, DbModelType>> {
-  // 1. Try local cache first — nearly instant when data exists.
+  // 1. Try local cache first — nearly instant when the cache has been warmed.
+  //    A successful getDocsFromCache means the cache has data for this query
+  //    path, even if the result set is empty (0 matching documents is valid).
+  //    The cache only throws when it has never been warmed for this query.
   try {
     const cached = await getDocsFromCache(q);
-    if (cached.size > 0) {
-      // Return cached data immediately for fast display.
-      // Fire a background server fetch to keep the cache fresh for next time.
-      withTimeout(firestoreGetDocs(q)).catch(() => {});
-      return cached;
-    }
+    // Cache is warmed — return immediately (even if empty) and sync in background.
+    withTimeout(firestoreGetDocs(q)).catch(() => {});
+    return cached;
   } catch {
-    // Cache unavailable — fall through to server
+    // Cache not warmed (first-ever load) — fall through to server
   }
 
-  // 2. Cache empty or unavailable (first load, cleared data, etc.) — fetch
-  //    from server with timeout.
+  // 2. First load — fetch from server with timeout.
   try {
     return await withTimeout(firestoreGetDocs(q));
+  } catch {
+    throw new Error("Unable to load data. Please check your connection and try again.");
+  }
+}
+
+/**
+ * Resilient getDoc: same cache-first strategy as getDocsResilient but for
+ * single-document reads.  Returns cached data instantly when available and
+ * refreshes the cache in the background.
+ */
+export async function getDocResilient<AppModelType = DocumentData, DbModelType extends DocumentData = DocumentData>(ref: DocumentReference<AppModelType, DbModelType>): Promise<DocumentSnapshot<AppModelType, DbModelType>> {
+  // 1. Try local cache first.  A successful getDocFromCache means the cache
+  //    knows about this document path — even if the document doesn't exist
+  //    (exists() === false is a valid cached answer).  The cache only throws
+  //    when the path has never been fetched.
+  try {
+    const cached = await getDocFromCache(ref);
+    // Cache is warmed — return immediately and sync in background.
+    withTimeout(firestoreGetDoc(ref)).catch(() => {});
+    return cached;
+  } catch {
+    // Cache not warmed — fall through to server
+  }
+
+  // 2. First load — fetch from server with timeout.
+  try {
+    return await withTimeout(firestoreGetDoc(ref));
   } catch {
     throw new Error("Unable to load data. Please check your connection and try again.");
   }

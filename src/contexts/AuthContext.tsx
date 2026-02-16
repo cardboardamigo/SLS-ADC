@@ -8,8 +8,8 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
 } from "firebase/auth";
-import { doc, getDoc, getDocFromCache, setDoc } from "firebase/firestore";
-import { auth, db, withTimeout } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db, getDocResilient } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types";
 
 const APP_USERS: Record<string, { name: string; email: string }> = {
@@ -50,17 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function fetchProfile(uid: string) {
     const docRef = doc(db, "users", uid);
-    let snap;
-    try {
-      snap = await withTimeout(getDoc(docRef));
-    } catch {
-      // Network / timeout — fall back to local persistent cache
-      try {
-        snap = await getDocFromCache(docRef);
-      } catch {
-        throw new Error("Unable to load profile. Please check your connection.");
-      }
-    }
+    const snap = await getDocResilient(docRef);
     if (snap.exists()) {
       setProfile(snap.data() as UserProfile);
     }
