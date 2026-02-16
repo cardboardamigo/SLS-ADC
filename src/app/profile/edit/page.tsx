@@ -152,6 +152,8 @@ export default function EditProfilePage() {
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imgLoaded, setImgLoaded] = useState(false);
+  // ── TEMPORARY DIAGNOSTICS (remove after upload is confirmed working) ──
+  const [diagLog, setDiagLog] = useState<string[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -212,22 +214,24 @@ export default function EditProfilePage() {
     }
 
     // ── TEMPORARY DIAGNOSTICS (remove after upload is confirmed working) ──
+    const diag = (msg: string) => setDiagLog((prev) => [...prev, msg]);
+    setDiagLog([]);
     const bucketName = storage.app.options.storageBucket;
     const auth = getAuth();
     const token = await auth.currentUser?.getIdToken(true).catch(() => null);
-    console.log("[UPLOAD DIAG] Storage bucket:", bucketName || "⚠ EMPTY");
-    console.log("[UPLOAD DIAG] Auth UID:", auth.currentUser?.uid || "⚠ NOT SIGNED IN");
-    console.log("[UPLOAD DIAG] Auth token:", token ? `${token.slice(0, 20)}… (${token.length} chars)` : "⚠ NO TOKEN");
-    console.log("[UPLOAD DIAG] File:", file.name, `(${(file.size / 1024).toFixed(1)} KB, ${file.type})`);
+    diag(`Bucket: ${bucketName || "⚠ EMPTY"}`);
+    diag(`Auth: ${auth.currentUser?.uid || "⚠ NO USER"}`);
+    diag(`Token: ${token ? "OK" : "⚠ NONE"}`);
+    diag(`File: ${(file.size / 1024).toFixed(0)} KB ${file.type}`);
 
     if (!bucketName) {
       setSaveError("Storage is not configured. Please contact support.");
-      console.error("[UPLOAD DIAG] NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is empty — uploads will fail.");
+      diag("⚠ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is empty");
       return;
     }
     if (!token) {
       setSaveError("Your session has expired. Please log out and log back in.");
-      console.error("[UPLOAD DIAG] No auth token — Firebase Storage will reject the upload.");
+      diag("⚠ No auth token — upload will be rejected");
       return;
     }
     // ── END TEMPORARY DIAGNOSTICS ──
@@ -243,7 +247,7 @@ export default function EditProfilePage() {
       // ── Stage 1: Compress (10 s timeout) ──
       setUploadStatus("compressing");
       const compressed = await compressImage(file);
-      console.log("[UPLOAD DIAG] Compressed:", `${(compressed.size / 1024).toFixed(1)} KB`);
+      diag(`Compressed: ${(compressed.size / 1024).toFixed(0)} KB`);
       if (cancelledRef.current || unmountedRef.current) return;
 
       // ── Stage 2: Upload to Firebase Storage (resumable, with retry) ──
@@ -266,7 +270,7 @@ export default function EditProfilePage() {
         }
 
         let stalled = false;
-        console.log(`[UPLOAD DIAG] Attempt ${attempt + 1}/${MAX_RETRIES + 1} starting…`);
+        diag(`Attempt ${attempt + 1}/${MAX_RETRIES + 1}…`);
         try {
           const { task, promise } = uploadWithProgress(
             storageRef,
@@ -283,7 +287,7 @@ export default function EditProfilePage() {
           await promise;
           uploadTaskRef.current = null;
           lastErr = null;
-          console.log("[UPLOAD DIAG] Upload succeeded on attempt", attempt + 1);
+          diag(`Upload OK (attempt ${attempt + 1})`);
           break; // success
         } catch (err) {
           uploadTaskRef.current = null;
@@ -294,7 +298,7 @@ export default function EditProfilePage() {
           if (stalled) {
             lastErr = new Error("Upload stalled — no progress for 20s");
           }
-          console.warn(`Upload attempt ${attempt + 1} failed:`, err);
+          diag(`Attempt ${attempt + 1} failed: ${stalled ? "stalled" : (err instanceof Error ? err.message : "unknown")}`);
         }
       }
 
@@ -309,7 +313,7 @@ export default function EditProfilePage() {
       );
       if (cancelledRef.current || unmountedRef.current) return;
 
-      console.log("[UPLOAD DIAG] Download URL obtained:", downloadUrl.slice(0, 80) + "…");
+      diag("Got URL — done!");
 
       // Persist URL to Firestore (fire-and-forget — local cache persists it)
       setDoc(doc(db, "users", user.uid), { profilePicUrl: downloadUrl }, { merge: true })
@@ -465,6 +469,26 @@ export default function EditProfilePage() {
             }}
           >
             {saveError}
+          </div>
+        )}
+
+        {/* ── TEMPORARY DIAG BANNER (remove after upload confirmed working) ── */}
+        {diagLog.length > 0 && (
+          <div
+            className="text-xs p-3 mb-4 rounded-xl font-mono leading-relaxed"
+            style={{
+              background: isDark ? "rgba(99,179,237,0.12)" : "rgba(26,54,93,0.08)",
+              border: `1px solid ${isDark ? "rgba(99,179,237,0.3)" : "rgba(26,54,93,0.2)"}`,
+              color: isDark ? "#90cdf4" : "#1a365d",
+            }}
+          >
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-semibold text-[10px] uppercase tracking-wider opacity-60">Upload Debug</span>
+              <button onClick={() => setDiagLog([])} className="opacity-40 text-[10px]">clear</button>
+            </div>
+            {diagLog.map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
           </div>
         )}
 
