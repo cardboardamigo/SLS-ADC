@@ -69,6 +69,8 @@ export interface BonusTier {
   bonusAmount: number;
 }
 
+export type ThemeMode = "light" | "dark";
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -76,6 +78,7 @@ export interface UserProfile {
   phone: string;
   title: string;
   profilePicUrl: string;
+  theme?: ThemeMode;
 }
 
 export interface BonusSubmission {
