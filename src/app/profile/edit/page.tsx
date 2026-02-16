@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { doc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage, withTimeout } from "@/lib/firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 import Image from "next/image";
 
 function compressImage(file: File, maxDim = 800, quality = 0.8): Promise<Blob> {
@@ -67,6 +67,7 @@ export default function EditProfilePage() {
   const [success, setSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -100,13 +101,49 @@ export default function EditProfilePage() {
     setPreviewUrl(localPreview);
 
     setUploading(true);
+    setUploadProgress(0);
     setSaveError(null);
     try {
       // Compress/resize image to drastically reduce upload size on mobile
       const compressed = await compressImage(file);
       const storageRef = ref(storage, `profilePics/${user.uid}`);
-      await withTimeout(uploadBytes(storageRef, compressed), 60000);
-      const url = await withTimeout(getDownloadURL(storageRef), 30000);
+
+      // Use resumable upload — it chunks the data, supports cancellation,
+      // and recovers from transient network drops (unlike uploadBytes which
+      // does a single PUT and fails entirely on any interruption).
+      const url = await new Promise<string>((resolve, reject) => {
+        const task = uploadBytesResumable(storageRef, compressed, {
+          contentType: "image/jpeg",
+        });
+
+        const timeoutId = setTimeout(() => {
+          task.cancel();
+          reject(new Error("Upload timed out"));
+        }, 120_000);
+
+        task.on(
+          "state_changed",
+          (snap) => {
+            setUploadProgress(
+              Math.round((snap.bytesTransferred / snap.totalBytes) * 100),
+            );
+          },
+          (err) => {
+            clearTimeout(timeoutId);
+            reject(err);
+          },
+          async () => {
+            clearTimeout(timeoutId);
+            try {
+              const downloadUrl = await getDownloadURL(task.snapshot.ref);
+              resolve(downloadUrl);
+            } catch (urlErr) {
+              reject(urlErr);
+            }
+          },
+        );
+      });
+
       // Save URL to Firestore — persistent cache ensures this persists
       // locally even on slow connections; don't block on server ACK.
       setDoc(doc(db, "users", user.uid), { profilePicUrl: url }, { merge: true })
@@ -125,10 +162,13 @@ export default function EditProfilePage() {
       const message =
         err instanceof Error && err.message.includes("timed out")
           ? "Photo upload timed out. Please check your connection."
-          : "Failed to upload photo. Please try again.";
+          : err instanceof Error && err.message.includes("canceled")
+            ? "Photo upload was cancelled. Please try again."
+            : "Failed to upload photo. Please try again.";
       setSaveError(message);
     } finally {
       setUploading(false);
+      setUploadProgress(0);
       if (cameraInputRef.current) cameraInputRef.current.value = "";
       if (galleryInputRef.current) galleryInputRef.current.value = "";
     }
@@ -284,8 +324,22 @@ export default function EditProfilePage() {
               </div>
             )}
             {uploading && (
-              <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
-                <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="absolute inset-0 rounded-full bg-black/50 flex flex-col items-center justify-center gap-1">
+                {uploadProgress > 0 && uploadProgress < 100 ? (
+                  <>
+                    <span className="text-white text-xs font-semibold">
+                      {uploadProgress}%
+                    </span>
+                    <div className="w-14 h-1.5 bg-white/30 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-white rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
               </div>
             )}
           </div>
