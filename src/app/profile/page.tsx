@@ -7,7 +7,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import Image from "next/image";
 
 export default function ProfilePage() {
   const { user, profile, loading, signOut } = useAuth();
@@ -62,7 +61,8 @@ export default function ProfilePage() {
           {/* Avatar */}
           <div className="relative mb-4">
             {profile?.profilePicUrl ? (
-              <Image
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
                 src={profile.profilePicUrl}
                 alt="Profile"
                 width={100}

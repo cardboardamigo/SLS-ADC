@@ -1,16 +1,32 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { doc, setDoc } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
-import Image from "next/image";
 
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Race a promise against a timeout. Rejects with a descriptive message. */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms),
+    ),
+  ]);
+}
+
+/**
+ * Client-side image compression via Canvas.
+ * Wrapped with a hard 10 s timeout — canvas.toBlob() silently never fires on
+ * some mobile WebKit builds for certain image sizes/formats.
+ */
 function compressImage(file: File, maxDim = 800, quality = 0.8): Promise<Blob> {
-  return new Promise((resolve, reject) => {
+  const inner = new Promise<Blob>((resolve, reject) => {
     const img = new window.Image();
     const objectUrl = URL.createObjectURL(file);
     img.onload = () => {
@@ -49,7 +65,14 @@ function compressImage(file: File, maxDim = 800, quality = 0.8): Promise<Blob> {
     };
     img.src = objectUrl;
   });
+  return withTimeout(inner, 10_000, "Image processing");
 }
+
+// ── Upload state machine ────────────────────────────────────────────────────
+
+type UploadStatus = "idle" | "compressing" | "uploading" | "error";
+
+// ── Component ───────────────────────────────────────────────────────────────
 
 export default function EditProfilePage() {
   const { user, profile, loading, updateProfileData } = useAuth();
@@ -57,6 +80,8 @@ export default function EditProfilePage() {
   const router = useRouter();
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const unmountedRef = useRef(false);
+  const cancelledRef = useRef(false);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -66,8 +91,8 @@ export default function EditProfilePage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -82,6 +107,33 @@ export default function EditProfilePage() {
     }
   }, [user, loading, router, profile]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      unmountedRef.current = true;
+    };
+  }, []);
+
+  // Revoke preview blob when it changes or unmounts
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const resetInputs = useCallback(() => {
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+    if (galleryInputRef.current) galleryInputRef.current.value = "";
+  }, []);
+
+  const cancelUpload = useCallback(() => {
+    cancelledRef.current = true;
+    setUploadStatus("idle");
+    setPreviewUrl(null);
+    setSaveError(null);
+    resetInputs();
+  }, [resetInputs]);
+
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -90,7 +142,6 @@ export default function EditProfilePage() {
       setSaveError("Please select an image file");
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
       setSaveError("Image must be under 5MB");
       return;
@@ -99,78 +150,68 @@ export default function EditProfilePage() {
     // Show local preview immediately
     const localPreview = URL.createObjectURL(file);
     setPreviewUrl(localPreview);
-
-    setUploading(true);
-    setUploadProgress(0);
+    cancelledRef.current = false;
     setSaveError(null);
+
     try {
-      // Compress/resize image to drastically reduce upload size on mobile
+      // ── Stage 1: Compress (10 s timeout) ──
+      setUploadStatus("compressing");
       const compressed = await compressImage(file);
+      if (cancelledRef.current || unmountedRef.current) return;
+
+      // ── Stage 2: Upload to Firebase Storage (30 s timeout) ──
+      // Using uploadBytes (single PUT) instead of uploadBytesResumable —
+      // compressed images are small (<200 KB) and the resumable protocol
+      // adds complexity that can stall on mobile without firing callbacks.
+      setUploadStatus("uploading");
       const storageRef = ref(storage, `profilePics/${user.uid}`);
+      await withTimeout(
+        uploadBytes(storageRef, compressed, { contentType: "image/jpeg" }),
+        30_000,
+        "Photo upload",
+      );
+      if (cancelledRef.current || unmountedRef.current) return;
 
-      // Use resumable upload — it chunks the data, supports cancellation,
-      // and recovers from transient network drops (unlike uploadBytes which
-      // does a single PUT and fails entirely on any interruption).
-      const url = await new Promise<string>((resolve, reject) => {
-        const task = uploadBytesResumable(storageRef, compressed, {
-          contentType: "image/jpeg",
-        });
+      // ── Stage 3: Get download URL (10 s timeout) ──
+      const downloadUrl = await withTimeout(
+        getDownloadURL(storageRef),
+        10_000,
+        "Retrieving photo URL",
+      );
+      if (cancelledRef.current || unmountedRef.current) return;
 
-        const timeoutId = setTimeout(() => {
-          task.cancel();
-          reject(new Error("Upload timed out"));
-        }, 120_000);
-
-        task.on(
-          "state_changed",
-          (snap) => {
-            setUploadProgress(
-              Math.round((snap.bytesTransferred / snap.totalBytes) * 100),
-            );
-          },
-          (err) => {
-            clearTimeout(timeoutId);
-            reject(err);
-          },
-          async () => {
-            clearTimeout(timeoutId);
-            try {
-              const downloadUrl = await getDownloadURL(task.snapshot.ref);
-              resolve(downloadUrl);
-            } catch (urlErr) {
-              reject(urlErr);
-            }
-          },
-        );
-      });
-
-      // Save URL to Firestore — persistent cache ensures this persists
-      // locally even on slow connections; don't block on server ACK.
-      setDoc(doc(db, "users", user.uid), { profilePicUrl: url }, { merge: true })
+      // Persist URL to Firestore (fire-and-forget — local cache persists it)
+      setDoc(doc(db, "users", user.uid), { profilePicUrl: downloadUrl }, { merge: true })
         .catch((err) => console.error("Background photo URL sync failed:", err));
-      // Optimistically update profile state with the new photo URL
-      updateProfileData({ profilePicUrl: url });
-      // Clean up local preview and use the real URL now
-      URL.revokeObjectURL(localPreview);
+
+      // Optimistically update local state
+      updateProfileData({ profilePicUrl: downloadUrl });
       setPreviewUrl(null);
+      setImgLoaded(false);
+      setUploadStatus("idle");
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
+      if (cancelledRef.current || unmountedRef.current) return;
       console.error("Failed to upload photo:", err);
-      URL.revokeObjectURL(localPreview);
       setPreviewUrl(null);
-      const message =
-        err instanceof Error && err.message.includes("timed out")
-          ? "Photo upload timed out. Please check your connection."
-          : err instanceof Error && err.message.includes("canceled")
-            ? "Photo upload was cancelled. Please try again."
-            : "Failed to upload photo. Please try again.";
+
+      let message: string;
+      if (err instanceof Error && err.message.includes("timed out")) {
+        message = err.message + " Please check your connection and try again.";
+      } else if (err instanceof Error && err.message.includes("Canvas not supported")) {
+        message = "Your browser could not process the image. Try a different photo.";
+      } else {
+        message = "Failed to upload photo. Please try again.";
+      }
+      setUploadStatus("error");
       setSaveError(message);
     } finally {
-      setUploading(false);
-      setUploadProgress(0);
-      if (cameraInputRef.current) cameraInputRef.current.value = "";
-      if (galleryInputRef.current) galleryInputRef.current.value = "";
+      resetInputs();
+      // If we got here via error/cancel, make sure we reset status
+      if (!cancelledRef.current && !unmountedRef.current) {
+        setUploadStatus((prev) => (prev === "compressing" || prev === "uploading" ? "idle" : prev));
+      }
     }
   }
 
@@ -187,12 +228,7 @@ export default function EditProfilePage() {
       phone: phone.trim(),
       title: title.trim(),
     };
-    // Optimistically update local state first so the UI reflects
-    // changes immediately regardless of network speed.
     updateProfileData(profileData);
-    // Write to Firestore — persistent local cache ensures data is saved
-    // locally and will sync to the server when the connection allows.
-    // We don't block navigation on the server acknowledgment.
     setDoc(doc(db, "users", user.uid), profileData, { merge: true })
       .catch((err) => console.error("Background profile sync failed:", err));
 
@@ -238,6 +274,7 @@ export default function EditProfilePage() {
     );
   }
 
+  const isUploading = uploadStatus === "compressing" || uploadStatus === "uploading";
   const displayUrl = previewUrl || profile?.profilePicUrl;
 
   return (
@@ -266,7 +303,7 @@ export default function EditProfilePage() {
             <span className="text-sm font-medium">Back</span>
           </button>
           <h1 className="text-base font-semibold text-white">Edit Profile</h1>
-          <div className="w-14" /> {/* Spacer for centering */}
+          <div className="w-14" />
         </div>
       </div>
 
@@ -301,17 +338,36 @@ export default function EditProfilePage() {
         <div className="flex flex-col items-center mb-6">
           <div className="relative mb-4">
             {displayUrl ? (
-              <Image
-                src={displayUrl}
-                alt="Profile"
-                width={110}
-                height={110}
-                className="w-[110px] h-[110px] rounded-full object-cover"
-                style={{
-                  border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`,
-                }}
-                unoptimized={!!previewUrl}
-              />
+              <>
+                {/* Use native img to bypass Next.js image proxy — Firebase
+                    Storage URLs are already CDN-optimised and the proxy adds
+                    a failure point on mobile (stalls, CORS, token expiry). */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={displayUrl}
+                  alt="Profile"
+                  width={110}
+                  height={110}
+                  className="w-[110px] h-[110px] rounded-full object-cover"
+                  style={{
+                    border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`,
+                    opacity: imgLoaded || previewUrl ? 1 : 0,
+                    transition: "opacity 0.2s ease-in",
+                  }}
+                  onLoad={() => setImgLoaded(true)}
+                  onError={() => setImgLoaded(true)}
+                />
+                {/* Skeleton while the remote image is still loading */}
+                {!imgLoaded && !previewUrl && (
+                  <div
+                    className="absolute inset-0 w-[110px] h-[110px] rounded-full animate-pulse"
+                    style={{
+                      background: isDark ? "#2a4a7f" : "#c5ddf5",
+                      border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`,
+                    }}
+                  />
+                )}
+              </>
             ) : (
               <div
                 className="w-[110px] h-[110px] rounded-full flex items-center justify-center text-white text-4xl font-bold"
@@ -323,64 +379,72 @@ export default function EditProfilePage() {
                 {name ? name[0].toUpperCase() : "?"}
               </div>
             )}
-            {uploading && (
+
+            {/* Upload overlay */}
+            {isUploading && (
               <div className="absolute inset-0 rounded-full bg-black/50 flex flex-col items-center justify-center gap-1">
-                {uploadProgress > 0 && uploadProgress < 100 ? (
-                  <>
-                    <span className="text-white text-xs font-semibold">
-                      {uploadProgress}%
-                    </span>
-                    <div className="w-14 h-1.5 bg-white/30 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-white rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                )}
+                <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span className="text-white text-[10px] font-medium">
+                  {uploadStatus === "compressing" ? "Processing…" : "Uploading…"}
+                </span>
               </div>
             )}
           </div>
 
-          {/* Camera & Gallery Buttons */}
+          {/* Camera, Gallery & Cancel Buttons */}
           <div className="flex gap-3">
-            <button
-              onClick={() => cameraInputRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-medium rounded-full transition-all active:scale-95 disabled:opacity-50"
-              style={{
-                background: isDark ? "#2a4a7f" : "#1a365d",
-                color: "white",
-                boxShadow: isDark
-                  ? "0 2px 8px rgba(0,0,0,0.4)"
-                  : "0 2px 8px rgba(15,42,74,0.25)",
-              }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
-              </svg>
-              Camera
-            </button>
-            <button
-              onClick={() => galleryInputRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-medium rounded-full transition-all active:scale-95 disabled:opacity-50"
-              style={{
-                background: isDark ? "#c0392b" : "var(--crimson)",
-                color: "white",
-                boxShadow: isDark
-                  ? "0 2px 8px rgba(0,0,0,0.4)"
-                  : "0 2px 8px rgba(192,57,43,0.25)",
-              }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-              </svg>
-              Gallery
-            </button>
+            {isUploading ? (
+              <button
+                onClick={cancelUpload}
+                className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-medium rounded-full transition-all active:scale-95"
+                style={{
+                  background: isDark ? "rgba(252,129,129,0.2)" : "rgba(220,38,38,0.1)",
+                  color: isDark ? "#fc8181" : "#dc2626",
+                  border: `1px solid ${isDark ? "rgba(252,129,129,0.3)" : "rgba(220,38,38,0.3)"}`,
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+                Cancel
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-medium rounded-full transition-all active:scale-95"
+                  style={{
+                    background: isDark ? "#2a4a7f" : "#1a365d",
+                    color: "white",
+                    boxShadow: isDark
+                      ? "0 2px 8px rgba(0,0,0,0.4)"
+                      : "0 2px 8px rgba(15,42,74,0.25)",
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
+                  </svg>
+                  Camera
+                </button>
+                <button
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-medium rounded-full transition-all active:scale-95"
+                  style={{
+                    background: isDark ? "#c0392b" : "var(--crimson)",
+                    color: "white",
+                    boxShadow: isDark
+                      ? "0 2px 8px rgba(0,0,0,0.4)"
+                      : "0 2px 8px rgba(192,57,43,0.25)",
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+                  </svg>
+                  Gallery
+                </button>
+              </>
+            )}
           </div>
 
           {/* Hidden file inputs */}
