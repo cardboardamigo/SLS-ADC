@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { doc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  type UploadTask,
+} from "firebase/storage";
+import { getAuth } from "firebase/auth";
 import { db, storage } from "@/lib/firebase";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -22,10 +28,12 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 
 /**
  * Client-side image compression via Canvas.
+ * Uses aggressive settings (600px max, 0.65 quality) to keep compressed output
+ * well under 100 KB so uploads complete quickly even on slow mobile connections.
  * Wrapped with a hard 10 s timeout — canvas.toBlob() silently never fires on
  * some mobile WebKit builds for certain image sizes/formats.
  */
-function compressImage(file: File, maxDim = 800, quality = 0.8): Promise<Blob> {
+function compressImage(file: File, maxDim = 600, quality = 0.65): Promise<Blob> {
   const inner = new Promise<Blob>((resolve, reject) => {
     const img = new window.Image();
     const objectUrl = URL.createObjectURL(file);
@@ -68,9 +76,58 @@ function compressImage(file: File, maxDim = 800, quality = 0.8): Promise<Blob> {
   return withTimeout(inner, 10_000, "Image processing");
 }
 
+/**
+ * Upload a blob to Firebase Storage using the resumable protocol.
+ * Uses an activity-based timeout: the upload is only cancelled when no progress
+ * has been made for `stallMs` (default 20 s). This prevents killing slow-but-
+ * working uploads while still catching genuine stalls.
+ * Returns the UploadTask so the caller can cancel it.
+ */
+function uploadWithProgress(
+  storageRef: ReturnType<typeof ref>,
+  data: Blob,
+  onProgress: (pct: number) => void,
+  onStall: () => void,
+  stallMs = 20_000,
+): { task: UploadTask; promise: Promise<void> } {
+  const task = uploadBytesResumable(storageRef, data, { contentType: "image/jpeg" });
+  let stallTimer: ReturnType<typeof setTimeout>;
+
+  const resetStallTimer = () => {
+    clearTimeout(stallTimer);
+    stallTimer = setTimeout(() => {
+      task.cancel();
+      onStall();
+    }, stallMs);
+  };
+
+  const promise = new Promise<void>((resolve, reject) => {
+    resetStallTimer();
+    task.on(
+      "state_changed",
+      (snap) => {
+        resetStallTimer();
+        const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+        onProgress(pct);
+      },
+      (err) => {
+        clearTimeout(stallTimer);
+        reject(err);
+      },
+      () => {
+        clearTimeout(stallTimer);
+        resolve();
+      },
+    );
+  });
+
+  return { task, promise };
+}
+
 // ── Upload state machine ────────────────────────────────────────────────────
 
 type UploadStatus = "idle" | "compressing" | "uploading" | "error";
+const MAX_RETRIES = 2;
 
 // ── Component ───────────────────────────────────────────────────────────────
 
@@ -82,6 +139,7 @@ export default function EditProfilePage() {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const unmountedRef = useRef(false);
   const cancelledRef = useRef(false);
+  const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -92,7 +150,10 @@ export default function EditProfilePage() {
   const [success, setSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [imgLoaded, setImgLoaded] = useState(false);
+  // ── TEMPORARY DIAGNOSTICS (remove after upload is confirmed working) ──
+  const [diagLog, setDiagLog] = useState<string[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -128,7 +189,12 @@ export default function EditProfilePage() {
 
   const cancelUpload = useCallback(() => {
     cancelledRef.current = true;
+    if (uploadTaskRef.current) {
+      uploadTaskRef.current.cancel();
+      uploadTaskRef.current = null;
+    }
     setUploadStatus("idle");
+    setUploadProgress(0);
     setPreviewUrl(null);
     setSaveError(null);
     resetInputs();
@@ -147,38 +213,107 @@ export default function EditProfilePage() {
       return;
     }
 
+    // ── TEMPORARY DIAGNOSTICS (remove after upload is confirmed working) ──
+    const diag = (msg: string) => setDiagLog((prev) => [...prev, msg]);
+    setDiagLog([]);
+    const bucketName = storage.app.options.storageBucket;
+    const auth = getAuth();
+    const token = await auth.currentUser?.getIdToken(true).catch(() => null);
+    diag(`Bucket: ${bucketName || "⚠ EMPTY"}`);
+    diag(`Auth: ${auth.currentUser?.uid || "⚠ NO USER"}`);
+    diag(`Token: ${token ? "OK" : "⚠ NONE"}`);
+    diag(`File: ${(file.size / 1024).toFixed(0)} KB ${file.type}`);
+
+    if (!bucketName) {
+      setSaveError("Storage is not configured. Please contact support.");
+      diag("⚠ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is empty");
+      return;
+    }
+    if (!token) {
+      setSaveError("Your session has expired. Please log out and log back in.");
+      diag("⚠ No auth token — upload will be rejected");
+      return;
+    }
+    // ── END TEMPORARY DIAGNOSTICS ──
+
     // Show local preview immediately
     const localPreview = URL.createObjectURL(file);
     setPreviewUrl(localPreview);
     cancelledRef.current = false;
     setSaveError(null);
+    setUploadProgress(0);
 
     try {
       // ── Stage 1: Compress (10 s timeout) ──
       setUploadStatus("compressing");
       const compressed = await compressImage(file);
+      diag(`Compressed: ${(compressed.size / 1024).toFixed(0)} KB`);
       if (cancelledRef.current || unmountedRef.current) return;
 
-      // ── Stage 2: Upload to Firebase Storage (30 s timeout) ──
-      // Using uploadBytes (single PUT) instead of uploadBytesResumable —
-      // compressed images are small (<200 KB) and the resumable protocol
-      // adds complexity that can stall on mobile without firing callbacks.
+      // ── Stage 2: Upload to Firebase Storage (resumable, with retry) ──
+      // Uses uploadBytesResumable with an activity-based timeout: the upload
+      // is only cancelled when no progress has been made for 20 s. This lets
+      // slow-but-working uploads finish while still catching genuine stalls.
+      // Retries up to MAX_RETRIES times on failure.
       setUploadStatus("uploading");
       const storageRef = ref(storage, `profilePics/${user.uid}`);
-      await withTimeout(
-        uploadBytes(storageRef, compressed, { contentType: "image/jpeg" }),
-        30_000,
-        "Photo upload",
-      );
+
+      let lastErr: unknown;
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        if (cancelledRef.current || unmountedRef.current) return;
+
+        if (attempt > 0) {
+          // Brief pause before retry
+          setUploadProgress(0);
+          await new Promise((r) => setTimeout(r, 1500));
+          if (cancelledRef.current || unmountedRef.current) return;
+        }
+
+        let stalled = false;
+        diag(`Attempt ${attempt + 1}/${MAX_RETRIES + 1}…`);
+        try {
+          const { task, promise } = uploadWithProgress(
+            storageRef,
+            compressed,
+            (pct) => {
+              if (!cancelledRef.current && !unmountedRef.current) {
+                setUploadProgress(pct);
+              }
+            },
+            () => { stalled = true; },
+            20_000,
+          );
+          uploadTaskRef.current = task;
+          await promise;
+          uploadTaskRef.current = null;
+          lastErr = null;
+          diag(`Upload OK (attempt ${attempt + 1})`);
+          break; // success
+        } catch (err) {
+          uploadTaskRef.current = null;
+          lastErr = err;
+          // If the user cancelled, stop retrying
+          if (cancelledRef.current || unmountedRef.current) return;
+          // If the upload was cancelled due to stall, format message for final error
+          if (stalled) {
+            lastErr = new Error("Upload stalled — no progress for 20s");
+          }
+          diag(`Attempt ${attempt + 1} failed: ${stalled ? "stalled" : (err instanceof Error ? err.message : "unknown")}`);
+        }
+      }
+
+      if (lastErr) throw lastErr;
       if (cancelledRef.current || unmountedRef.current) return;
 
-      // ── Stage 3: Get download URL (10 s timeout) ──
+      // ── Stage 3: Get download URL (15 s timeout) ──
       const downloadUrl = await withTimeout(
         getDownloadURL(storageRef),
-        10_000,
+        15_000,
         "Retrieving photo URL",
       );
       if (cancelledRef.current || unmountedRef.current) return;
+
+      diag("Got URL — done!");
 
       // Persist URL to Firestore (fire-and-forget — local cache persists it)
       setDoc(doc(db, "users", user.uid), { profilePicUrl: downloadUrl }, { merge: true })
@@ -189,6 +324,7 @@ export default function EditProfilePage() {
       setPreviewUrl(null);
       setImgLoaded(false);
       setUploadStatus("idle");
+      setUploadProgress(0);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -197,16 +333,18 @@ export default function EditProfilePage() {
       setPreviewUrl(null);
 
       let message: string;
-      if (err instanceof Error && err.message.includes("timed out")) {
-        message = err.message + " Please check your connection and try again.";
+      if (err instanceof Error && (err.message.includes("timed out") || err.message.includes("stalled"))) {
+        message = "Upload failed — connection too slow or unstable. Please try again.";
       } else if (err instanceof Error && err.message.includes("Canvas not supported")) {
         message = "Your browser could not process the image. Try a different photo.";
       } else {
         message = "Failed to upload photo. Please try again.";
       }
       setUploadStatus("error");
+      setUploadProgress(0);
       setSaveError(message);
     } finally {
+      uploadTaskRef.current = null;
       resetInputs();
       // If we got here via error/cancel, make sure we reset status
       if (!cancelledRef.current && !unmountedRef.current) {
@@ -334,6 +472,26 @@ export default function EditProfilePage() {
           </div>
         )}
 
+        {/* ── TEMPORARY DIAG BANNER (remove after upload confirmed working) ── */}
+        {diagLog.length > 0 && (
+          <div
+            className="text-xs p-3 mb-4 rounded-xl font-mono leading-relaxed"
+            style={{
+              background: isDark ? "rgba(99,179,237,0.12)" : "rgba(26,54,93,0.08)",
+              border: `1px solid ${isDark ? "rgba(99,179,237,0.3)" : "rgba(26,54,93,0.2)"}`,
+              color: isDark ? "#90cdf4" : "#1a365d",
+            }}
+          >
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-semibold text-[10px] uppercase tracking-wider opacity-60">Upload Debug</span>
+              <button onClick={() => setDiagLog([])} className="opacity-40 text-[10px]">clear</button>
+            </div>
+            {diagLog.map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
+          </div>
+        )}
+
         {/* ── Avatar Section ── */}
         <div className="flex flex-col items-center mb-6">
           <div className="relative mb-4">
@@ -385,7 +543,11 @@ export default function EditProfilePage() {
               <div className="absolute inset-0 rounded-full bg-black/50 flex flex-col items-center justify-center gap-1">
                 <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 <span className="text-white text-[10px] font-medium">
-                  {uploadStatus === "compressing" ? "Processing…" : "Uploading…"}
+                  {uploadStatus === "compressing"
+                    ? "Processing…"
+                    : uploadProgress > 0
+                      ? `Uploading ${uploadProgress}%`
+                      : "Uploading…"}
                 </span>
               </div>
             )}
