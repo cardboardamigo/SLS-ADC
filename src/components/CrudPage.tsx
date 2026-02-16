@@ -188,13 +188,29 @@ export default function CrudPage<T extends { id: string; date: string }>({
     (f) => f.disableSubmitWhenEmpty && !fieldValues[f.name]?.trim()
   );
 
+  const inputStyle: React.CSSProperties = {
+    background: "var(--input-bg)",
+    borderColor: "var(--border)",
+    color: "var(--text)",
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 content-below-header">
+    <div
+      className="min-h-screen pb-24 content-below-header"
+      style={{ background: "var(--bg)" }}
+    >
       <Header />
 
       <div className="max-w-2xl mx-auto px-5 py-5">
         {success && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse">
+          <div
+            className="rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse"
+            style={{
+              background: "var(--status-admit-bg)",
+              border: "1px solid var(--status-admit)",
+              color: "var(--status-admit)",
+            }}
+          >
             {editingId
               ? `${config.entityName} updated successfully`
               : `${config.entityName} recorded successfully`}
@@ -202,14 +218,24 @@ export default function CrudPage<T extends { id: string; date: string }>({
         )}
 
         {saveError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-5 text-center text-base font-medium">
+          <div
+            className="rounded-xl p-4 mb-5 text-center text-base font-medium"
+            style={{
+              background: "var(--status-discharge-bg)",
+              border: "1px solid var(--status-discharge)",
+              color: "var(--status-discharge)",
+            }}
+          >
             {saveError}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="card p-6 mb-5">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-semibold text-gray-800">
+            <h2
+              className="text-lg font-semibold"
+              style={{ color: "var(--text)" }}
+            >
               {editingId
                 ? `Edit ${config.entityName}`
                 : `Record ${config.entityName}`}
@@ -218,7 +244,8 @@ export default function CrudPage<T extends { id: string; date: string }>({
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="text-base text-gray-400 hover:text-gray-600"
+                className="text-base"
+                style={{ color: "var(--text-muted)" }}
               >
                 Cancel Edit
               </button>
@@ -226,7 +253,10 @@ export default function CrudPage<T extends { id: string; date: string }>({
           </div>
 
           <div className="mb-5">
-            <label className="block text-base font-medium text-gray-600 mb-2">
+            <label
+              className="block text-base font-medium mb-2"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Date
             </label>
             <input
@@ -234,7 +264,8 @@ export default function CrudPage<T extends { id: string; date: string }>({
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
-              className={`w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
+              className={`w-full px-4 py-4 border rounded-xl focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
+              style={inputStyle}
             />
           </div>
 
@@ -245,7 +276,10 @@ export default function CrudPage<T extends { id: string; date: string }>({
                 idx === config.fields.length - 1 ? "mb-6" : "mb-5"
               }
             >
-              <label className="block text-base font-medium text-gray-600 mb-2">
+              <label
+                className="block text-base font-medium mb-2"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 {field.label}
               </label>
               {field.type === "text" ? (
@@ -255,13 +289,15 @@ export default function CrudPage<T extends { id: string; date: string }>({
                   onChange={(e) => setField(field.name, e.target.value)}
                   required
                   placeholder={field.placeholder}
-                  className={`w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
+                  className={`w-full px-4 py-4 border rounded-xl focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
+                  style={inputStyle}
                 />
               ) : (
                 <select
                   value={fieldValues[field.name] || field.defaultValue}
                   onChange={(e) => setField(field.name, e.target.value)}
-                  className={`w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 ${config.focusRingClass} transition bg-white text-base`}
+                  className={`w-full px-4 py-4 border rounded-xl focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
+                  style={inputStyle}
                 >
                   {field.options?.map((opt) => (
                     <option key={opt} value={opt}>
@@ -290,7 +326,8 @@ export default function CrudPage<T extends { id: string; date: string }>({
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setListDate(subMonths(listDate, 1))}
-              className="p-2 hover:bg-gray-100 rounded-lg transition"
+              className="p-2 rounded-lg transition"
+              style={{ color: "var(--text-secondary)" }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -298,7 +335,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
                 viewBox="0 0 24 24"
                 strokeWidth={2}
                 stroke="currentColor"
-                className="w-6 h-6 text-gray-600"
+                className="w-6 h-6"
               >
                 <path
                   strokeLinecap="round"
@@ -308,10 +345,13 @@ export default function CrudPage<T extends { id: string; date: string }>({
               </svg>
             </button>
             <div className="text-center">
-              <h2 className="text-lg font-semibold text-gray-800">
+              <h2
+                className="text-lg font-semibold"
+                style={{ color: "var(--text)" }}
+              >
                 {format(listDate, "MMMM yyyy")}
               </h2>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                 {items.length}{" "}
                 {items.length === 1
                   ? config.entityNamePlural.replace(/s$/i, "")
@@ -323,8 +363,9 @@ export default function CrudPage<T extends { id: string; date: string }>({
                 !isCurrentMonth && setListDate(addMonths(listDate, 1))
               }
               className={`p-2 rounded-lg transition ${
-                isCurrentMonth ? "opacity-30" : "hover:bg-gray-100"
+                isCurrentMonth ? "opacity-30" : ""
               }`}
+              style={{ color: "var(--text-secondary)" }}
               disabled={isCurrentMonth}
             >
               <svg
@@ -333,7 +374,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
                 viewBox="0 0 24 24"
                 strokeWidth={2}
                 stroke="currentColor"
-                className="w-6 h-6 text-gray-600"
+                className="w-6 h-6"
               >
                 <path
                   strokeLinecap="round"
@@ -346,16 +387,20 @@ export default function CrudPage<T extends { id: string; date: string }>({
 
           {loadError ? (
             <div className="text-center py-6">
-              <p className="text-red-500 text-base mb-3">{loadError}</p>
+              <p className="text-base mb-3" style={{ color: "var(--danger)" }}>{loadError}</p>
               <button
                 onClick={loadItems}
-                className="text-[#38b2ac] text-base font-medium"
+                className="text-base font-medium"
+                style={{ color: "var(--accent)" }}
               >
                 Retry
               </button>
             </div>
           ) : items.length === 0 ? (
-            <p className="text-gray-400 text-base text-center py-6">
+            <p
+              className="text-base text-center py-6"
+              style={{ color: "var(--text-muted)" }}
+            >
               No {config.entityNamePlural.toLowerCase()} this month
             </p>
           ) : (
@@ -363,20 +408,28 @@ export default function CrudPage<T extends { id: string; date: string }>({
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0"
+                  className="flex items-center justify-between py-3 border-b last:border-0"
+                  style={{ borderColor: "var(--border)" }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-medium text-gray-800">
+                    <p
+                      className="text-base font-medium"
+                      style={{ color: "var(--text)" }}
+                    >
                       {config.getItemTitle(item)}
                     </p>
-                    <p className="text-sm text-gray-400">
+                    <p
+                      className="text-sm"
+                      style={{ color: "var(--text-muted)" }}
+                    >
                       {config.getItemSubtitle(item)}
                     </p>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                     <button
                       onClick={() => startEdit(item)}
-                      className="text-[#38b2ac] hover:text-[#319795] p-2"
+                      className="p-2"
+                      style={{ color: "var(--accent)" }}
                       title="Edit"
                     >
                       <svg
@@ -396,7 +449,8 @@ export default function CrudPage<T extends { id: string; date: string }>({
                     </button>
                     <button
                       onClick={() => handleDelete(item.id)}
-                      className="text-red-400 hover:text-red-600 p-2"
+                      className="p-2"
+                      style={{ color: "var(--danger)" }}
                       title="Delete"
                     >
                       <svg

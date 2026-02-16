@@ -12,7 +12,7 @@ import {
   type UploadTask,
 } from "firebase/storage";
 import { getAuth } from "firebase/auth";
-import { db, storage } from "@/lib/firebase";
+import { db, storage, storageAlt, storageAltBucket } from "@/lib/firebase";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -219,7 +219,7 @@ export default function EditProfilePage() {
     const bucketName = storage.app.options.storageBucket;
     const auth = getAuth();
     const token = await auth.currentUser?.getIdToken(true).catch(() => null);
-    diag(`Bucket: ${bucketName || "⚠ EMPTY"}`);
+    diag(`Bucket: ${bucketName || "⚠ EMPTY"}${storageAltBucket ? ` (fallback: ${storageAltBucket})` : ""}`);
     diag(`Auth: ${auth.currentUser?.uid || "⚠ NO USER"}`);
     diag(`Token: ${token ? "OK" : "⚠ NONE"}`);
     diag(`File: ${(file.size / 1024).toFixed(0)} KB ${file.type}`);
@@ -254,11 +254,16 @@ export default function EditProfilePage() {
       // Uses uploadBytesResumable with an activity-based timeout: the upload
       // is only cancelled when no progress has been made for 20 s. This lets
       // slow-but-working uploads finish while still catching genuine stalls.
-      // Retries up to MAX_RETRIES times on failure.
+      // Retries up to MAX_RETRIES times on failure.  If the first attempt
+      // stalls, subsequent retries use the alternate bucket-name format
+      // (appspot.com ↔ firebasestorage.app) in case the configured name is
+      // the legacy format for a newer project or vice-versa.
       setUploadStatus("uploading");
-      const storageRef = ref(storage, `profilePics/${user.uid}`);
+      const primaryPath = `profilePics/${user.uid}`;
 
       let lastErr: unknown;
+      let useAlt = false;
+      let successRef: ReturnType<typeof ref> | null = null;
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         if (cancelledRef.current || unmountedRef.current) return;
 
@@ -269,8 +274,13 @@ export default function EditProfilePage() {
           if (cancelledRef.current || unmountedRef.current) return;
         }
 
+        // After the first stall, switch to the alternate bucket format
+        const storageInstance = (useAlt && storageAlt) ? storageAlt : storage;
+        const storageRef = ref(storageInstance, primaryPath);
+
         let stalled = false;
-        diag(`Attempt ${attempt + 1}/${MAX_RETRIES + 1}…`);
+        const bucketLabel = (useAlt && storageAlt) ? "alt bucket" : "primary bucket";
+        diag(`Attempt ${attempt + 1}/${MAX_RETRIES + 1} (${bucketLabel})…`);
         try {
           const { task, promise } = uploadWithProgress(
             storageRef,
@@ -287,16 +297,21 @@ export default function EditProfilePage() {
           await promise;
           uploadTaskRef.current = null;
           lastErr = null;
-          diag(`Upload OK (attempt ${attempt + 1})`);
+          successRef = storageRef;
+          diag(`Upload OK (attempt ${attempt + 1}, ${bucketLabel})`);
           break; // success
         } catch (err) {
           uploadTaskRef.current = null;
           lastErr = err;
           // If the user cancelled, stop retrying
           if (cancelledRef.current || unmountedRef.current) return;
-          // If the upload was cancelled due to stall, format message for final error
+          // If the upload stalled, try the alternate bucket on the next attempt
           if (stalled) {
             lastErr = new Error("Upload stalled — no progress for 20s");
+            if (!useAlt && storageAlt) {
+              useAlt = true;
+              diag("Switching to alternate bucket format for next attempt…");
+            }
           }
           diag(`Attempt ${attempt + 1} failed: ${stalled ? "stalled" : (err instanceof Error ? err.message : "unknown")}`);
         }
@@ -307,7 +322,7 @@ export default function EditProfilePage() {
 
       // ── Stage 3: Get download URL (15 s timeout) ──
       const downloadUrl = await withTimeout(
-        getDownloadURL(storageRef),
+        getDownloadURL(successRef!),
         15_000,
         "Retrieving photo URL",
       );
