@@ -55,12 +55,14 @@ export default function ProfilePage() {
       await withTimeout(setDoc(doc(db, "users", user.uid), profileData, { merge: true }));
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2000);
-      await refreshProfile();
+      // Refresh profile in background — don't let a failure here
+      // make the save appear to have failed.
+      refreshProfile().catch((err) => console.warn("Profile refresh failed:", err));
     } catch (err: unknown) {
       console.error("Failed to save profile:", err);
       const message = err instanceof Error && err.message.includes("timed out")
         ? "Save timed out. Please check your connection and try again."
-        : "Failed to save. Please try again.";
+        : "Failed to save profile. Please try again.";
       setSaveError(message);
     } finally {
       setSaving(false);
@@ -145,7 +147,7 @@ export default function ProfilePage() {
 
   return (
     <div
-      className="min-h-screen pb-28 pt-20"
+      className="min-h-screen pb-28 content-below-header"
       style={{
         fontFamily: "'Poppins', sans-serif",
         background: "linear-gradient(165deg, #c5ddf5 0%, #d4e6f9 40%, #ddeafa 70%, #e5eefb 100%)",
@@ -153,7 +155,7 @@ export default function ProfilePage() {
     >
       <Header />
 
-      <div className="max-w-[380px] mx-auto px-5 py-8">
+      <div className="max-w-[420px] mx-auto px-7 py-8">
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <Image
@@ -243,7 +245,6 @@ export default function ProfilePage() {
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            capture="user"
             onChange={handlePhotoUpload}
             className="hidden"
           />
@@ -253,7 +254,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Form Card */}
-        <form onSubmit={handleSave} className="px-5 py-7 sm:px-7 mb-6" style={glassCard}>
+        <form onSubmit={handleSave} className="px-7 py-7 mb-6" style={glassCard}>
           <h2
             className="text-lg font-semibold mb-6"
             style={{ color: "var(--navy)" }}

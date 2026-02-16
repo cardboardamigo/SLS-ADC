@@ -143,12 +143,14 @@ export default function CrudPage<T extends { id: string; date: string }>({
           createdBy: user.uid,
           createdAt: new Date().toISOString(),
         });
-        await recordActivity({
+        // Record activity in the background — don't let a failure here
+        // make the save appear failed when the item was actually saved.
+        recordActivity({
           type: config.activityType,
           patientName: config.getActivityPatientName(fieldValues),
           liaisonName: profile?.name ?? (fieldValues.clinicalLiaison || ""),
           userUID: user.uid,
-        });
+        }).catch((err) => console.warn("Activity log failed (non-critical):", err));
       }
       setSuccess(true);
       setDate(format(new Date(), "yyyy-MM-dd"));
@@ -187,7 +189,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 pt-20">
+    <div className="min-h-screen bg-gray-50 pb-24 content-below-header">
       <Header />
 
       <div className="max-w-2xl mx-auto px-5 py-5">
