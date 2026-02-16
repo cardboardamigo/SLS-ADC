@@ -2,7 +2,6 @@ import {
   collection,
   query,
   where,
-  getDocs,
   addDoc,
   deleteDoc,
   doc,
@@ -12,7 +11,7 @@ import {
   updateDoc,
   onSnapshot,
 } from "firebase/firestore";
-import { db, withTimeout } from "./firebase";
+import { db, withTimeout, getDocsResilient } from "./firebase";
 import { Admission, Discharge, RTA, MonthlyADC, ActivityType, ActivityEntry } from "./types";
 import { calculateBonus } from "./bonus";
 import { format, getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
@@ -34,7 +33,7 @@ export async function getAdmissionsForMonth(year: number, month: number): Promis
     orderBy("date", "desc")
   );
 
-  const snapshot = await withTimeout(getDocs(q));
+  const snapshot = await getDocsResilient(q);
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Admission));
 }
 
@@ -63,7 +62,7 @@ export async function getDischargesForMonth(year: number, month: number): Promis
     orderBy("date", "desc")
   );
 
-  const snapshot = await withTimeout(getDocs(q));
+  const snapshot = await getDocsResilient(q);
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Discharge));
 }
 
@@ -92,7 +91,7 @@ export async function getRTAsForMonth(year: number, month: number): Promise<RTA[
     orderBy("date", "desc")
   );
 
-  const snapshot = await withTimeout(getDocs(q));
+  const snapshot = await getDocsResilient(q);
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as RTA));
 }
 
@@ -134,7 +133,7 @@ export async function getActivityForMonth(year: number, month: number): Promise<
     orderBy("timestamp", "desc")
   );
 
-  const snapshot = await withTimeout(getDocs(q));
+  const snapshot = await getDocsResilient(q);
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityEntry));
 }
 
@@ -280,9 +279,9 @@ export async function hasEntriesForDate(dateStr: string): Promise<boolean> {
   const rtaQ = query(collection(db, "rtas"), where("date", "==", dateStr));
 
   const [admSnap, dcSnap, rtaSnap] = await Promise.all([
-    getDocs(admQ),
-    getDocs(dcQ),
-    getDocs(rtaQ),
+    getDocsResilient(admQ),
+    getDocsResilient(dcQ),
+    getDocsResilient(rtaQ),
   ]);
 
   return !admSnap.empty || !dcSnap.empty || !rtaSnap.empty;

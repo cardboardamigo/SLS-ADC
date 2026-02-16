@@ -91,7 +91,7 @@ export default function DashboardPage() {
 
   if (dataError) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-24 pt-20">
+      <div className="min-h-screen bg-gray-50 pb-24 content-below-header">
         <Header />
         <div className="max-w-2xl mx-auto px-5 py-20 text-center">
           <p className="text-red-500 text-base mb-4">{dataError}</p>
@@ -123,7 +123,7 @@ export default function DashboardPage() {
   })();
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 pt-20">
+    <div className="min-h-screen bg-gray-50 pb-24 content-below-header">
       <Header />
 
       <div className="max-w-2xl mx-auto px-5 py-5">

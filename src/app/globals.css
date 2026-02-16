@@ -92,6 +92,11 @@ textarea {
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
+/* Content area below the fixed header — must clear both the header (h-20 = 5rem)
+   and any safe-area inset (notch/dynamic island). */
+.content-below-header {
+  padding-top: calc(5rem + env(safe-area-inset-top, 0px));
+}
 
 /* FAB animation */
 @keyframes fab-item-in {
