@@ -11,6 +11,7 @@ import {
   getDownloadURL,
   type UploadTask,
 } from "firebase/storage";
+import { getAuth } from "firebase/auth";
 import { db, storage } from "@/lib/firebase";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -210,6 +211,27 @@ export default function EditProfilePage() {
       return;
     }
 
+    // ── TEMPORARY DIAGNOSTICS (remove after upload is confirmed working) ──
+    const bucketName = storage.app.options.storageBucket;
+    const auth = getAuth();
+    const token = await auth.currentUser?.getIdToken(true).catch(() => null);
+    console.log("[UPLOAD DIAG] Storage bucket:", bucketName || "⚠ EMPTY");
+    console.log("[UPLOAD DIAG] Auth UID:", auth.currentUser?.uid || "⚠ NOT SIGNED IN");
+    console.log("[UPLOAD DIAG] Auth token:", token ? `${token.slice(0, 20)}… (${token.length} chars)` : "⚠ NO TOKEN");
+    console.log("[UPLOAD DIAG] File:", file.name, `(${(file.size / 1024).toFixed(1)} KB, ${file.type})`);
+
+    if (!bucketName) {
+      setSaveError("Storage is not configured. Please contact support.");
+      console.error("[UPLOAD DIAG] NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is empty — uploads will fail.");
+      return;
+    }
+    if (!token) {
+      setSaveError("Your session has expired. Please log out and log back in.");
+      console.error("[UPLOAD DIAG] No auth token — Firebase Storage will reject the upload.");
+      return;
+    }
+    // ── END TEMPORARY DIAGNOSTICS ──
+
     // Show local preview immediately
     const localPreview = URL.createObjectURL(file);
     setPreviewUrl(localPreview);
@@ -221,6 +243,7 @@ export default function EditProfilePage() {
       // ── Stage 1: Compress (10 s timeout) ──
       setUploadStatus("compressing");
       const compressed = await compressImage(file);
+      console.log("[UPLOAD DIAG] Compressed:", `${(compressed.size / 1024).toFixed(1)} KB`);
       if (cancelledRef.current || unmountedRef.current) return;
 
       // ── Stage 2: Upload to Firebase Storage (resumable, with retry) ──
@@ -243,6 +266,7 @@ export default function EditProfilePage() {
         }
 
         let stalled = false;
+        console.log(`[UPLOAD DIAG] Attempt ${attempt + 1}/${MAX_RETRIES + 1} starting…`);
         try {
           const { task, promise } = uploadWithProgress(
             storageRef,
@@ -259,6 +283,7 @@ export default function EditProfilePage() {
           await promise;
           uploadTaskRef.current = null;
           lastErr = null;
+          console.log("[UPLOAD DIAG] Upload succeeded on attempt", attempt + 1);
           break; // success
         } catch (err) {
           uploadTaskRef.current = null;
@@ -283,6 +308,8 @@ export default function EditProfilePage() {
         "Retrieving photo URL",
       );
       if (cancelledRef.current || unmountedRef.current) return;
+
+      console.log("[UPLOAD DIAG] Download URL obtained:", downloadUrl.slice(0, 80) + "…");
 
       // Persist URL to Firestore (fire-and-forget — local cache persists it)
       setDoc(doc(db, "users", user.uid), { profilePicUrl: downloadUrl }, { merge: true })
