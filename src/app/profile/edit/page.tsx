@@ -9,6 +9,48 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage, withTimeout } from "@/lib/firebase";
 import Image from "next/image";
 
+function compressImage(file: File, maxDim = 800, quality = 0.8): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas not supported"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Failed to compress image"));
+        },
+        "image/jpeg",
+        quality,
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Failed to load image"));
+    };
+    img.src = objectUrl;
+  });
+}
+
 export default function EditProfilePage() {
   const { user, profile, loading, updateProfileData } = useAuth();
   const { theme } = useTheme();
@@ -60,12 +102,15 @@ export default function EditProfilePage() {
     setUploading(true);
     setSaveError(null);
     try {
+      // Compress/resize image to drastically reduce upload size on mobile
+      const compressed = await compressImage(file);
       const storageRef = ref(storage, `profilePics/${user.uid}`);
-      await withTimeout(uploadBytes(storageRef, file), 30000);
-      const url = await withTimeout(getDownloadURL(storageRef));
-      await withTimeout(
-        setDoc(doc(db, "users", user.uid), { profilePicUrl: url }, { merge: true })
-      );
+      await withTimeout(uploadBytes(storageRef, compressed), 60000);
+      const url = await withTimeout(getDownloadURL(storageRef), 30000);
+      // Save URL to Firestore — persistent cache ensures this persists
+      // locally even on slow connections; don't block on server ACK.
+      setDoc(doc(db, "users", user.uid), { profilePicUrl: url }, { merge: true })
+        .catch((err) => console.error("Background photo URL sync failed:", err));
       // Optimistically update profile state with the new photo URL
       updateProfileData({ profilePicUrl: url });
       // Clean up local preview and use the real URL now
@@ -95,35 +140,28 @@ export default function EditProfilePage() {
     setSaving(true);
     setSaveError(null);
 
-    try {
-      const profileData = {
-        uid: user.uid,
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        title: title.trim(),
-      };
-      await withTimeout(
-        setDoc(doc(db, "users", user.uid), profileData, { merge: true })
-      );
-      // Optimistically update profile state — avoids a second network
-      // round-trip that could time out and falsely report a save failure.
-      updateProfileData(profileData);
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        router.push("/profile");
-      }, 1500);
-    } catch (err: unknown) {
-      console.error("Failed to save profile:", err);
-      const message =
-        err instanceof Error && err.message.includes("timed out")
-          ? "Save timed out. Please check your connection and try again."
-          : "Failed to save profile. Please try again.";
-      setSaveError(message);
-    } finally {
-      setSaving(false);
-    }
+    const profileData = {
+      uid: user.uid,
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      title: title.trim(),
+    };
+    // Optimistically update local state first so the UI reflects
+    // changes immediately regardless of network speed.
+    updateProfileData(profileData);
+    // Write to Firestore — persistent local cache ensures data is saved
+    // locally and will sync to the server when the connection allows.
+    // We don't block navigation on the server acknowledgment.
+    setDoc(doc(db, "users", user.uid), profileData, { merge: true })
+      .catch((err) => console.error("Background profile sync failed:", err));
+
+    setSaving(false);
+    setSuccess(true);
+    setTimeout(() => {
+      setSuccess(false);
+      router.push("/profile");
+    }, 1500);
   }
 
   const isDark = theme === "dark";
