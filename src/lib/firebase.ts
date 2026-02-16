@@ -65,21 +65,35 @@ export function withTimeout<T>(promise: Promise<T>, ms: number = 15000): Promise
 }
 
 /**
- * Resilient getDocs: tries the server first, falls back to local cache on
- * failure.  This prevents flaky mobile connections from blocking reads when
- * perfectly good cached data is available.
+ * Resilient getDocs: tries the local persistent cache first for instant
+ * display, then syncs from the server in the background so the cache stays
+ * fresh for next time.  This eliminates the ~15 s delay users see on slow or
+ * flaky mobile connections — the cache resolves in milliseconds because
+ * writes are applied locally before they reach the server.
+ *
+ * On the very first load (cache empty), we fall through to a normal server
+ * fetch so the user still sees real data.
  */
 export async function getDocsResilient<AppModelType = DocumentData, DbModelType extends DocumentData = DocumentData>(q: Query<AppModelType, DbModelType>): Promise<QuerySnapshot<AppModelType, DbModelType>> {
+  // 1. Try local cache first — nearly instant when data exists.
+  try {
+    const cached = await getDocsFromCache(q);
+    if (cached.size > 0) {
+      // Return cached data immediately for fast display.
+      // Fire a background server fetch to keep the cache fresh for next time.
+      withTimeout(firestoreGetDocs(q)).catch(() => {});
+      return cached;
+    }
+  } catch {
+    // Cache unavailable — fall through to server
+  }
+
+  // 2. Cache empty or unavailable (first load, cleared data, etc.) — fetch
+  //    from server with timeout.
   try {
     return await withTimeout(firestoreGetDocs(q));
   } catch {
-    // Network / timeout error — try the local persistent cache
-    try {
-      return await getDocsFromCache(q);
-    } catch {
-      // Cache miss (first load, cleared data, etc.) — throw a helpful error
-      throw new Error("Unable to load data. Please check your connection and try again.");
-    }
+    throw new Error("Unable to load data. Please check your connection and try again.");
   }
 }
 
