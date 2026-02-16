@@ -10,7 +10,7 @@ import { db, storage, withTimeout } from "@/lib/firebase";
 import Image from "next/image";
 
 export default function EditProfilePage() {
-  const { user, profile, loading, refreshProfile } = useAuth();
+  const { user, profile, loading, updateProfileData } = useAuth();
   const { theme } = useTheme();
   const router = useRouter();
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -66,7 +66,8 @@ export default function EditProfilePage() {
       await withTimeout(
         setDoc(doc(db, "users", user.uid), { profilePicUrl: url }, { merge: true })
       );
-      await refreshProfile();
+      // Optimistically update profile state with the new photo URL
+      updateProfileData({ profilePicUrl: url });
       // Clean up local preview and use the real URL now
       URL.revokeObjectURL(localPreview);
       setPreviewUrl(null);
@@ -105,7 +106,9 @@ export default function EditProfilePage() {
       await withTimeout(
         setDoc(doc(db, "users", user.uid), profileData, { merge: true })
       );
-      await refreshProfile();
+      // Optimistically update profile state — avoids a second network
+      // round-trip that could time out and falsely report a save failure.
+      updateProfileData(profileData);
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);

@@ -8,7 +8,7 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, getDocFromCache, setDoc } from "firebase/firestore";
 import { auth, db, withTimeout } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types";
 
@@ -38,6 +38,7 @@ interface AuthContextType {
   signIn: (email: string, pin: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateProfileData: (data: Partial<UserProfile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,7 +50,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function fetchProfile(uid: string) {
     const docRef = doc(db, "users", uid);
-    const snap = await withTimeout(getDoc(docRef));
+    let snap;
+    try {
+      snap = await withTimeout(getDoc(docRef));
+    } catch {
+      // Network / timeout — fall back to local persistent cache
+      try {
+        snap = await getDocFromCache(docRef);
+      } catch {
+        throw new Error("Unable to load profile. Please check your connection.");
+      }
+    }
     if (snap.exists()) {
       setProfile(snap.data() as UserProfile);
     }
@@ -123,8 +134,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function updateProfileData(data: Partial<UserProfile>) {
+    setProfile((prev) => (prev ? { ...prev, ...data } : prev));
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, refreshProfile, updateProfileData }}>
       {children}
     </AuthContext.Provider>
   );
