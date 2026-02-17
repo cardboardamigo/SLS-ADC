@@ -145,10 +145,16 @@ export default function DashboardPage() {
 
   if (loading || dataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "var(--bg)" }}
+      >
         <div className="text-center">
-          <div className="w-10 h-10 border-4 border-[#38b2ac] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-500 text-base">Loading census data...</p>
+          <div
+            className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-3"
+            style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }}
+          />
+          <p className="text-base" style={{ color: "var(--text-muted)" }}>Loading census data...</p>
         </div>
       </div>
     );
@@ -156,13 +162,17 @@ export default function DashboardPage() {
 
   if (dataError) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-24 content-below-header">
+      <div
+        className="min-h-screen pb-24 content-below-header"
+        style={{ background: "var(--bg)" }}
+      >
         <Header />
         <div className="max-w-2xl mx-auto px-5 py-20 text-center">
-          <p className="text-red-500 text-base mb-4">{dataError}</p>
+          <p className="text-base mb-4" style={{ color: "var(--danger)" }}>{dataError}</p>
           <button
             onClick={loadData}
-            className="bg-[#1a365d] text-white px-6 py-3 rounded-xl text-base font-medium"
+            className="text-white px-6 py-3 rounded-xl text-base font-medium"
+            style={{ background: "var(--primary)" }}
           >
             Retry
           </button>
@@ -190,7 +200,11 @@ export default function DashboardPage() {
   })();
 
   return (
-    <div ref={pullRef} className="min-h-screen bg-gray-50 pb-24 content-below-header overflow-auto">
+    <div
+      ref={pullRef}
+      className="min-h-screen pb-24 content-below-header overflow-auto"
+      style={{ background: "var(--bg)" }}
+    >
       <Header />
 
       {/* Pull-to-refresh indicator */}
@@ -200,10 +214,12 @@ export default function DashboardPage() {
           style={{ height: refreshing ? 48 : pullDistance * 0.5 }}
         >
           <div
-            className={`w-6 h-6 border-2 border-[#38b2ac] border-t-transparent rounded-full ${
+            className={`w-6 h-6 border-2 border-t-transparent rounded-full ${
               refreshing ? "animate-spin" : ""
             }`}
             style={{
+              borderColor: "var(--accent)",
+              borderTopColor: "transparent",
               opacity: refreshing ? 1 : pullProgress,
               transform: `rotate(${pullProgress * 360}deg)`,
             }}
@@ -246,8 +262,8 @@ export default function DashboardPage() {
         <div className="card p-5 mb-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-base text-gray-500">Starting Census (Month)</p>
-              <p className="text-2xl font-semibold">{startCensus}</p>
+              <p className="text-base" style={{ color: "var(--text-muted)" }}>Starting Census (Month)</p>
+              <p className="text-2xl font-semibold" style={{ color: "var(--text)" }}>{startCensus}</p>
             </div>
             {!editingCensus ? (
               <button
@@ -255,7 +271,8 @@ export default function DashboardPage() {
                   setCensusInput(String(startCensus));
                   setEditingCensus(true);
                 }}
-                className="text-base text-[#38b2ac] font-medium px-4 py-2"
+                className="text-base font-medium px-4 py-2"
+                style={{ color: "var(--accent)" }}
               >
                 Edit
               </button>
@@ -266,16 +283,23 @@ export default function DashboardPage() {
                   value={censusInput}
                   onChange={(e) => setCensusInput(e.target.value)}
                   className="w-24 px-3 py-2 border rounded-lg text-center text-lg"
+                  style={{
+                    background: "var(--input-bg)",
+                    borderColor: "var(--border)",
+                    color: "var(--text)",
+                  }}
                 />
                 <button
                   onClick={handleSetStartingCensus}
-                  className="text-base bg-[#38b2ac] text-white px-4 py-2 rounded-lg"
+                  className="text-base text-white px-4 py-2 rounded-lg"
+                  style={{ background: "var(--accent)" }}
                 >
                   Save
                 </button>
                 <button
                   onClick={() => setEditingCensus(false)}
-                  className="text-base text-gray-400 px-2 py-2"
+                  className="text-base px-2 py-2"
+                  style={{ color: "var(--text-muted)" }}
                 >
                   Cancel
                 </button>
@@ -287,16 +311,20 @@ export default function DashboardPage() {
         {/* Bonus Hint - subtle */}
         {nextTier && (
           <div
-            className="bg-amber-50 rounded-xl p-4 mb-5 border border-amber-100 cursor-pointer"
+            className="rounded-xl p-4 mb-5 cursor-pointer"
+            style={{
+              background: "var(--status-rta-bg)",
+              border: "1px solid var(--status-rta)",
+            }}
             onClick={() => setShowBonusHint(!showBonusHint)}
           >
-            <p className="text-base text-amber-700">
+            <p className="text-base" style={{ color: "var(--status-rta)" }}>
               {adc >= 20
                 ? `Current tier: ${formatCurrency(calculateBonus(adc).amount)}`
                 : `${(nextTier.adcThreshold - adc).toFixed(1)} ADC to next milestone`}
             </p>
             {showBonusHint && (
-              <p className="text-sm text-amber-600 mt-2">
+              <p className="text-sm mt-2" style={{ color: "var(--status-rta)" }}>
                 Next: {nextTier.adcThreshold} ADC = {formatCurrency(nextTier.bonusAmount)}
               </p>
             )}
@@ -306,17 +334,18 @@ export default function DashboardPage() {
         {/* Recent Activity */}
         <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Recent Activity</h2>
+            <h2 className="text-lg font-semibold" style={{ color: "var(--text)" }}>Recent Activity</h2>
             <button
               onClick={() => router.push("/history")}
-              className="text-base text-[#38b2ac] font-medium"
+              className="text-base font-medium"
+              style={{ color: "var(--accent)" }}
             >
               View All
             </button>
           </div>
 
           {activities.length === 0 ? (
-            <p className="text-gray-400 text-base text-center py-6">
+            <p className="text-base text-center py-6" style={{ color: "var(--text-muted)" }}>
               No entries this month. Tap + to start tracking.
             </p>
           ) : (
@@ -324,32 +353,43 @@ export default function DashboardPage() {
               {activities.slice(0, 10).map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-3 py-3 border-b border-gray-50 last:border-0"
+                  className="flex items-center gap-3 py-3 border-b last:border-0"
+                  style={{ borderColor: "var(--border)" }}
                 >
                   <div
-                    className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                      item.type === "Admit"
-                        ? "bg-emerald-400"
-                        : item.type === "DC"
-                        ? "bg-rose-400"
-                        : "bg-amber-400"
-                    }`}
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{
+                      background:
+                        item.type === "Admit"
+                          ? "var(--status-admit)"
+                          : item.type === "DC"
+                          ? "var(--status-discharge)"
+                          : "var(--status-rta)",
+                    }}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-base text-gray-800 truncate">{item.patientName}</p>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-base truncate" style={{ color: "var(--text)" }}>{item.patientName}</p>
+                    <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                       {format(new Date(item.timestamp), "MMM d, h:mm a")}
                       {item.liaisonName ? ` \u00b7 ${item.liaisonName}` : ""}
                     </p>
                   </div>
                   <span
-                    className={`text-sm font-medium px-3 py-1 rounded-full ${
-                      item.type === "Admit"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : item.type === "DC"
-                        ? "bg-rose-50 text-rose-700"
-                        : "bg-amber-50 text-amber-700"
-                    }`}
+                    className="text-sm font-medium px-3 py-1 rounded-full"
+                    style={{
+                      background:
+                        item.type === "Admit"
+                          ? "var(--status-admit-bg)"
+                          : item.type === "DC"
+                          ? "var(--status-discharge-bg)"
+                          : "var(--status-rta-bg)",
+                      color:
+                        item.type === "Admit"
+                          ? "var(--status-admit)"
+                          : item.type === "DC"
+                          ? "var(--status-discharge)"
+                          : "var(--status-rta)",
+                    }}
                   >
                     {item.type === "Admit" ? "ADM" : item.type === "DC" ? "D/C" : "RTA"}
                   </span>
@@ -375,7 +415,7 @@ export default function DashboardPage() {
             }
           }}
         >
-          <p className="text-sm text-gray-300 select-none">v1.0 - SLS Census Tracker</p>
+          <p className="text-sm select-none" style={{ color: "var(--text-muted)", opacity: 0.5 }}>v1.0 - SLS Census Tracker</p>
         </div>
       </div>
 
@@ -391,36 +431,57 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-3 mb-4">
             <button
               onClick={() => { router.push("/admissions"); setFabOpen(false); }}
-              className="fab-item-enter flex items-center gap-2.5 bg-white rounded-full pl-4 pr-2 py-2 shadow-lg border border-gray-100"
-              style={{ animationDelay: "0ms" }}
+              className="fab-item-enter flex items-center gap-2.5 rounded-full pl-4 pr-2 py-2 shadow-lg"
+              style={{
+                animationDelay: "0ms",
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+              }}
             >
-              <span className="text-sm font-medium text-[#1a365d]">Admit</span>
-              <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-emerald-600">
+              <span className="text-sm font-medium" style={{ color: "var(--primary)" }}>Admit</span>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: "var(--status-admit-bg)" }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5" style={{ color: "var(--status-admit)" }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
                 </svg>
               </div>
             </button>
             <button
               onClick={() => { router.push("/discharges"); setFabOpen(false); }}
-              className="fab-item-enter flex items-center gap-2.5 bg-white rounded-full pl-4 pr-2 py-2 shadow-lg border border-gray-100"
-              style={{ animationDelay: "50ms" }}
+              className="fab-item-enter flex items-center gap-2.5 rounded-full pl-4 pr-2 py-2 shadow-lg"
+              style={{
+                animationDelay: "50ms",
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+              }}
             >
-              <span className="text-sm font-medium text-[#1a365d]">Discharge</span>
-              <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-rose-600">
+              <span className="text-sm font-medium" style={{ color: "var(--primary)" }}>Discharge</span>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: "var(--status-discharge-bg)" }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5" style={{ color: "var(--status-discharge)" }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
                 </svg>
               </div>
             </button>
             <button
               onClick={() => { router.push("/rta"); setFabOpen(false); }}
-              className="fab-item-enter flex items-center gap-2.5 bg-white rounded-full pl-4 pr-2 py-2 shadow-lg border border-gray-100"
-              style={{ animationDelay: "100ms" }}
+              className="fab-item-enter flex items-center gap-2.5 rounded-full pl-4 pr-2 py-2 shadow-lg"
+              style={{
+                animationDelay: "100ms",
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+              }}
             >
-              <span className="text-sm font-medium text-[#1a365d]">RTA</span>
-              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-amber-600">
+              <span className="text-sm font-medium" style={{ color: "var(--primary)" }}>RTA</span>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: "var(--status-rta-bg)" }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5" style={{ color: "var(--status-rta)" }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
                 </svg>
               </div>
@@ -429,8 +490,11 @@ export default function DashboardPage() {
         )}
         <button
           onClick={() => setFabOpen(!fabOpen)}
-          className="w-14 h-14 rounded-full bg-[#1a365d] text-white shadow-lg flex items-center justify-center transition-transform duration-200 hover:shadow-xl active:scale-95"
-          style={{ transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)" }}
+          className="w-14 h-14 rounded-full text-white shadow-lg flex items-center justify-center transition-transform duration-200 hover:shadow-xl active:scale-95"
+          style={{
+            background: "#1a365d",
+            transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)",
+          }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

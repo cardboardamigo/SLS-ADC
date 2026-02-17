@@ -59,6 +59,24 @@ export const db = _db;
 
 export const storage = getStorage(app);
 
+// Create an alternate storage instance with the other bucket-name format.
+// Legacy Firebase projects use PROJECT.appspot.com while newer ones use
+// PROJECT.firebasestorage.app.  If the configured bucket stalls we can
+// retry against the alternate format.
+function altBucketUrl(bucket: string): string | null {
+  if (bucket.endsWith(".appspot.com")) {
+    return `gs://${bucket.replace(".appspot.com", ".firebasestorage.app")}`;
+  }
+  if (bucket.endsWith(".firebasestorage.app")) {
+    return `gs://${bucket.replace(".firebasestorage.app", ".appspot.com")}`;
+  }
+  return null;
+}
+
+const _altUrl = altBucketUrl(firebaseConfig.storageBucket);
+export const storageAlt = _altUrl ? getStorage(app, _altUrl) : null;
+export const storageAltBucket = _altUrl ? _altUrl.replace("gs://", "") : null;
+
 export function withTimeout<T>(promise: Promise<T>, ms: number = 8000): Promise<T> {
   return Promise.race([
     promise,
