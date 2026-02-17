@@ -147,12 +147,12 @@ export default function HistoryPage() {
         style={{ background: "var(--bg)" }}
       >
         <Header />
-        <div className="form-wrapper px-5 py-20 text-center">
+        <div className="form-wrapper py-20 text-center">
           <p className="text-base mb-4" style={{ color: "var(--danger)" }}>{dataError}</p>
           <button
             onClick={loadData}
             className="text-white text-base font-semibold"
-            style={{ background: "var(--primary)", borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+            style={{ background: "var(--primary)", borderRadius: "50px", padding: "14px 28px", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)" }}
           >
             Retry
           </button>
@@ -177,19 +177,19 @@ export default function HistoryPage() {
     >
       <Header />
 
-      <div className="form-wrapper px-5 py-5">
+      <div className="form-wrapper py-8">
         {/* Title + View Toggle */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-12">
           <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>
             {viewMode === "list" ? "Monthly History" : "Census Calendar"}
           </h2>
           <div
-            className="flex rounded-lg overflow-hidden border"
+            className="flex rounded-full overflow-hidden border"
             style={{ borderColor: "var(--border)" }}
           >
             <button
               onClick={() => setViewMode("list")}
-              className="px-3 py-1.5 text-sm font-medium transition-colors"
+              className="px-4 py-2 text-sm font-medium transition-colors"
               style={{
                 background: viewMode === "list" ? "var(--primary)" : "var(--card)",
                 color: viewMode === "list" ? "#fff" : "var(--text-muted)",
@@ -199,7 +199,7 @@ export default function HistoryPage() {
             </button>
             <button
               onClick={() => setViewMode("calendar")}
-              className="px-3 py-1.5 text-sm font-medium transition-colors"
+              className="px-4 py-2 text-sm font-medium transition-colors"
               style={{
                 background: viewMode === "calendar" ? "var(--primary)" : "var(--card)",
                 color: viewMode === "calendar" ? "#fff" : "var(--text-muted)",
@@ -337,11 +337,11 @@ export default function HistoryPage() {
         {viewMode === "calendar" && (
           <>
             {/* Month Navigation */}
-            <div className="card p-4 mb-4">
+            <div className="card p-4 mb-12">
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => setCalendarDate(subMonths(calendarDate, 1))}
-                  className="p-2 rounded-lg transition"
+                  className="p-2 rounded-full transition"
                   style={{ color: "var(--text-secondary)" }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
@@ -353,7 +353,7 @@ export default function HistoryPage() {
                 </h3>
                 <button
                   onClick={() => !isCurrentMonth && setCalendarDate(addMonths(calendarDate, 1))}
-                  className={`p-2 rounded-lg transition ${isCurrentMonth ? "opacity-30" : ""}`}
+                  className={`p-2 rounded-full transition ${isCurrentMonth ? "opacity-30" : ""}`}
                   style={{ color: "var(--text-secondary)" }}
                   disabled={isCurrentMonth}
                 >
@@ -407,7 +407,7 @@ export default function HistoryPage() {
                           key={day.date}
                           onClick={() => hasAct && setSelectedDay(day)}
                           disabled={!hasAct}
-                          className={`aspect-square rounded-lg flex flex-col items-center justify-center relative transition-all ${
+                          className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all ${
                             hasAct ? "cursor-pointer active:scale-95" : "cursor-default"
                           }`}
                           style={{
@@ -523,7 +523,7 @@ export default function HistoryPage() {
                 </div>
                 <button
                   onClick={() => setSelectedDay(null)}
-                  className="p-2 rounded-lg"
+                  className="p-2 rounded-full"
                   style={{ color: "var(--text-muted)" }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
