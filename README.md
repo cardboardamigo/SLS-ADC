@@ -1,24 +1,60 @@
-# Census Tracker (SLS-ADC)
-
-An internal Progressive Web App for clinical liaisons at **Salt Lake Specialty Hospital** to track patient admissions, discharges, and return-to-acute (RTA) cases — and calculate monthly Average Daily Census (ADC) for bonus reporting.
+# Census Tracker: SLS Specialty Hospital
 
 > **Built and managed entirely from an Android phone** by the primary user/owner using Claude Code.
 
 ---
 
-## Project Goal
+## Project Overview
 
-Provide a streamlined, mobile-first tool for the two clinical liaisons at Salt Lake Specialty Hospital to:
-
-- Record daily patient admissions, discharges, and RTAs
-- Calculate and display the Average Daily Census (ADC) averaged over each month
-- Determine bonus tier eligibility based on ADC thresholds
-- Generate PDF bonus submission forms
-- View historical census data by month with a calendar interface
+A specialized tool for tracking the **Average Daily Census (ADC)** at Salt Lake Specialty Hospital. This app allows Clinical Liaisons (Thad and West) to coordinate data in real-time to ensure accurate monthly reporting and bonus calculations.
 
 ---
 
-## Tech Stack
+## Core Logic & Data Points
+
+### 1. Admissions Tracking
+
+- **Hospital Name** — Text input
+- **Patient Type** — Dropdown: `Resp Complex`, `Trach Vent`, `Wound`, `Med Complex`
+- **Clinical Liaison** — Dropdown: `Thad`, `West`
+
+### 2. Discharge & RTA Tracking
+
+**Routine Discharges:**
+- **Type** — `IRF`, `SNF`, `HH`, `ALF`, `Passed`
+- **Patient Name** — Text input
+
+**Return to Acute (RTA):**
+- **Hospital** — `UofU`, `IMC`, `SMH`, `SLR`, `HC-JV`, `HC-JVW`, `HCH`
+- **Reason** — `Sepsis`, `^Resp`, `^Cardiac`, `GI bleed`, `Family Request`, `Sx`, `Procedure`, `Other`
+
+### 3. Calculations & Incentives
+
+**ADC:** Calculated monthly. Previous months' totals are archived and accessible via the history calendar.
+
+```
+dailyCensus = startingCensus + admissions − discharges − RTAs
+ADC = totalCensusDays / daysElapsed
+```
+
+**Bonus Feature (Hidden):** A password-protected or hidden section that calculates monthly bonuses based on the ADC. Seven tiers range from $750 at 20 ADC to $7,000 at 36+ ADC.
+
+| ADC Threshold | Bonus Amount |
+|---------------|-------------|
+| 36+ | $7,000 |
+| 33+ | $5,000 |
+| 30+ | $4,000 |
+| 28+ | $3,000 |
+| 26+ | $2,000 |
+| 23+ | $1,350 |
+| 20+ | $750 |
+| < 20 | $0 |
+
+**Output:** Ability to generate a **Monthly Bonus Submission PDF** including User Name, ADC, Total Bonus, and a Signature/Date line for email submission.
+
+---
+
+## Technical Infrastructure
 
 | Layer | Technology |
 |-------|------------|
@@ -26,52 +62,46 @@ Provide a streamlined, mobile-first tool for the two clinical liaisons at Salt L
 | **UI Library** | React 19 |
 | **Language** | TypeScript 5.9 |
 | **Styling** | Tailwind CSS 4.1 + PostCSS |
-| **Auth** | Firebase Authentication |
-| **Database** | Cloud Firestore |
+| **Frontend Hosting** | Vercel |
+| **Database / Auth** | Firebase (enables real-time syncing between users) |
 | **File Storage** | Firebase Cloud Storage |
 | **PDF Generation** | jsPDF + html2canvas |
 | **Date Utilities** | date-fns |
-| **Hosting** | Vercel |
 | **App Type** | PWA (manifest + service worker) |
+
+**UI Standards:** Follows [`UI_STYLE_GUIDE.md`](./UI_STYLE_GUIDE.md) — Pill-shaped inputs (`border-radius: 50px`), max-width 400px, centered layouts, floating shadows.
+
+**Assets:** Company logo is stored at `/public/SLS-LOGO.png`.
 
 ---
 
-## Core Features
+## Key Workflows
 
-### Census View
+### Real-time Sync
 
-Displays the **Average Daily Census (ADC)** for the current month, calculated from a running daily census:
+Data must be cohesive across all user devices. Firestore `onSnapshot` subscriptions and a cache-first loading strategy ensure both liaisons always see the latest entries. Pull-to-refresh on the dashboard reloads current month data.
 
-```
-dailyCensus = startingCensus + admissions − discharges − RTAs
-ADC = totalCensusDays / daysElapsed
-```
+### Reminders
 
-The dashboard shows the current ADC alongside the corresponding **bonus tier** (7 tiers ranging from $750 at 20 ADC to $7,000 at 36+ ADC). A bonus hint indicates how many additional ADC points are needed to reach the next tier. Pull-to-refresh reloads the latest data.
+Generate a notification if admissions/discharges aren't entered by noon the following day. A `NotificationManager` component polls for activity every 60 seconds.
 
-### Admit / Discharge / RTA Entry
+### Profile
 
-Form-based data entry using the app's signature **pill-shaped UI** (all inputs and buttons use `border-radius: 50px` with floating shadows). Each entry type has its own page built on a shared `CrudPage` component:
+Users can upload profile pictures and manage demographic info:
+- **Name**
+- **Phone**
+- **Email**
+- **Title**
 
-- **Admissions** — Hospital name, patient type (Resp Complex, Trach Vent, Wound, Med Complex), clinical liaison, and date.
-- **Discharges** — Patient name, discharge type (IRF, SNF, HH, ALF, Passed), and date.
-- **RTA** — Hospital, reason (Sepsis, Resp, Cardiac, GI Bleed, Family Request, Sx, Procedure, Other), and date.
+Displayed with a circular floating profile icon at the top of the profile view. A dark mode toggle is available and persists across sessions.
 
-### User Profiles
+### Census Dashboard
 
-Demographic tracking with a **circular floating profile icon** at the top of the profile view. Each user can upload a profile photo (stored in Firebase Cloud Storage), edit their name, email, phone, and title. A dark mode toggle is available and persists across sessions.
+The main dashboard shows the current month's ADC alongside the corresponding bonus tier. A bonus hint indicates how many additional ADC points are needed to reach the next tier. An activity feed shows recent entries from both liaisons in real time.
 
 ### History & Calendar
 
-A monthly calendar view lets liaisons review daily activity — expanding any date to see the admissions, discharges, and RTAs recorded that day. Month-to-month navigation and cross-month day analysis are supported.
-
-### Bonus Tracker
-
-Loads the current month plus the previous six months of ADC data. Displays a bonus tier reference table and can generate a **PDF bonus submission form** pre-populated with the user's profile information.
-
-### Activity Feed
-
-A real-time activity feed on the dashboard shows recent entries from both liaisons, powered by Firestore `onSnapshot` subscriptions with 60-second polling.
+A monthly calendar view lets liaisons review daily activity — expanding any date to see the admissions, discharges, and RTAs recorded that day. Month-to-month navigation and cross-month day analysis are supported. Previous months' ADC totals are archived here.
 
 ---
 
@@ -169,19 +199,6 @@ The app is deployed to **Vercel** and connects to Firebase services in productio
 
 ---
 
-## Design System
-
-The UI follows the conventions documented in [`UI_STYLE_GUIDE.md`](./UI_STYLE_GUIDE.md). Key principles:
-
-- **Pill-shaped elements** — All inputs, selects, and buttons use `border-radius: 50px`
-- **Floating depth** — Subtle `box-shadow` on interactive elements
-- **Mobile-first** — Form wrappers at 90% width on mobile, 60% on desktop
-- **Safe area support** — Handles notched devices via `env(safe-area-inset-*)`
-- **Dark mode** — Full light/dark theme with CSS custom properties
-- **Typography** — Poppins font family with weights 300–700
-
----
-
 ## Current Status
 
-The app is currently functional. The UI is synced with `UI_STYLE_GUIDE.md`. Active development continues with recent work focused on Vercel deployment stability, pill-shape styling consistency, and cache-first data loading for offline resilience.
+The app is currently functional. UI is synced with `UI_STYLE_GUIDE.md`. Active development continues with recent work focused on Vercel deployment stability, pill-shape styling consistency, and cache-first data loading for offline resilience.
