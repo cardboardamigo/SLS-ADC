@@ -201,7 +201,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
     >
       <Header />
 
-      <div className="max-w-2xl mx-auto px-5 py-5">
+      <div className="form-wrapper px-5 py-5">
         {success && (
           <div
             className="rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse"
@@ -264,7 +264,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
-              className={`w-full px-4 py-4 border rounded-xl focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
+              className={`border focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
               style={inputStyle}
             />
           </div>
@@ -289,14 +289,14 @@ export default function CrudPage<T extends { id: string; date: string }>({
                   onChange={(e) => setField(field.name, e.target.value)}
                   required
                   placeholder={field.placeholder}
-                  className={`w-full px-4 py-4 border rounded-xl focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
+                  className={`border focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
                   style={inputStyle}
                 />
               ) : (
                 <select
                   value={fieldValues[field.name] || field.defaultValue}
                   onChange={(e) => setField(field.name, e.target.value)}
-                  className={`w-full px-4 py-4 border rounded-xl focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
+                  className={`border focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
                   style={inputStyle}
                 >
                   {field.options?.map((opt) => (
@@ -312,7 +312,8 @@ export default function CrudPage<T extends { id: string; date: string }>({
           <button
             type="submit"
             disabled={submitting || hasEmptyRequired}
-            className={`w-full ${config.buttonClass} text-white py-4 rounded-xl text-lg font-semibold disabled:opacity-50 transition`}
+            className={`w-full max-w-[400px] mx-auto block ${config.buttonClass} text-white text-lg font-semibold disabled:opacity-50 transition`}
+            style={{ borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
           >
             {submitting
               ? "Saving..."

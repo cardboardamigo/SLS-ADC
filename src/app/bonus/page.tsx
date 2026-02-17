@@ -74,21 +74,22 @@ export default function BonusPage() {
 
   if (loading || dataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-10 h-10 border-4 border-[#38b2ac] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg)" }}>
+        <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }}></div>
       </div>
     );
   }
 
   if (dataError) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-24 content-below-header">
+      <div className="min-h-screen pb-24 content-below-header" style={{ background: "var(--bg)" }}>
         <Header />
-        <div className="max-w-2xl mx-auto px-5 py-20 text-center">
-          <p className="text-red-500 text-base mb-4">{dataError}</p>
+        <div className="form-wrapper px-5 py-20 text-center">
+          <p className="text-base mb-4" style={{ color: "var(--danger)" }}>{dataError}</p>
           <button
             onClick={loadData}
-            className="bg-[#1a365d] text-white px-6 py-3 rounded-xl text-base font-medium"
+            className="text-white text-base font-semibold"
+            style={{ background: "var(--primary)", borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
           >
             Retry
           </button>
@@ -101,12 +102,12 @@ export default function BonusPage() {
   const currentBonus = currentMonth ? calculateBonus(currentMonth.averageDailyCensus) : { tier: null, amount: 0 };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 content-below-header">
+    <div className="min-h-screen pb-24 content-below-header" style={{ background: "var(--bg)" }}>
       <Header />
 
-      <div className="max-w-2xl mx-auto px-5 py-5">
+      <div className="form-wrapper px-5 py-5">
         {pdfError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-5 text-center text-base font-medium">
+          <div className="rounded-xl p-4 mb-5 text-center text-base font-medium" style={{ background: "var(--status-discharge-bg)", border: "1px solid var(--status-discharge)", color: "var(--status-discharge)" }}>
             {pdfError}
           </div>
         )}
@@ -127,7 +128,8 @@ export default function BonusPage() {
             <button
               onClick={() => handleGeneratePDF(currentMonth)}
               disabled={generatingPDF}
-              className="mt-5 bg-white/20 hover:bg-white/30 text-white px-5 py-3 rounded-xl text-base font-medium transition w-full"
+              className="mt-5 bg-white/20 hover:bg-white/30 text-white text-base font-semibold transition w-full max-w-[400px] mx-auto block"
+              style={{ borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
             >
               {generatingPDF ? "Generating..." : "Generate Bonus Submission Form (PDF)"}
             </button>
@@ -136,7 +138,7 @@ export default function BonusPage() {
 
         {/* Tier Chart */}
         <div className="card p-6 mb-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Bonus Tiers</h2>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--text)" }}>Bonus Tiers</h2>
           <div className="space-y-3">
             {[...BONUS_TIERS].reverse().map((tier) => {
               const isActive =
@@ -146,40 +148,47 @@ export default function BonusPage() {
               return (
                 <div
                   key={tier.adcThreshold}
-                  className={`flex items-center justify-between p-4 rounded-xl transition ${
-                    isCurrent
-                      ? "bg-amber-50 border-2 border-amber-300"
+                  className="flex items-center justify-between p-4 rounded-xl transition"
+                  style={{
+                    background: isCurrent
+                      ? "var(--status-rta-bg)"
                       : isActive
-                      ? "bg-green-50 border border-green-200"
-                      : "bg-gray-50 border border-gray-100"
-                  }`}
+                      ? "var(--status-admit-bg)"
+                      : "var(--surface)",
+                    border: isCurrent
+                      ? "2px solid var(--status-rta)"
+                      : isActive
+                      ? "1px solid var(--status-admit)"
+                      : "1px solid var(--border)",
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-4 h-4 rounded-full ${
-                        isCurrent
-                          ? "bg-amber-500"
+                      className="w-4 h-4 rounded-full"
+                      style={{
+                        background: isCurrent
+                          ? "var(--status-rta)"
                           : isActive
-                          ? "bg-green-500"
-                          : "bg-gray-300"
-                      }`}
+                          ? "var(--status-admit)"
+                          : "var(--text-muted)",
+                      }}
                     />
                     <span
-                      className={`text-base font-medium ${
-                        isActive ? "text-gray-800" : "text-gray-400"
-                      }`}
+                      className="text-base font-medium"
+                      style={{ color: isActive ? "var(--text)" : "var(--text-muted)" }}
                     >
                       {tier.adcThreshold} ADC
                     </span>
                   </div>
                   <span
-                    className={`text-base font-semibold ${
-                      isCurrent
-                        ? "text-amber-600"
+                    className="text-base font-semibold"
+                    style={{
+                      color: isCurrent
+                        ? "var(--status-rta)"
                         : isActive
-                        ? "text-green-600"
-                        : "text-gray-400"
-                    }`}
+                        ? "var(--success)"
+                        : "var(--text-muted)",
+                    }}
                   >
                     {formatCurrency(tier.bonusAmount)}
                   </span>
@@ -191,9 +200,9 @@ export default function BonusPage() {
 
         {/* Previous Months */}
         <div className="card p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Previous Months</h2>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--text)" }}>Previous Months</h2>
           {previousMonths.length === 0 ? (
-            <p className="text-gray-400 text-base text-center py-6">No previous data</p>
+            <p className="text-base text-center py-6" style={{ color: "var(--text-muted)" }}>No previous data</p>
           ) : (
             <div className="space-y-3">
               {previousMonths.map((m) => {
@@ -201,17 +210,17 @@ export default function BonusPage() {
                 return (
                   <div
                     key={m.month}
-                    className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0"
+                    className="flex items-center justify-between py-4 border-b last:border-0"
+                    style={{ borderColor: "var(--border)" }}
                   >
                     <div>
-                      <p className="text-base font-medium text-gray-800">{m.monthName}</p>
-                      <p className="text-sm text-gray-400">ADC: {m.averageDailyCensus.toFixed(1)}</p>
+                      <p className="text-base font-medium" style={{ color: "var(--text)" }}>{m.monthName}</p>
+                      <p className="text-sm" style={{ color: "var(--text-muted)" }}>ADC: {m.averageDailyCensus.toFixed(1)}</p>
                     </div>
                     <div className="text-right">
                       <p
-                        className={`text-base font-semibold ${
-                          bonus.amount > 0 ? "text-green-600" : "text-gray-400"
-                        }`}
+                        className="text-base font-semibold"
+                        style={{ color: bonus.amount > 0 ? "var(--success)" : "var(--text-muted)" }}
                       >
                         {formatCurrency(bonus.amount)}
                       </p>

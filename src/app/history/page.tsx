@@ -147,12 +147,12 @@ export default function HistoryPage() {
         style={{ background: "var(--bg)" }}
       >
         <Header />
-        <div className="max-w-2xl mx-auto px-5 py-20 text-center">
+        <div className="form-wrapper px-5 py-20 text-center">
           <p className="text-base mb-4" style={{ color: "var(--danger)" }}>{dataError}</p>
           <button
             onClick={loadData}
-            className="text-white px-6 py-3 rounded-xl text-base font-medium"
-            style={{ background: "var(--primary)" }}
+            className="text-white text-base font-semibold"
+            style={{ background: "var(--primary)", borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
           >
             Retry
           </button>
@@ -177,7 +177,7 @@ export default function HistoryPage() {
     >
       <Header />
 
-      <div className="max-w-2xl mx-auto px-5 py-5">
+      <div className="form-wrapper px-5 py-5">
         {/* Title + View Toggle */}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>
