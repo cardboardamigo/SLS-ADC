@@ -193,12 +193,12 @@ export default function CrudPage<T extends { id: string; date: string }>({
     borderColor: "var(--border)",
     color: "var(--text)",
     borderRadius: "50px",
-    padding: "12px 24px",
-    maxWidth: "400px",
+    padding: "14px 28px",
+    maxWidth: "100%",
     width: "100%",
     margin: "0 auto",
     display: "block",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)",
   };
 
   return (
@@ -208,10 +208,10 @@ export default function CrudPage<T extends { id: string; date: string }>({
     >
       <Header />
 
-      <div className="form-wrapper px-5 py-5">
+      <div className="form-wrapper py-8">
         {success && (
           <div
-            className="rounded-xl p-4 mb-5 text-center text-base font-medium animate-pulse"
+            className="rounded-xl p-4 mb-12 text-center text-base font-medium animate-pulse"
             style={{
               background: "var(--status-admit-bg)",
               border: "1px solid var(--status-admit)",
@@ -226,7 +226,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
 
         {saveError && (
           <div
-            className="rounded-xl p-4 mb-5 text-center text-base font-medium"
+            className="rounded-xl p-4 mb-12 text-center text-base font-medium"
             style={{
               background: "var(--status-discharge-bg)",
               border: "1px solid var(--status-discharge)",
@@ -237,8 +237,8 @@ export default function CrudPage<T extends { id: string; date: string }>({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="card p-6 mb-5">
-          <div className="flex items-center justify-between mb-5">
+        <form onSubmit={handleSubmit} className="card p-8 mb-12">
+          <div className="flex items-center justify-between mb-12">
             <h2
               className="text-lg font-semibold"
               style={{ color: "var(--text)" }}
@@ -259,7 +259,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
             )}
           </div>
 
-          <div className="mb-5">
+          <div className="mb-12">
             <label
               className="block text-base font-medium mb-2"
               style={{ color: "var(--text-secondary)" }}
@@ -271,7 +271,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
-              className={`border focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
+              className="border focus:outline-none transition text-base"
               style={inputStyle}
             />
           </div>
@@ -279,9 +279,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
           {config.fields.map((field, idx) => (
             <div
               key={field.name}
-              className={
-                idx === config.fields.length - 1 ? "mb-6" : "mb-5"
-              }
+              className="mb-12"
             >
               <label
                 className="block text-base font-medium mb-2"
@@ -296,14 +294,14 @@ export default function CrudPage<T extends { id: string; date: string }>({
                   onChange={(e) => setField(field.name, e.target.value)}
                   required
                   placeholder={field.placeholder}
-                  className={`border focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
+                  className="border focus:outline-none transition text-base"
                   style={inputStyle}
                 />
               ) : (
                 <select
                   value={fieldValues[field.name] || field.defaultValue}
                   onChange={(e) => setField(field.name, e.target.value)}
-                  className={`border focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
+                  className="border focus:outline-none transition text-base"
                   style={inputStyle}
                 >
                   {field.options?.map((opt) => (
@@ -319,8 +317,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
           <button
             type="submit"
             disabled={submitting || hasEmptyRequired}
-            className={`w-full max-w-[400px] mx-auto block ${config.buttonClass} text-white text-lg font-semibold disabled:opacity-50 transition`}
-            style={{ borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+            className="btn-hero w-full mx-auto block text-white text-lg font-semibold disabled:opacity-50"
           >
             {submitting
               ? "Saving..."
@@ -330,11 +327,11 @@ export default function CrudPage<T extends { id: string; date: string }>({
           </button>
         </form>
 
-        <div className="card p-6">
+        <div className="card p-8">
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setListDate(subMonths(listDate, 1))}
-              className="p-2 rounded-lg transition"
+              className="p-2 rounded-full transition"
               style={{ color: "var(--text-secondary)" }}
             >
               <svg
@@ -370,7 +367,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
               onClick={() =>
                 !isCurrentMonth && setListDate(addMonths(listDate, 1))
               }
-              className={`p-2 rounded-lg transition ${
+              className={`p-2 rounded-full transition ${
                 isCurrentMonth ? "opacity-30" : ""
               }`}
               style={{ color: "var(--text-secondary)" }}

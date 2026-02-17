@@ -219,7 +219,7 @@ function LoginContent() {
 
             <div className="px-5 py-7 sm:px-7" style={glassCard}>
               {errorBanner}
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-12">
                 <div>
                   <label htmlFor="pin" className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
                     4-Digit PIN
@@ -251,8 +251,8 @@ function LoginContent() {
                         color: "var(--navy)",
                         fontSize: "1.25rem",
                         letterSpacing: "0.5em",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                        maxWidth: "400px",
+                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)",
+                        maxWidth: "100%",
                       }}
                       onFocus={(e) => {
                         e.target.style.borderColor = "var(--crimson)";
@@ -272,13 +272,9 @@ function LoginContent() {
                 <button
                   type="submit"
                   disabled={loading || pin.length !== 4}
-                  className="h-14 w-full max-w-[400px] mx-auto block text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-2"
+                  className="btn-hero h-14 w-full mx-auto block text-white text-sm font-semibold disabled:opacity-50"
                   style={{
-                    borderRadius: "50px",
-                    background: "var(--crimson)",
                     fontFamily: "'Poppins', sans-serif",
-                    padding: "12px 24px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                   }}
                 >
                   {loading ? (

@@ -402,12 +402,12 @@ export default function EditProfilePage() {
     fontFamily: "'Poppins', sans-serif",
     color: "var(--text)",
     fontSize: "14px",
-    maxWidth: "400px",
+    maxWidth: "100%",
     width: "100%",
     margin: "0 auto",
     display: "block",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-    padding: "12px 24px",
+    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)",
+    padding: "14px 28px",
   };
 
   function handleInputFocus(e: React.FocusEvent<HTMLInputElement>) {
@@ -466,7 +466,7 @@ export default function EditProfilePage() {
         </div>
       </div>
 
-      <div className="form-wrapper px-5 py-6">
+      <div className="form-wrapper py-8">
         {/* Status Messages */}
         {success && (
           <div
@@ -514,7 +514,7 @@ export default function EditProfilePage() {
         )}
 
         {/* ── Avatar Section ── */}
-        <div className="flex flex-col items-center mb-6">
+        <div className="flex flex-col items-center mb-12">
           <div className="relative mb-4">
             {displayUrl ? (
               <>
@@ -666,7 +666,7 @@ export default function EditProfilePage() {
             Profile Information
           </h2>
 
-          <div className="space-y-3">
+          <div className="space-y-12">
             <div>
               <label
                 className="block text-xs font-medium mb-1"
@@ -747,13 +747,9 @@ export default function EditProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full max-w-[400px] mx-auto block text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-5"
+            className="btn-hero w-full mx-auto block text-white text-sm font-semibold disabled:opacity-50 mt-12"
             style={{
-              borderRadius: "50px",
-              padding: "12px 24px",
-              background: isDark ? "#c0392b" : "var(--crimson)",
               fontFamily: "'Poppins', sans-serif",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
             }}
           >
             {saving ? "Saving..." : "Save Changes"}

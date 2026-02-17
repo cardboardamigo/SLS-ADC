@@ -84,12 +84,12 @@ export default function BonusPage() {
     return (
       <div className="min-h-screen pb-24 content-below-header" style={{ background: "var(--bg)" }}>
         <Header />
-        <div className="form-wrapper px-5 py-20 text-center">
+        <div className="form-wrapper py-20 text-center">
           <p className="text-base mb-4" style={{ color: "var(--danger)" }}>{dataError}</p>
           <button
             onClick={loadData}
             className="text-white text-base font-semibold"
-            style={{ background: "var(--primary)", borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+            style={{ background: "var(--primary)", borderRadius: "50px", padding: "14px 28px", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)" }}
           >
             Retry
           </button>
@@ -105,15 +105,15 @@ export default function BonusPage() {
     <div className="min-h-screen pb-24 content-below-header" style={{ background: "var(--bg)" }}>
       <Header />
 
-      <div className="form-wrapper px-5 py-5">
+      <div className="form-wrapper py-8">
         {pdfError && (
-          <div className="rounded-xl p-4 mb-5 text-center text-base font-medium" style={{ background: "var(--status-discharge-bg)", border: "1px solid var(--status-discharge)", color: "var(--status-discharge)" }}>
+          <div className="rounded-xl p-4 mb-12 text-center text-base font-medium" style={{ background: "var(--status-discharge-bg)", border: "1px solid var(--status-discharge)", color: "var(--status-discharge)" }}>
             {pdfError}
           </div>
         )}
 
         {/* Current Month Bonus */}
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-8 text-white mb-5 shadow-lg">
+        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-8 text-white mb-12 shadow-lg">
           <p className="text-white/80 text-base mb-1">
             {currentMonth?.monthName} Projected Bonus
           </p>
@@ -129,7 +129,7 @@ export default function BonusPage() {
               onClick={() => handleGeneratePDF(currentMonth)}
               disabled={generatingPDF}
               className="mt-5 bg-white/20 hover:bg-white/30 text-white text-base font-semibold transition w-full max-w-[400px] mx-auto block"
-              style={{ borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+              style={{ borderRadius: "50px", padding: "14px 28px", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)" }}
             >
               {generatingPDF ? "Generating..." : "Generate Bonus Submission Form (PDF)"}
             </button>
@@ -137,7 +137,7 @@ export default function BonusPage() {
         </div>
 
         {/* Tier Chart */}
-        <div className="card p-6 mb-5">
+        <div className="card p-8 mb-12">
           <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--text)" }}>Bonus Tiers</h2>
           <div className="space-y-3">
             {[...BONUS_TIERS].reverse().map((tier) => {
@@ -199,7 +199,7 @@ export default function BonusPage() {
         </div>
 
         {/* Previous Months */}
-        <div className="card p-6">
+        <div className="card p-8">
           <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--text)" }}>Previous Months</h2>
           {previousMonths.length === 0 ? (
             <p className="text-base text-center py-6" style={{ color: "var(--text-muted)" }}>No previous data</p>

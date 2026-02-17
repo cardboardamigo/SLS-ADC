@@ -167,12 +167,12 @@ export default function DashboardPage() {
         style={{ background: "var(--bg)" }}
       >
         <Header />
-        <div className="form-wrapper px-5 py-20 text-center">
+        <div className="form-wrapper py-20 text-center">
           <p className="text-base mb-4" style={{ color: "var(--danger)" }}>{dataError}</p>
           <button
             onClick={loadData}
             className="text-white text-base font-semibold"
-            style={{ background: "var(--primary)", borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+            style={{ background: "var(--primary)", borderRadius: "50px", padding: "14px 28px", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)" }}
           >
             Retry
           </button>
@@ -227,9 +227,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="form-wrapper px-5 py-5">
+      <div className="form-wrapper py-8">
         {/* ADC Hero Card */}
-        <div className="bg-gradient-to-br from-[#1a365d] to-[#2a4a7f] rounded-xl p-8 text-white mb-5 shadow-lg">
+        <div className="bg-gradient-to-br from-[#1a365d] to-[#2a4a7f] rounded-xl p-8 text-white mb-12 shadow-lg">
           <div className="text-center">
             <p className="text-white/70 text-base mb-1">{format(now, "MMMM yyyy")} ADC</p>
             <p className="text-6xl font-bold mb-2">{adc.toFixed(1)}</p>
@@ -259,7 +259,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Starting Census */}
-        <div className="card p-5 mb-5">
+        <div className="card p-8 mb-12">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-base" style={{ color: "var(--text-muted)" }}>Starting Census (Month)</p>
@@ -288,8 +288,8 @@ export default function DashboardPage() {
                     borderColor: "var(--border)",
                     color: "var(--text)",
                     borderRadius: "50px",
-                    padding: "12px 24px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                    padding: "14px 28px",
+                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)",
                     width: "120px",
                     maxWidth: "120px",
                   }}
@@ -297,7 +297,7 @@ export default function DashboardPage() {
                 <button
                   onClick={handleSetStartingCensus}
                   className="text-base text-white font-semibold"
-                  style={{ background: "var(--accent)", borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+                  style={{ background: "var(--accent)", borderRadius: "50px", padding: "14px 28px", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)" }}
                 >
                   Save
                 </button>
@@ -316,7 +316,7 @@ export default function DashboardPage() {
         {/* Bonus Hint - subtle */}
         {nextTier && (
           <div
-            className="rounded-xl p-4 mb-5 cursor-pointer"
+            className="rounded-xl p-4 mb-12 cursor-pointer"
             style={{
               background: "var(--status-rta-bg)",
               border: "1px solid var(--status-rta)",
@@ -337,7 +337,7 @@ export default function DashboardPage() {
         )}
 
         {/* Recent Activity */}
-        <div className="card p-5">
+        <div className="card p-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold" style={{ color: "var(--text)" }}>Recent Activity</h2>
             <button
