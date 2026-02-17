@@ -167,12 +167,12 @@ export default function DashboardPage() {
         style={{ background: "var(--bg)" }}
       >
         <Header />
-        <div className="max-w-2xl mx-auto px-5 py-20 text-center">
+        <div className="form-wrapper px-5 py-20 text-center">
           <p className="text-base mb-4" style={{ color: "var(--danger)" }}>{dataError}</p>
           <button
             onClick={loadData}
-            className="text-white px-6 py-3 rounded-xl text-base font-medium"
-            style={{ background: "var(--primary)" }}
+            className="text-white text-base font-semibold"
+            style={{ background: "var(--primary)", borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
           >
             Retry
           </button>
@@ -227,7 +227,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto px-5 py-5">
+      <div className="form-wrapper px-5 py-5">
         {/* ADC Hero Card */}
         <div className="bg-gradient-to-br from-[#1a365d] to-[#2a4a7f] rounded-xl p-8 text-white mb-5 shadow-lg">
           <div className="text-center">
@@ -282,17 +282,18 @@ export default function DashboardPage() {
                   type="number"
                   value={censusInput}
                   onChange={(e) => setCensusInput(e.target.value)}
-                  className="w-24 px-3 py-2 border rounded-lg text-center text-lg"
+                  className="w-24 border text-center text-lg"
                   style={{
                     background: "var(--input-bg)",
                     borderColor: "var(--border)",
                     color: "var(--text)",
+                    maxWidth: "120px",
                   }}
                 />
                 <button
                   onClick={handleSetStartingCensus}
-                  className="text-base text-white px-4 py-2 rounded-lg"
-                  style={{ background: "var(--accent)" }}
+                  className="text-base text-white font-semibold"
+                  style={{ background: "var(--accent)", borderRadius: "50px", padding: "12px 24px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
                 >
                   Save
                 </button>

@@ -103,7 +103,7 @@ function LoginContent() {
     <div
       className="text-sm p-3.5 mb-5 flex items-start gap-2.5"
       style={{
-        borderRadius: "var(--bubble-radius-input)",
+        borderRadius: "50px",
         background: "rgba(220,38,38,0.08)",
         border: "1px solid rgba(220,38,38,0.3)",
         color: "#b91c1c",
@@ -244,13 +244,15 @@ function LoginContent() {
                       required
                       className="h-14 w-full pl-14 pr-5 text-sm text-center tracking-[0.5em] placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                       style={{
-                        borderRadius: "var(--bubble-radius-input)",
+                        borderRadius: "50px",
                         background: "rgba(255,255,255,0.7)",
                         border: "1.5px solid var(--navy)",
                         fontFamily: "'Poppins', sans-serif",
                         color: "var(--navy)",
                         fontSize: "1.25rem",
                         letterSpacing: "0.5em",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                        maxWidth: "400px",
                       }}
                       onFocus={(e) => {
                         e.target.style.borderColor = "var(--crimson)";
@@ -270,12 +272,13 @@ function LoginContent() {
                 <button
                   type="submit"
                   disabled={loading || pin.length !== 4}
-                  className="h-14 w-full text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-2"
+                  className="h-14 w-full max-w-[400px] mx-auto block text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-2"
                   style={{
-                    borderRadius: "var(--bubble-radius-input)",
+                    borderRadius: "50px",
                     background: "var(--crimson)",
                     fontFamily: "'Poppins', sans-serif",
-                    boxShadow: "0 4px 20px rgba(192,57,43,0.35)",
+                    padding: "12px 24px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                   }}
                 >
                   {loading ? (

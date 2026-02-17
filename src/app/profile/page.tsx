@@ -48,7 +48,7 @@ export default function ProfilePage() {
     >
       <Header />
 
-      <div className="max-w-[420px] mx-auto px-5 py-6">
+      <div className="form-wrapper px-5 py-6">
         {/* ── Profile Card ── */}
         <div
           className="rounded-2xl p-6 mb-5 flex flex-col items-center"
@@ -67,8 +67,8 @@ export default function ProfilePage() {
                 alt="Profile"
                 width={100}
                 height={100}
-                className="w-[100px] h-[100px] rounded-full object-cover"
-                style={{ border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}` }}
+                className="w-[100px] h-[100px] rounded-full object-cover block mx-auto"
+                style={{ border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`, boxShadow: "var(--avatar-shadow)" }}
               />
             ) : (
               <div

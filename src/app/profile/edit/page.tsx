@@ -396,12 +396,15 @@ export default function EditProfilePage() {
   const isDark = theme === "dark";
 
   const inputStyle: React.CSSProperties = {
-    borderRadius: "12px",
+    borderRadius: "50px",
     background: "var(--input-bg)",
     border: "1.5px solid var(--input-border)",
     fontFamily: "'Poppins', sans-serif",
     color: "var(--text)",
     fontSize: "14px",
+    maxWidth: "400px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+    padding: "12px 24px",
   };
 
   function handleInputFocus(e: React.FocusEvent<HTMLInputElement>) {
@@ -460,7 +463,7 @@ export default function EditProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-[420px] mx-auto px-5 py-6">
+      <div className="form-wrapper px-5 py-6">
         {/* Status Messages */}
         {success && (
           <div
@@ -521,11 +524,12 @@ export default function EditProfilePage() {
                   alt="Profile"
                   width={110}
                   height={110}
-                  className="w-[110px] h-[110px] rounded-full object-cover"
+                  className="w-[110px] h-[110px] rounded-full object-cover block mx-auto"
                   style={{
                     border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`,
                     opacity: imgLoaded || previewUrl ? 1 : 0,
                     transition: "opacity 0.2s ease-in",
+                    boxShadow: "var(--avatar-shadow)",
                   }}
                   onLoad={() => setImgLoaded(true)}
                   onError={() => setImgLoaded(true)}
@@ -740,13 +744,13 @@ export default function EditProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="h-12 w-full text-white text-sm font-semibold rounded-xl active:scale-[0.98] disabled:opacity-50 transition-all mt-5"
+            className="w-full max-w-[400px] mx-auto block text-white text-sm font-semibold active:scale-[0.98] disabled:opacity-50 transition-all mt-5"
             style={{
+              borderRadius: "50px",
+              padding: "12px 24px",
               background: isDark ? "#c0392b" : "var(--crimson)",
               fontFamily: "'Poppins', sans-serif",
-              boxShadow: isDark
-                ? "0 2px 12px rgba(0,0,0,0.4)"
-                : "0 2px 12px rgba(192,57,43,0.3)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
             }}
           >
             {saving ? "Saving..." : "Save Changes"}
