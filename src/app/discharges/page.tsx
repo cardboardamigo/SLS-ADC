@@ -11,10 +11,10 @@ const config: CrudPageConfig<Discharge> = {
   entityNamePlural: "discharges",
   fields: [
     { name: "dischargeType", label: "Discharge Type", type: "select", options: DISCHARGE_TYPES, defaultValue: "IRF" },
-    { name: "dischargeName", label: "Patient / Discharge Name", type: "text", defaultValue: "", placeholder: "Enter name", disableSubmitWhenEmpty: true },
+    { name: "dischargeName", label: "Discharge Name", type: "text", defaultValue: "", placeholder: "Enter name", disableSubmitWhenEmpty: true },
   ],
-  focusRingClass: "focus:ring-rose-400",
-  buttonClass: "bg-rose-600 hover:bg-rose-700",
+  focusRingClass: "focus:ring-orange-400",
+  buttonClass: "bg-orange-500 hover:bg-orange-600",
   addItem: addDischarge,
   getItemsForMonth: getDischargesForMonth,
   deleteItem: deleteDischarge,
