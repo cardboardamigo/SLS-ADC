@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Server-side route protection middleware.
+ * Server-side route protection proxy (formerly middleware).
  *
  * Firebase Auth v9+ stores sessions in IndexedDB — it does NOT set cookies.
  * To bridge this gap, the AuthContext sets a lightweight "__session" cookie
- * when the user signs in and clears it on sign-out.  The middleware checks
+ * when the user signs in and clears it on sign-out.  The proxy checks
  * for that cookie so unauthenticated users are redirected before any page
  * JS loads.
  *
@@ -23,7 +23,7 @@ function isPublicPath(pathname: string): boolean {
   );
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublicPath(pathname)) {
