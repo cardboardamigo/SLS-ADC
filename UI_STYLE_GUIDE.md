@@ -6,6 +6,29 @@ This document defines the design tokens and styling conventions for the Census T
 
 ---
 
+## 0. Architecture Principles (The Bones)
+
+These principles are the structural backbone of the Boutique vision. Design tokens are "the skin"; these rules are "the bones."
+
+### Whitespace Is a Feature
+Large gaps between form groups are **mandatory**. The `3rem` (48px) vertical spacing between islands is a hard minimum — more space is acceptable, less is not. This reduces clinical data-entry fatigue and keeps each screen feeling open and breathable.
+
+### The 150-Line Rule
+No single component file should exceed ~150 lines. When a file grows beyond that limit, decompose it:
+
+| Concern | Target Directory |
+|---------|-----------------|
+| Reusable UI primitives (PillInput, BoutiqueCard, HeroButton) | `/components/ui` |
+| Complex feature-level UI (CensusList, ActivityFeed, CalendarGrid) | `/components/features` |
+| Business logic & state management | `/hooks` |
+| Utility math, formatters, image helpers | `/lib` or `/utils` |
+| Page layouts (thin wrappers that plug in hooks + components) | `/app` |
+
+### Pluggable Architecture
+Code must be **data-driven**, not hard-coded for specific hospitals, patient types, or clinical liaisons. Configuration arrays should live in dedicated config files or be fetched from the database so the app can adapt to new facilities without modifying component code.
+
+---
+
 ## 1. Layout & Containers — The "Anti-Cram" Layout
 
 ### Form Wrapper
@@ -257,9 +280,9 @@ These are the existing design tokens defined in `src/app/globals.css` that work 
 | `--card-radius` | `12px` | Card containers |
 | `--bubble-radius` | `40px` | Large buttons, modals |
 | `--bubble-radius-sm` | `28px` | Medium elements |
-| `--bubble-radius-input` | `20px` | Form inputs (override to `50px` per this guide) |
+| `--bubble-radius-input` | `50px` | Form inputs — pill shape |
 
-> **Note:** The pill look defined in this guide (`border-radius: 50px`) supersedes `--bubble-radius-input` for all text inputs, dropdowns, and buttons.
+> **Note:** `--bubble-radius-input` is set to `50px` in `globals.css`, matching the pill specification. The `border-radius: 50px !important` rules in the global stylesheet enforce this across all text inputs, dropdowns, and buttons.
 
 ### Shadow Tokens
 
