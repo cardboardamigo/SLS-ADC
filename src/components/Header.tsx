@@ -3,20 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const pageTitles: Record<string, string> = {
-  "/dashboard": "Census Tracker",
-  "/admissions": "New Admission",
-  "/discharges": "Discharge",
-  "/rta": "Return to Acute",
-  "/history": "Monthly History",
-  "/bonus": "Bonus Tracker",
-  "/profile": "My Profile",
-};
+import { PAGE_TITLES } from "@/lib/config";
 
 export default function Header() {
   const pathname = usePathname();
-  const title = pageTitles[pathname] || "Census Tracker";
+  const title = PAGE_TITLES[pathname] || "Census Tracker";
 
   return (
     <header

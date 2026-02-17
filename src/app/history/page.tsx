@@ -494,7 +494,7 @@ export default function HistoryPage() {
             onClick={() => setSelectedDay(null)}
           />
           <div
-            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl max-h-[80vh] overflow-y-auto"
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-xl max-h-[80vh] overflow-y-auto"
             style={{
               background: "var(--card)",
               boxShadow: "0 -4px 24px rgba(0,0,0,0.15)",

@@ -4,11 +4,7 @@ import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useAuth, friendlyAuthError } from "@/contexts/AuthContext";
-
-const USERS = [
-  { initials: "WB", name: "West Brewer", email: "jbrewer@slspecialty.org" },
-  { initials: "TW", name: "Thad Webb", email: "twebb@slspecialty.org" },
-] as const;
+import { USERS } from "@/lib/config";
 
 type SelectedUser = (typeof USERS)[number] | null;
 
@@ -129,7 +125,7 @@ function LoginContent() {
         {/* ── Select User View ── */}
         {!selectedUser && (
           <>
-            <div className="flex flex-col items-center mb-10">
+            <div className="flex flex-col items-center mb-12">
               <Image
                 src="/CT_LOGO_.png"
                 alt="Census Tracker"
@@ -140,7 +136,7 @@ function LoginContent() {
               />
             </div>
 
-            <div className="w-full flex flex-col items-center gap-6">
+            <div className="w-full flex flex-col items-center gap-12">
               {errorBanner}
 
               <p

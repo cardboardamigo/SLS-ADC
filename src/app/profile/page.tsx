@@ -51,7 +51,7 @@ export default function ProfilePage() {
       <div className="form-wrapper py-8">
         {/* ── Profile Card ── */}
         <div
-          className="rounded-2xl p-8 mb-12 flex flex-col items-center"
+          className="rounded-xl p-8 mb-12 flex flex-col items-center"
           style={{
             background: "var(--card)",
             border: "1px solid var(--border)",
@@ -120,7 +120,7 @@ export default function ProfilePage() {
 
         {/* ── Settings List ── */}
         <div
-          className="rounded-2xl overflow-hidden mb-12"
+          className="rounded-xl overflow-hidden mb-12"
           style={{
             background: "var(--card)",
             border: "1px solid var(--border)",
@@ -205,7 +205,7 @@ export default function ProfilePage() {
 
         {/* ── App Section ── */}
         <div
-          className="rounded-2xl overflow-hidden mb-12"
+          className="rounded-xl overflow-hidden mb-12"
           style={{
             background: "var(--card)",
             border: "1px solid var(--border)",

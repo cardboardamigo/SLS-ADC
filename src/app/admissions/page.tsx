@@ -2,10 +2,8 @@
 
 import CrudPage, { CrudPageConfig } from "@/components/CrudPage";
 import { addAdmission, getAdmissionsForMonth, deleteAdmission, updateAdmission } from "@/lib/census";
-import { Admission, PatientType, ClinicalLiaison } from "@/lib/types";
-
-const PATIENT_TYPES: PatientType[] = ["Resp Complex", "Trach Vent", "Wound", "Med Complex"];
-const CLINICAL_LIAISONS: ClinicalLiaison[] = ["Thad", "West"];
+import { Admission } from "@/lib/types";
+import { PATIENT_TYPES, CLINICAL_LIAISONS } from "@/lib/config";
 
 const config: CrudPageConfig<Admission> = {
   entityName: "Admission",
