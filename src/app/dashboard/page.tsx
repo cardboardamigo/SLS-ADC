@@ -282,11 +282,15 @@ export default function DashboardPage() {
                   type="number"
                   value={censusInput}
                   onChange={(e) => setCensusInput(e.target.value)}
-                  className="w-24 border text-center text-lg"
+                  className="border text-center text-lg"
                   style={{
                     background: "var(--input-bg)",
                     borderColor: "var(--border)",
                     color: "var(--text)",
+                    borderRadius: "50px",
+                    padding: "12px 24px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                    width: "120px",
                     maxWidth: "120px",
                   }}
                 />

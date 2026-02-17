@@ -403,6 +403,9 @@ export default function EditProfilePage() {
     color: "var(--text)",
     fontSize: "14px",
     maxWidth: "400px",
+    width: "100%",
+    margin: "0 auto",
+    display: "block",
     boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
     padding: "12px 24px",
   };
