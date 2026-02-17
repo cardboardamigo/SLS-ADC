@@ -192,6 +192,13 @@ export default function CrudPage<T extends { id: string; date: string }>({
     background: "var(--input-bg)",
     borderColor: "var(--border)",
     color: "var(--text)",
+    borderRadius: "50px",
+    padding: "12px 24px",
+    maxWidth: "400px",
+    width: "100%",
+    margin: "0 auto",
+    display: "block",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
   };
 
   return (
