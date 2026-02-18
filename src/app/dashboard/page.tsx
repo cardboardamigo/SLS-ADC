@@ -111,7 +111,7 @@ export default function DashboardPage() {
         <div className="dashboard-cards">
         {/* ADC Hero Card */}
         <div className="bg-gradient-to-br from-[#1a365d] to-[#2a4a7f] p-8 text-white shadow-lg" style={{ borderRadius: "var(--card-radius)" }}>
-          <div className="text-center">
+          <div className="dashboard-stat-center flex-col text-center">
             <p className="text-white/70 text-base mb-1">{format(now, "MMMM yyyy")} ADC</p>
             <p className="text-6xl font-bold mb-2">{adc.toFixed(1)}</p>
             <p className="text-white/60 text-sm">
@@ -197,7 +197,7 @@ export default function DashboardPage() {
         {/* Bonus Hint - subtle */}
         {nextTier && (
           <div
-            className="p-4 cursor-pointer"
+            className="dashboard-stat-center flex-col p-4 cursor-pointer"
             style={{
               borderRadius: "var(--card-radius)",
               background: "var(--status-rta-bg)",
@@ -205,13 +205,13 @@ export default function DashboardPage() {
             }}
             onClick={() => setShowBonusHint(!showBonusHint)}
           >
-            <p className="text-base" style={{ color: "var(--status-rta)" }}>
+            <p className="text-base text-center" style={{ color: "var(--status-rta)" }}>
               {adc >= 20
                 ? `Current tier: ${formatCurrency(calculateBonus(adc).amount)}`
                 : `${(nextTier.adcThreshold - adc).toFixed(1)} ADC to next milestone`}
             </p>
             {showBonusHint && (
-              <p className="text-sm mt-2" style={{ color: "var(--status-rta)" }}>
+              <p className="text-sm mt-2 text-center" style={{ color: "var(--status-rta)" }}>
                 Next: {nextTier.adcThreshold} ADC = {formatCurrency(nextTier.bonusAmount)}
               </p>
             )}

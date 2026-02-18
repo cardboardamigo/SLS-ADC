@@ -47,6 +47,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
     margin: "0 auto",
     display: "block",
     boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)",
+    textAlign: "center",
   };
 
   return (
