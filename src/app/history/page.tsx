@@ -117,7 +117,7 @@ export default function HistoryPage() {
                 <div key={m.adc.month} className="card overflow-hidden">
                   <button
                     onClick={() => setExpandedMonth(isExpanded ? null : m.adc.month)}
-                    className="w-full p-5 flex items-center justify-between text-left"
+                    className="w-full p-5 flex items-center justify-between text-center"
                   >
                     <div>
                       <p className="text-base font-semibold" style={{ color: "var(--text)" }}>
