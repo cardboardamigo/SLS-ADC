@@ -144,7 +144,7 @@ function LoginContent() {
                 className="text-xs font-semibold uppercase tracking-[0.2em] text-center mb-8"
                 style={{ color: "rgba(15,42,74,0.4)" }}
               >
-                Select your account
+                Choose your account
               </p>
 
               <div className="flex justify-center gap-10">
