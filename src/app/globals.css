@@ -418,9 +418,7 @@ textarea {
 
 /* ── Submit button island ── */
 .btn-island {
-  margin-top: var(--button-island);
-  padding-top: var(--button-island);
-  border-top: 1px solid var(--border);
+  margin-top: 2rem;
 }
 
 /* PWA safe area */
