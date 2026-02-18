@@ -107,9 +107,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="form-wrapper py-8">
+      <div className="form-wrapper py-8 page-breathe">
+        <div className="dashboard-cards">
         {/* ADC Hero Card */}
-        <div className="bg-gradient-to-br from-[#1a365d] to-[#2a4a7f] rounded-xl p-8 text-white mb-12 shadow-lg">
+        <div className="bg-gradient-to-br from-[#1a365d] to-[#2a4a7f] p-8 text-white shadow-lg" style={{ borderRadius: "var(--card-radius)" }}>
           <div className="text-center">
             <p className="text-white/70 text-base mb-1">{format(now, "MMMM yyyy")} ADC</p>
             <p className="text-6xl font-bold mb-2">{adc.toFixed(1)}</p>
@@ -139,7 +140,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Starting Census */}
-        <div className="card p-8 mb-12">
+        <div className="card p-8">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-base" style={{ color: "var(--text-muted)" }}>Starting Census (Month)</p>
@@ -196,8 +197,9 @@ export default function DashboardPage() {
         {/* Bonus Hint - subtle */}
         {nextTier && (
           <div
-            className="rounded-xl p-4 mb-12 cursor-pointer"
+            className="p-4 cursor-pointer"
             style={{
+              borderRadius: "var(--card-radius)",
               background: "var(--status-rta-bg)",
               border: "1px solid var(--status-rta)",
             }}
@@ -283,6 +285,8 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        </div>{/* end dashboard-cards */}
 
         {/* Hidden bonus access - triple tap area */}
         <div className="mt-6 text-center" onClick={handleTripleTap}>
