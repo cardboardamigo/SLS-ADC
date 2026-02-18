@@ -2,19 +2,8 @@
 
 import CrudPage, { CrudPageConfig } from "@/components/CrudPage";
 import { addRTA, getRTAsForMonth, deleteRTA, updateRTA } from "@/lib/census";
-import { RTA, RTAHospital, RTAReason } from "@/lib/types";
-
-const RTA_HOSPITALS: RTAHospital[] = ["UofU", "IMC", "SMH", "SLR", "HC-JV", "HC-JVW", "HCH"];
-const RTA_REASONS: RTAReason[] = [
-  "Sepsis",
-  "^Resp",
-  "^Cardiac",
-  "GI Bleed",
-  "Family Request",
-  "Sx",
-  "Procedure",
-  "Other",
-];
+import { RTA } from "@/lib/types";
+import { RTA_HOSPITALS, RTA_REASONS } from "@/lib/config";
 
 const config: CrudPageConfig<RTA> = {
   entityName: "Return to Acute",

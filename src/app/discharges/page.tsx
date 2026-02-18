@@ -2,9 +2,8 @@
 
 import CrudPage, { CrudPageConfig } from "@/components/CrudPage";
 import { addDischarge, getDischargesForMonth, deleteDischarge, updateDischarge } from "@/lib/census";
-import { Discharge, DischargeType } from "@/lib/types";
-
-const DISCHARGE_TYPES: DischargeType[] = ["IRF", "SNF", "HH", "ALF", "Passed"];
+import { Discharge } from "@/lib/types";
+import { DISCHARGE_TYPES } from "@/lib/config";
 
 const config: CrudPageConfig<Discharge> = {
   entityName: "Discharge",

@@ -1,14 +1,7 @@
 import { BonusTier } from "./types";
+import { BONUS_TIERS } from "./config";
 
-export const BONUS_TIERS: BonusTier[] = [
-  { adcThreshold: 36, bonusAmount: 7000 },
-  { adcThreshold: 33, bonusAmount: 5000 },
-  { adcThreshold: 30, bonusAmount: 4000 },
-  { adcThreshold: 28, bonusAmount: 3000 },
-  { adcThreshold: 26, bonusAmount: 2000 },
-  { adcThreshold: 23, bonusAmount: 1350 },
-  { adcThreshold: 20, bonusAmount: 750 },
-];
+export { BONUS_TIERS };
 
 export function calculateBonus(adc: number): { tier: BonusTier | null; amount: number } {
   for (const tier of BONUS_TIERS) {
