@@ -106,10 +106,10 @@ export default function HistoryPage() {
                 const isExpanded = expandedMonth === m.adc.month;
 
                 return (
-                  <div key={m.adc.month} className="card card-flush overflow-hidden">
+                  <div key={m.adc.month} className="card overflow-hidden">
                     <button
                       onClick={() => setExpandedMonth(isExpanded ? null : m.adc.month)}
-                      className="w-full p-5 flex items-center justify-between text-center"
+                      className="w-full flex items-center justify-between text-center"
                     >
                       <div>
                         <p className="text-base font-semibold" style={{ color: "var(--text)" }}>
@@ -130,7 +130,7 @@ export default function HistoryPage() {
 
                     {isExpanded && (
                       <div
-                        className="px-5 pb-5 border-t"
+                        className="border-t pt-4"
                         style={{ borderColor: "var(--border)" }}
                       >
                         <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 mt-4 mb-4">

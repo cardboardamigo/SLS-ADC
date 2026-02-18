@@ -104,7 +104,7 @@ export default function DashboardPage() {
         <div className="content-container py-8">
           <div className="dashboard-cards">
             {/* ADC Hero Card */}
-            <div className="card-full-width bg-gradient-to-br from-[#1a365d] to-[#2a4a7f] p-8 text-white shadow-lg" style={{ borderRadius: "var(--card-radius)" }}>
+            <div className="card card-full-width bg-gradient-to-br from-[#1a365d] to-[#2a4a7f] text-white shadow-lg" style={{ border: "none" }}>
               <div className="dashboard-stat-center flex-col text-center">
                 <p className="text-white/70 text-base mb-1">{format(now, "MMMM yyyy")} ADC</p>
                 <p className="text-6xl font-bold mb-2">{adc.toFixed(1)}</p>
@@ -186,9 +186,8 @@ export default function DashboardPage() {
             {/* Bonus Hint */}
             {nextTier && (
               <div
-                className="dashboard-stat-center flex-col p-4 cursor-pointer"
+                className="card dashboard-stat-center flex-col cursor-pointer"
                 style={{
-                  borderRadius: "var(--card-radius)",
                   background: "var(--status-rta-bg)",
                   border: "1px solid var(--status-rta)",
                 }}

@@ -121,9 +121,9 @@ export default function ProfilePage() {
             {/* Right: Settings */}
             <div>
               {/* ── Settings List ── */}
-              <div className="card card-flush overflow-hidden mb-12">
+              <div className="card overflow-hidden mb-12">
                 <h3
-                  className="text-xs font-semibold uppercase tracking-wider px-5 pt-4 pb-2"
+                  className="text-xs font-semibold uppercase tracking-wider pb-2"
                   style={{ color: "var(--text-muted)" }}
                 >
                   Account
@@ -132,7 +132,7 @@ export default function ProfilePage() {
                 {/* Edit Profile */}
                 <button
                   onClick={() => router.push("/profile/edit")}
-                  className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
+                  className="w-full flex items-center gap-4 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
                   style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
                 >
                   <div
@@ -153,12 +153,12 @@ export default function ProfilePage() {
                   </svg>
                 </button>
 
-                <div className="mx-5" style={{ borderBottom: "1px solid var(--border)" }} />
+                <div style={{ borderBottom: "1px solid var(--border)" }} />
 
                 {/* Dark Mode Toggle */}
                 <button
                   onClick={toggleTheme}
-                  className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
+                  className="w-full flex items-center gap-4 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
                   style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
                 >
                   <div
@@ -199,9 +199,9 @@ export default function ProfilePage() {
               </div>
 
               {/* ── App Section ── */}
-              <div className="card card-flush overflow-hidden mb-12">
+              <div className="card overflow-hidden mb-12">
                 <h3
-                  className="text-xs font-semibold uppercase tracking-wider px-5 pt-4 pb-2"
+                  className="text-xs font-semibold uppercase tracking-wider pb-2"
                   style={{ color: "var(--text-muted)" }}
                 >
                   App
@@ -212,7 +212,7 @@ export default function ProfilePage() {
                   <>
                     <button
                       onClick={promptInstall}
-                      className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
+                      className="w-full flex items-center gap-4 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
                       style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
                     >
                       <div
@@ -232,13 +232,13 @@ export default function ProfilePage() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
                       </svg>
                     </button>
-                    <div className="mx-5" style={{ borderBottom: "1px solid var(--border)" }} />
+                    <div style={{ borderBottom: "1px solid var(--border)" }} />
                   </>
                 )}
 
                 {isInstalled && (
                   <>
-                    <div className="flex items-center gap-4 px-5 py-3.5 min-h-[48px]">
+                    <div className="flex items-center gap-4 py-3.5 min-h-[48px]">
                       <div
                         className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                         style={{
@@ -253,14 +253,14 @@ export default function ProfilePage() {
                         App Installed
                       </span>
                     </div>
-                    <div className="mx-5" style={{ borderBottom: "1px solid var(--border)" }} />
+                    <div style={{ borderBottom: "1px solid var(--border)" }} />
                   </>
                 )}
 
                 {/* Sign Out */}
                 <button
                   onClick={handleSignOut}
-                  className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
+                  className="w-full flex items-center gap-4 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
                   style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
                 >
                   <div
