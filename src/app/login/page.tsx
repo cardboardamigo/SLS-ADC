@@ -146,7 +146,7 @@ function LoginContent() {
                 Select your account
               </p>
 
-              <div className="flex gap-8">
+              <div className="flex gap-12">
                 {USERS.map((u) => (
                   <button
                     key={u.email}
