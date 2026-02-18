@@ -1,20 +1,16 @@
-export type PatientType = "Resp Complex" | "Trach Vent" | "Wound" | "Med Complex";
+import {
+  PATIENT_TYPES,
+  CLINICAL_LIAISONS,
+  DISCHARGE_TYPES,
+  RTA_HOSPITALS,
+  RTA_REASONS,
+} from "./config";
 
-export type ClinicalLiaison = "Thad" | "West";
-
-export type DischargeType = "IRF" | "SNF" | "HH" | "ALF" | "Passed";
-
-export type RTAHospital = "UofU" | "IMC" | "SMH" | "SLR" | "HC-JV" | "HC-JVW" | "HCH";
-
-export type RTAReason =
-  | "Sepsis"
-  | "^Resp"
-  | "^Cardiac"
-  | "GI Bleed"
-  | "Family Request"
-  | "Sx"
-  | "Procedure"
-  | "Other";
+export type PatientType = (typeof PATIENT_TYPES)[number];
+export type ClinicalLiaison = (typeof CLINICAL_LIAISONS)[number];
+export type DischargeType = (typeof DISCHARGE_TYPES)[number];
+export type RTAHospital = (typeof RTA_HOSPITALS)[number];
+export type RTAReason = (typeof RTA_REASONS)[number];
 
 export interface Admission {
   id: string;

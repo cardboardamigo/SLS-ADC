@@ -1,24 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 
 export default function ProfilePage() {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuthGuard();
   const { theme, toggleTheme } = useTheme();
   const { isInstallable, isInstalled, promptInstall } = useInstallPrompt();
   const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
-    }
-  }, [user, loading, router]);
 
   async function handleSignOut() {
     await signOut();
@@ -51,7 +44,7 @@ export default function ProfilePage() {
       <div className="form-wrapper py-8">
         {/* ── Profile Card ── */}
         <div
-          className="rounded-2xl p-8 mb-12 flex flex-col items-center"
+          className="rounded-xl p-8 mb-12 flex flex-col items-center"
           style={{
             background: "var(--card)",
             border: "1px solid var(--border)",
@@ -120,7 +113,7 @@ export default function ProfilePage() {
 
         {/* ── Settings List ── */}
         <div
-          className="rounded-2xl overflow-hidden mb-12"
+          className="rounded-xl overflow-hidden mb-12"
           style={{
             background: "var(--card)",
             border: "1px solid var(--border)",
@@ -205,7 +198,7 @@ export default function ProfilePage() {
 
         {/* ── App Section ── */}
         <div
-          className="rounded-2xl overflow-hidden mb-12"
+          className="rounded-xl overflow-hidden mb-12"
           style={{
             background: "var(--card)",
             border: "1px solid var(--border)",
