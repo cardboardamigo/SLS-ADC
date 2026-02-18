@@ -39,11 +39,11 @@ html.light {
   --bubble-radius-input: 50px;
 
   /* Card tokens – airy, clearly separated islands */
-  --card-radius: 16px;
-  --card-shadow: 0 2px 4px rgba(0,0,0,0.03), 0 6px 20px rgba(0,0,0,0.06);
+  --card-radius: 12px;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
 
   /* Spacing tokens – anti-anxiety breathing room */
-  --group-gap: 2rem;        /* 32px between input groups */
+  --group-gap: 3rem;        /* 48px between input groups */
   --label-gap: 0.75rem;     /* 12px label-to-input */
   --input-gap: 1.5rem;      /* 24px input-to-input */
   --section-gap: 1.25rem;   /* 20px between dashboard cards */
@@ -96,11 +96,11 @@ html.dark {
   --bubble-radius-input: 50px;
 
   /* Card tokens – airy, clearly separated islands */
-  --card-radius: 16px;
-  --card-shadow: 0 2px 4px rgba(0,0,0,0.15), 0 6px 20px rgba(0,0,0,0.25);
+  --card-radius: 12px;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.20);
 
   /* Spacing tokens – anti-anxiety breathing room */
-  --group-gap: 2rem;
+  --group-gap: 3rem;
   --label-gap: 0.75rem;
   --input-gap: 1.5rem;
   --section-gap: 1.25rem;
