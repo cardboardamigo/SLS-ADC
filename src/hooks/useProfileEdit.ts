@@ -11,8 +11,8 @@ import {
   type UploadTask,
 } from "firebase/storage";
 import { getAuth } from "firebase/auth";
-import { db, storage, storageAlt, storageAltBucket } from "@/lib/firebase";
-import { withTimeout, compressImage, uploadWithProgress } from "@/lib/imageUtils";
+import { db, storage, storageAlt, storageAltBucket, withTimeout } from "@/lib/firebase";
+import { compressImage, uploadWithProgress } from "@/lib/imageUtils";
 
 // ── Upload state machine ────────────────────────────────────────────────────
 
@@ -42,8 +42,6 @@ export function useProfileEdit() {
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imgLoaded, setImgLoaded] = useState(false);
-  // ── TEMPORARY DIAGNOSTICS (remove after upload is confirmed working) ──
-  const [diagLog, setDiagLog] = useState<string[]>([]);
 
   // ── Populate form from profile ──────────────────────────────────────────
 
@@ -103,28 +101,19 @@ export function useProfileEdit() {
       return;
     }
 
-    // ── TEMPORARY DIAGNOSTICS (remove after upload is confirmed working) ──
-    const diag = (msg: string) => setDiagLog((prev) => [...prev, msg]);
-    setDiagLog([]);
+    // Validate storage config and auth before attempting upload
     const bucketName = storage.app.options.storageBucket;
     const auth = getAuth();
     const token = await auth.currentUser?.getIdToken(true).catch(() => null);
-    diag(`Bucket: ${bucketName || "\u26a0 EMPTY"}${storageAltBucket ? ` (fallback: ${storageAltBucket})` : ""}`);
-    diag(`Auth: ${auth.currentUser?.uid || "\u26a0 NO USER"}`);
-    diag(`Token: ${token ? "OK" : "\u26a0 NONE"}`);
-    diag(`File: ${(file.size / 1024).toFixed(0)} KB ${file.type}`);
 
     if (!bucketName) {
       setSaveError("Storage is not configured. Please contact support.");
-      diag("\u26a0 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is empty");
       return;
     }
     if (!token) {
       setSaveError("Your session has expired. Please log out and log back in.");
-      diag("\u26a0 No auth token \u2014 upload will be rejected");
       return;
     }
-    // ── END TEMPORARY DIAGNOSTICS ──
 
     // Show local preview immediately
     const localPreview = URL.createObjectURL(file);
@@ -137,7 +126,6 @@ export function useProfileEdit() {
       // ── Stage 1: Compress (10 s timeout) ──
       setUploadStatus("compressing");
       const compressed = await compressImage(file);
-      diag(`Compressed: ${(compressed.size / 1024).toFixed(0)} KB`);
       if (cancelledRef.current || unmountedRef.current) return;
 
       // ── Stage 2: Upload to Firebase Storage ──
@@ -160,8 +148,6 @@ export function useProfileEdit() {
         const storageRef = ref(storageInstance, primaryPath);
 
         let stalled = false;
-        const bucketLabel = (useAlt && storageAlt) ? "alt bucket" : "primary bucket";
-        diag(`Attempt ${attempt + 1}/${MAX_RETRIES + 1} (${bucketLabel})\u2026`);
         try {
           const { task, promise } = uploadWithProgress(
             storageRef,
@@ -179,7 +165,6 @@ export function useProfileEdit() {
           uploadTaskRef.current = null;
           lastErr = null;
           successRef = storageRef;
-          diag(`Upload OK (attempt ${attempt + 1}, ${bucketLabel})`);
           break;
         } catch (err) {
           uploadTaskRef.current = null;
@@ -189,10 +174,8 @@ export function useProfileEdit() {
             lastErr = new Error("Upload stalled \u2014 no progress for 20s");
             if (!useAlt && storageAlt) {
               useAlt = true;
-              diag("Switching to alternate bucket format for next attempt\u2026");
             }
           }
-          diag(`Attempt ${attempt + 1} failed: ${stalled ? "stalled" : (err instanceof Error ? err.message : "unknown")}`);
         }
       }
 
@@ -206,8 +189,6 @@ export function useProfileEdit() {
         "Retrieving photo URL",
       );
       if (cancelledRef.current || unmountedRef.current) return;
-
-      diag("Got URL \u2014 done!");
 
       setDoc(doc(db, "users", user.uid), { profilePicUrl: downloadUrl }, { merge: true })
         .catch((err) => console.error("Background photo URL sync failed:", err));
@@ -303,8 +284,6 @@ export function useProfileEdit() {
     setImgLoaded,
     isUploading,
     displayUrl,
-    diagLog,
-    setDiagLog,
     handlePhotoUpload,
     cancelUpload,
     // Form action

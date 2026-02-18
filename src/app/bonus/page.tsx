@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import { calculateMonthlyADC } from "@/lib/census";
@@ -12,8 +11,7 @@ import { subMonths } from "date-fns";
 import { generateBonusPDF } from "@/lib/pdfGenerator";
 
 export default function BonusPage() {
-  const { user, profile, loading } = useAuth();
-  const router = useRouter();
+  const { user, profile, loading } = useAuthGuard();
   const [currentMonth, setCurrentMonth] = useState<MonthlyADC | null>(null);
   const [previousMonths, setPreviousMonths] = useState<MonthlyADC[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -44,12 +42,8 @@ export default function BonusPage() {
   }, []);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
-      return;
-    }
     if (user) loadData();
-  }, [user, loading, router, loadData]);
+  }, [user, loadData]);
 
   async function handleGeneratePDF(monthData: MonthlyADC) {
     if (!profile) return;

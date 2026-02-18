@@ -3,16 +3,7 @@ import {
   uploadBytesResumable,
   type UploadTask,
 } from "firebase/storage";
-
-/** Race a promise against a timeout. Rejects with a descriptive message. */
-export function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms),
-    ),
-  ]);
-}
+import { withTimeout } from "./firebase";
 
 /**
  * Client-side image compression via Canvas.

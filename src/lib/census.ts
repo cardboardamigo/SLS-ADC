@@ -120,22 +120,6 @@ export async function recordActivity(data: {
   return ref.id;
 }
 
-// --- Fetch Activity for Month ---
-export async function getActivityForMonth(year: number, month: number): Promise<ActivityEntry[]> {
-  const startTimestamp = new Date(year, month - 1, 1).toISOString();
-  const endTimestamp = new Date(year, month, 1).toISOString();
-
-  const q = query(
-    collection(db, "activity"),
-    where("timestamp", ">=", startTimestamp),
-    where("timestamp", "<", endTimestamp),
-    orderBy("timestamp", "desc")
-  );
-
-  const snapshot = await getDocsResilient(q);
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityEntry));
-}
-
 // --- Real-time Activity Subscription ---
 export function subscribeToActivityForMonth(
   year: number,
@@ -196,15 +180,6 @@ export async function setStartingCensus(
 ): Promise<void> {
   const docRef = doc(db, "censusConfig", `${year}-${String(month).padStart(2, "0")}`);
   await withTimeout(setDoc(docRef, { startingCensus: census }, { merge: true }));
-}
-
-export async function setEndingCensus(
-  year: number,
-  month: number,
-  census: number
-): Promise<void> {
-  const docRef = doc(db, "censusConfig", `${year}-${String(month).padStart(2, "0")}`);
-  await withTimeout(setDoc(docRef, { endingCensus: census }, { merge: true }));
 }
 
 function computeADC(
