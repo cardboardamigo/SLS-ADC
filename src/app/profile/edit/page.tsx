@@ -1,289 +1,37 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
-import { doc, setDoc } from "firebase/firestore";
-import {
-  ref,
-  getDownloadURL,
-  type UploadTask,
-} from "firebase/storage";
-import { getAuth } from "firebase/auth";
-import { db, storage, storageAlt, storageAltBucket } from "@/lib/firebase";
-import { withTimeout, compressImage, uploadWithProgress } from "@/lib/imageUtils";
-
-// ── Upload state machine ────────────────────────────────────────────────────
-
-type UploadStatus = "idle" | "compressing" | "uploading" | "error";
-const MAX_RETRIES = 2;
-
-// ── Component ───────────────────────────────────────────────────────────────
+import { useProfileEdit } from "@/hooks/useProfileEdit";
 
 export default function EditProfilePage() {
-  const { user, profile, loading, updateProfileData } = useAuth();
-  const { theme } = useTheme();
-  const router = useRouter();
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
-  const unmountedRef = useRef(false);
-  const cancelledRef = useRef(false);
-  const uploadTaskRef = useRef<UploadTask | null>(null);
-
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [title, setTitle] = useState("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [imgLoaded, setImgLoaded] = useState(false);
-  // ── TEMPORARY DIAGNOSTICS (remove after upload is confirmed working) ──
-  const [diagLog, setDiagLog] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
-      return;
-    }
-    if (profile) {
-      setName(profile.name || "");
-      setEmail(profile.email || "");
-      setPhone(profile.phone || "");
-      setTitle(profile.title || "");
-    }
-  }, [user, loading, router, profile]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      unmountedRef.current = true;
-    };
-  }, []);
-
-  // Revoke preview blob when it changes or unmounts
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
-  const resetInputs = useCallback(() => {
-    if (cameraInputRef.current) cameraInputRef.current.value = "";
-    if (galleryInputRef.current) galleryInputRef.current.value = "";
-  }, []);
-
-  const cancelUpload = useCallback(() => {
-    cancelledRef.current = true;
-    if (uploadTaskRef.current) {
-      uploadTaskRef.current.cancel();
-      uploadTaskRef.current = null;
-    }
-    setUploadStatus("idle");
-    setUploadProgress(0);
-    setPreviewUrl(null);
-    setSaveError(null);
-    resetInputs();
-  }, [resetInputs]);
-
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    if (!file.type.startsWith("image/")) {
-      setSaveError("Please select an image file");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setSaveError("Image must be under 5MB");
-      return;
-    }
-
-    // ── TEMPORARY DIAGNOSTICS (remove after upload is confirmed working) ──
-    const diag = (msg: string) => setDiagLog((prev) => [...prev, msg]);
-    setDiagLog([]);
-    const bucketName = storage.app.options.storageBucket;
-    const auth = getAuth();
-    const token = await auth.currentUser?.getIdToken(true).catch(() => null);
-    diag(`Bucket: ${bucketName || "⚠ EMPTY"}${storageAltBucket ? ` (fallback: ${storageAltBucket})` : ""}`);
-    diag(`Auth: ${auth.currentUser?.uid || "⚠ NO USER"}`);
-    diag(`Token: ${token ? "OK" : "⚠ NONE"}`);
-    diag(`File: ${(file.size / 1024).toFixed(0)} KB ${file.type}`);
-
-    if (!bucketName) {
-      setSaveError("Storage is not configured. Please contact support.");
-      diag("⚠ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is empty");
-      return;
-    }
-    if (!token) {
-      setSaveError("Your session has expired. Please log out and log back in.");
-      diag("⚠ No auth token — upload will be rejected");
-      return;
-    }
-    // ── END TEMPORARY DIAGNOSTICS ──
-
-    // Show local preview immediately
-    const localPreview = URL.createObjectURL(file);
-    setPreviewUrl(localPreview);
-    cancelledRef.current = false;
-    setSaveError(null);
-    setUploadProgress(0);
-
-    try {
-      // ── Stage 1: Compress (10 s timeout) ──
-      setUploadStatus("compressing");
-      const compressed = await compressImage(file);
-      diag(`Compressed: ${(compressed.size / 1024).toFixed(0)} KB`);
-      if (cancelledRef.current || unmountedRef.current) return;
-
-      // ── Stage 2: Upload to Firebase Storage (resumable, with retry) ──
-      // Uses uploadBytesResumable with an activity-based timeout: the upload
-      // is only cancelled when no progress has been made for 20 s. This lets
-      // slow-but-working uploads finish while still catching genuine stalls.
-      // Retries up to MAX_RETRIES times on failure.  If the first attempt
-      // stalls, subsequent retries use the alternate bucket-name format
-      // (appspot.com ↔ firebasestorage.app) in case the configured name is
-      // the legacy format for a newer project or vice-versa.
-      setUploadStatus("uploading");
-      const primaryPath = `profilePics/${user.uid}`;
-
-      let lastErr: unknown;
-      let useAlt = false;
-      let successRef: ReturnType<typeof ref> | null = null;
-      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        if (cancelledRef.current || unmountedRef.current) return;
-
-        if (attempt > 0) {
-          // Brief pause before retry
-          setUploadProgress(0);
-          await new Promise((r) => setTimeout(r, 1500));
-          if (cancelledRef.current || unmountedRef.current) return;
-        }
-
-        // After the first stall, switch to the alternate bucket format
-        const storageInstance = (useAlt && storageAlt) ? storageAlt : storage;
-        const storageRef = ref(storageInstance, primaryPath);
-
-        let stalled = false;
-        const bucketLabel = (useAlt && storageAlt) ? "alt bucket" : "primary bucket";
-        diag(`Attempt ${attempt + 1}/${MAX_RETRIES + 1} (${bucketLabel})…`);
-        try {
-          const { task, promise } = uploadWithProgress(
-            storageRef,
-            compressed,
-            (pct) => {
-              if (!cancelledRef.current && !unmountedRef.current) {
-                setUploadProgress(pct);
-              }
-            },
-            () => { stalled = true; },
-            20_000,
-          );
-          uploadTaskRef.current = task;
-          await promise;
-          uploadTaskRef.current = null;
-          lastErr = null;
-          successRef = storageRef;
-          diag(`Upload OK (attempt ${attempt + 1}, ${bucketLabel})`);
-          break; // success
-        } catch (err) {
-          uploadTaskRef.current = null;
-          lastErr = err;
-          // If the user cancelled, stop retrying
-          if (cancelledRef.current || unmountedRef.current) return;
-          // If the upload stalled, try the alternate bucket on the next attempt
-          if (stalled) {
-            lastErr = new Error("Upload stalled — no progress for 20s");
-            if (!useAlt && storageAlt) {
-              useAlt = true;
-              diag("Switching to alternate bucket format for next attempt…");
-            }
-          }
-          diag(`Attempt ${attempt + 1} failed: ${stalled ? "stalled" : (err instanceof Error ? err.message : "unknown")}`);
-        }
-      }
-
-      if (lastErr) throw lastErr;
-      if (cancelledRef.current || unmountedRef.current) return;
-
-      // ── Stage 3: Get download URL (15 s timeout) ──
-      const downloadUrl = await withTimeout(
-        getDownloadURL(successRef!),
-        15_000,
-        "Retrieving photo URL",
-      );
-      if (cancelledRef.current || unmountedRef.current) return;
-
-      diag("Got URL — done!");
-
-      // Persist URL to Firestore (fire-and-forget — local cache persists it)
-      setDoc(doc(db, "users", user.uid), { profilePicUrl: downloadUrl }, { merge: true })
-        .catch((err) => console.error("Background photo URL sync failed:", err));
-
-      // Optimistically update local state
-      updateProfileData({ profilePicUrl: downloadUrl });
-      setPreviewUrl(null);
-      setImgLoaded(false);
-      setUploadStatus("idle");
-      setUploadProgress(0);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      if (cancelledRef.current || unmountedRef.current) return;
-      console.error("Failed to upload photo:", err);
-      setPreviewUrl(null);
-
-      let message: string;
-      if (err instanceof Error && (err.message.includes("timed out") || err.message.includes("stalled"))) {
-        message = "Upload failed — connection too slow or unstable. Please try again.";
-      } else if (err instanceof Error && err.message.includes("Canvas not supported")) {
-        message = "Your browser could not process the image. Try a different photo.";
-      } else {
-        message = "Failed to upload photo. Please try again.";
-      }
-      setUploadStatus("error");
-      setUploadProgress(0);
-      setSaveError(message);
-    } finally {
-      uploadTaskRef.current = null;
-      resetInputs();
-      // If we got here via error/cancel, make sure we reset status
-      if (!cancelledRef.current && !unmountedRef.current) {
-        setUploadStatus((prev) => (prev === "compressing" || prev === "uploading" ? "idle" : prev));
-      }
-    }
-  }
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (!user) return;
-    setSaving(true);
-    setSaveError(null);
-
-    const profileData = {
-      uid: user.uid,
-      name: name.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
-      title: title.trim(),
-    };
-    updateProfileData(profileData);
-    setDoc(doc(db, "users", user.uid), profileData, { merge: true })
-      .catch((err) => console.error("Background profile sync failed:", err));
-
-    setSaving(false);
-    setSuccess(true);
-    setTimeout(() => {
-      setSuccess(false);
-      router.push("/profile");
-    }, 1500);
-  }
-
-  const isDark = theme === "dark";
+  const {
+    loading,
+    name,
+    setName,
+    email,
+    setEmail,
+    phone,
+    setPhone,
+    title,
+    setTitle,
+    saving,
+    success,
+    saveError,
+    cameraInputRef,
+    galleryInputRef,
+    uploadStatus,
+    uploadProgress,
+    imgLoaded,
+    setImgLoaded,
+    isUploading,
+    displayUrl,
+    diagLog,
+    setDiagLog,
+    handlePhotoUpload,
+    cancelUpload,
+    handleSave,
+    isDark,
+    router,
+  } = useProfileEdit();
 
   const inputStyle: React.CSSProperties = {
     borderRadius: "50px",
@@ -322,9 +70,6 @@ export default function EditProfilePage() {
       </div>
     );
   }
-
-  const isUploading = uploadStatus === "compressing" || uploadStatus === "uploading";
-  const displayUrl = previewUrl || profile?.profilePicUrl;
 
   return (
     <div
@@ -408,9 +153,6 @@ export default function EditProfilePage() {
           <div className="relative mb-4">
             {displayUrl ? (
               <>
-                {/* Use native img to bypass Next.js image proxy — Firebase
-                    Storage URLs are already CDN-optimised and the proxy adds
-                    a failure point on mobile (stalls, CORS, token expiry). */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={displayUrl}
@@ -420,7 +162,7 @@ export default function EditProfilePage() {
                   className="w-[110px] h-[110px] rounded-full object-cover block mx-auto"
                   style={{
                     border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`,
-                    opacity: imgLoaded || previewUrl ? 1 : 0,
+                    opacity: imgLoaded || displayUrl.startsWith("blob:") ? 1 : 0,
                     transition: "opacity 0.2s ease-in",
                     boxShadow: "var(--avatar-shadow)",
                   }}
@@ -428,7 +170,7 @@ export default function EditProfilePage() {
                   onError={() => setImgLoaded(true)}
                 />
                 {/* Skeleton while the remote image is still loading */}
-                {!imgLoaded && !previewUrl && (
+                {!imgLoaded && !displayUrl.startsWith("blob:") && (
                   <div
                     className="absolute inset-0 w-[110px] h-[110px] rounded-full animate-pulse"
                     style={{
@@ -456,10 +198,10 @@ export default function EditProfilePage() {
                 <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 <span className="text-white text-[10px] font-medium">
                   {uploadStatus === "compressing"
-                    ? "Processing…"
+                    ? "Processing\u2026"
                     : uploadProgress > 0
                       ? `Uploading ${uploadProgress}%`
-                      : "Uploading…"}
+                      : "Uploading\u2026"}
                 </span>
               </div>
             )}

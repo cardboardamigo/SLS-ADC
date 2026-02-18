@@ -1,130 +1,34 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import { getMonthSummary, getStartingCensus } from "@/lib/census";
-import { MonthlyADC, Admission, Discharge, RTA } from "@/lib/types";
+import { useHistory } from "@/hooks/useHistory";
+import type { DayCensusData } from "@/hooks/useHistory";
 import { calculateBonus, formatCurrency } from "@/lib/bonus";
-import { subMonths, addMonths, format, getDaysInMonth, getDay } from "date-fns";
-
-interface MonthDetail {
-  adc: MonthlyADC;
-  admissions: Admission[];
-  discharges: Discharge[];
-  rtas: RTA[];
-}
-
-interface DayCensusData {
-  date: string; // yyyy-MM-dd
-  dayNumber: number;
-  endingCensus: number;
-  admissions: Admission[];
-  discharges: Discharge[];
-  rtas: RTA[];
-}
-
-type ViewMode = "list" | "calendar";
+import { subMonths, addMonths, format } from "date-fns";
 
 export default function HistoryPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-  const [months, setMonths] = useState<MonthDetail[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [dataError, setDataError] = useState<string | null>(null);
-  const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
-
-  // Calendar view state
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [calendarDate, setCalendarDate] = useState(new Date());
-  const [calendarData, setCalendarData] = useState<DayCensusData[]>([]);
-  const [calendarLoading, setCalendarLoading] = useState(false);
-  const [selectedDay, setSelectedDay] = useState<DayCensusData | null>(null);
-
-  const calendarYear = calendarDate.getFullYear();
-  const calendarMonth = calendarDate.getMonth() + 1;
-  const isCurrentMonth =
-    calendarDate.getMonth() === new Date().getMonth() &&
-    calendarDate.getFullYear() === new Date().getFullYear();
-
-  const loadData = useCallback(async () => {
-    try {
-      setDataLoading(true);
-      setDataError(null);
-      const now = new Date();
-
-      const results = await Promise.all(
-        Array.from({ length: 12 }, (_, i) => {
-          const d = subMonths(now, i);
-          return getMonthSummary(d.getFullYear(), d.getMonth() + 1);
-        })
-      );
-
-      setMonths(results);
-    } catch (err) {
-      console.error("Failed to load history:", err);
-      setDataError("Failed to load history data. Please check your connection and try again.");
-    } finally {
-      setDataLoading(false);
-    }
-  }, []);
-
-  // Load calendar data for the selected month
-  const loadCalendarData = useCallback(async () => {
-    try {
-      setCalendarLoading(true);
-      const [summary, startCensus] = await Promise.all([
-        getMonthSummary(calendarYear, calendarMonth),
-        getStartingCensus(calendarYear, calendarMonth),
-      ]);
-
-      const daysInMonth = getDaysInMonth(new Date(calendarYear, calendarMonth - 1));
-      const today = format(new Date(), "yyyy-MM-dd");
-      const days: DayCensusData[] = [];
-      let runningCensus = startCensus;
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const dateStr = format(new Date(calendarYear, calendarMonth - 1, d), "yyyy-MM-dd");
-
-        const dayAdmissions = summary.admissions.filter((a) => a.date === dateStr);
-        const dayDischarges = summary.discharges.filter((dc) => dc.date === dateStr);
-        const dayRtas = summary.rtas.filter((r) => r.date === dateStr);
-
-        runningCensus = runningCensus + dayAdmissions.length - dayDischarges.length - dayRtas.length;
-
-        days.push({
-          date: dateStr,
-          dayNumber: d,
-          endingCensus: dateStr <= today ? runningCensus : -1, // -1 means future day
-          admissions: dayAdmissions,
-          discharges: dayDischarges,
-          rtas: dayRtas,
-        });
-      }
-
-      setCalendarData(days);
-    } catch (err) {
-      console.error("Failed to load calendar data:", err);
-    } finally {
-      setCalendarLoading(false);
-    }
-  }, [calendarYear, calendarMonth]);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
-      return;
-    }
-    if (user) loadData();
-  }, [user, loading, router, loadData]);
-
-  useEffect(() => {
-    if (user && viewMode === "calendar") {
-      loadCalendarData();
-    }
-  }, [user, viewMode, loadCalendarData]);
+  const {
+    loading,
+    dataLoading,
+    dataError,
+    months,
+    expandedMonth,
+    setExpandedMonth,
+    viewMode,
+    setViewMode,
+    calendarDate,
+    setCalendarDate,
+    calendarData,
+    calendarLoading,
+    selectedDay,
+    setSelectedDay,
+    isCurrentMonth,
+    firstDayOfWeek,
+    weekDays,
+    hasActivity,
+    loadData,
+  } = useHistory();
 
   if (loading || dataLoading) {
     return (
@@ -161,14 +65,6 @@ export default function HistoryPage() {
       </div>
     );
   }
-
-  // Calendar grid helpers
-  const firstDayOfWeek = getDay(new Date(calendarYear, calendarMonth - 1, 1)); // 0=Sun
-  const daysInMonth = getDaysInMonth(new Date(calendarYear, calendarMonth - 1));
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  const hasActivity = (day: DayCensusData) =>
-    day.admissions.length > 0 || day.discharges.length > 0 || day.rtas.length > 0;
 
   return (
     <div
@@ -487,183 +383,191 @@ export default function HistoryPage() {
 
       {/* ========== DAY DETAIL PAGER (Modal) ========== */}
       {selectedDay && (
-        <>
-          <div
-            className="fixed inset-0 z-50"
-            style={{ background: "var(--overlay)" }}
-            onClick={() => setSelectedDay(null)}
-          />
-          <div
-            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-xl max-h-[80vh] overflow-y-auto"
-            style={{
-              background: "var(--card)",
-              boxShadow: "0 -4px 24px rgba(0,0,0,0.15)",
-            }}
-          >
-            {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-1">
-              <div
-                className="w-10 h-1 rounded-full"
-                style={{ background: "var(--border)" }}
-              />
-            </div>
-
-            <div className="px-5 pb-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold" style={{ color: "var(--text)" }}>
-                    {format(new Date(selectedDay.date + "T12:00:00"), "EEEE, MMM d")}
-                  </h3>
-                  {selectedDay.endingCensus !== -1 && (
-                    <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                      Ending Census: <span className="font-semibold" style={{ color: "var(--text)" }}>{selectedDay.endingCensus}</span>
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setSelectedDay(null)}
-                  className="p-2 rounded-full"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Summary badges */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div
-                  className="rounded-xl p-3 text-center"
-                  style={{ background: "var(--status-admit-bg)" }}
-                >
-                  <p className="text-xl font-bold" style={{ color: "var(--status-admit)" }}>
-                    {selectedDay.admissions.length}
-                  </p>
-                  <p className="text-xs font-medium" style={{ color: "var(--status-admit)" }}>Admits</p>
-                </div>
-                <div
-                  className="rounded-xl p-3 text-center"
-                  style={{ background: "var(--status-discharge-bg)" }}
-                >
-                  <p className="text-xl font-bold" style={{ color: "var(--status-discharge)" }}>
-                    {selectedDay.discharges.length}
-                  </p>
-                  <p className="text-xs font-medium" style={{ color: "var(--status-discharge)" }}>D/C</p>
-                </div>
-                <div
-                  className="rounded-xl p-3 text-center"
-                  style={{ background: "var(--status-rta-bg)" }}
-                >
-                  <p className="text-xl font-bold" style={{ color: "var(--status-rta)" }}>
-                    {selectedDay.rtas.length}
-                  </p>
-                  <p className="text-xs font-medium" style={{ color: "var(--status-rta)" }}>RTA</p>
-                </div>
-              </div>
-
-              {/* Admission Details */}
-              {selectedDay.admissions.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-semibold mb-2" style={{ color: "var(--status-admit)" }}>
-                    Admissions
-                  </p>
-                  {selectedDay.admissions.map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex items-center gap-2 py-2 border-b last:border-0"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      <div
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ background: "var(--status-admit)" }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                          {a.hospitalName}
-                        </p>
-                        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                          {a.patientType} &middot; CL: {a.clinicalLiaison}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Discharge Details */}
-              {selectedDay.discharges.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-semibold mb-2" style={{ color: "var(--status-discharge)" }}>
-                    Discharges
-                  </p>
-                  {selectedDay.discharges.map((d) => (
-                    <div
-                      key={d.id}
-                      className="flex items-center gap-2 py-2 border-b last:border-0"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      <div
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ background: "var(--status-discharge)" }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                          {d.dischargeName}
-                        </p>
-                        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                          {d.dischargeType}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* RTA Details */}
-              {selectedDay.rtas.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-semibold mb-2" style={{ color: "var(--status-rta)" }}>
-                    Returns to Acute
-                  </p>
-                  {selectedDay.rtas.map((r) => (
-                    <div
-                      key={r.id}
-                      className="flex items-center gap-2 py-2 border-b last:border-0"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      <div
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ background: "var(--status-rta)" }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                          {r.hospital}
-                        </p>
-                        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                          {r.reason}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* No activity message */}
-              {selectedDay.admissions.length === 0 &&
-                selectedDay.discharges.length === 0 &&
-                selectedDay.rtas.length === 0 && (
-                  <p className="text-center py-6 text-base" style={{ color: "var(--text-muted)" }}>
-                    No activity for this day
-                  </p>
-                )}
-            </div>
-          </div>
-        </>
+        <DayDetailModal day={selectedDay} onClose={() => setSelectedDay(null)} />
       )}
 
       <BottomNav />
     </div>
+  );
+}
+
+// ── Day detail bottom sheet ─────────────────────────────────────────────────
+
+function DayDetailModal({ day, onClose }: { day: DayCensusData; onClose: () => void }) {
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-50"
+        style={{ background: "var(--overlay)" }}
+        onClick={onClose}
+      />
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-xl max-h-[80vh] overflow-y-auto"
+        style={{
+          background: "var(--card)",
+          boxShadow: "0 -4px 24px rgba(0,0,0,0.15)",
+        }}
+      >
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div
+            className="w-10 h-1 rounded-full"
+            style={{ background: "var(--border)" }}
+          />
+        </div>
+
+        <div className="px-5 pb-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold" style={{ color: "var(--text)" }}>
+                {format(new Date(day.date + "T12:00:00"), "EEEE, MMM d")}
+              </h3>
+              {day.endingCensus !== -1 && (
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                  Ending Census: <span className="font-semibold" style={{ color: "var(--text)" }}>{day.endingCensus}</span>
+                </p>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Summary badges */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div
+              className="rounded-xl p-3 text-center"
+              style={{ background: "var(--status-admit-bg)" }}
+            >
+              <p className="text-xl font-bold" style={{ color: "var(--status-admit)" }}>
+                {day.admissions.length}
+              </p>
+              <p className="text-xs font-medium" style={{ color: "var(--status-admit)" }}>Admits</p>
+            </div>
+            <div
+              className="rounded-xl p-3 text-center"
+              style={{ background: "var(--status-discharge-bg)" }}
+            >
+              <p className="text-xl font-bold" style={{ color: "var(--status-discharge)" }}>
+                {day.discharges.length}
+              </p>
+              <p className="text-xs font-medium" style={{ color: "var(--status-discharge)" }}>D/C</p>
+            </div>
+            <div
+              className="rounded-xl p-3 text-center"
+              style={{ background: "var(--status-rta-bg)" }}
+            >
+              <p className="text-xl font-bold" style={{ color: "var(--status-rta)" }}>
+                {day.rtas.length}
+              </p>
+              <p className="text-xs font-medium" style={{ color: "var(--status-rta)" }}>RTA</p>
+            </div>
+          </div>
+
+          {/* Admission Details */}
+          {day.admissions.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm font-semibold mb-2" style={{ color: "var(--status-admit)" }}>
+                Admissions
+              </p>
+              {day.admissions.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center gap-2 py-2 border-b last:border-0"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: "var(--status-admit)" }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                      {a.hospitalName}
+                    </p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                      {a.patientType} &middot; CL: {a.clinicalLiaison}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Discharge Details */}
+          {day.discharges.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm font-semibold mb-2" style={{ color: "var(--status-discharge)" }}>
+                Discharges
+              </p>
+              {day.discharges.map((d) => (
+                <div
+                  key={d.id}
+                  className="flex items-center gap-2 py-2 border-b last:border-0"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: "var(--status-discharge)" }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                      {d.dischargeName}
+                    </p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                      {d.dischargeType}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* RTA Details */}
+          {day.rtas.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm font-semibold mb-2" style={{ color: "var(--status-rta)" }}>
+                Returns to Acute
+              </p>
+              {day.rtas.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-center gap-2 py-2 border-b last:border-0"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: "var(--status-rta)" }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                      {r.hospital}
+                    </p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                      {r.reason}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* No activity message */}
+          {day.admissions.length === 0 &&
+            day.discharges.length === 0 &&
+            day.rtas.length === 0 && (
+              <p className="text-center py-6 text-base" style={{ color: "var(--text-muted)" }}>
+                No activity for this day
+              </p>
+            )}
+        </div>
+      </div>
+    </>
   );
 }

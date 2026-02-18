@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { recordActivity } from "@/lib/census";
 import { ActivityType, UserProfile } from "@/lib/types";
 import { format, subMonths, addMonths } from "date-fns";
@@ -37,8 +36,7 @@ export interface CrudPageConfig<T extends { id: string; date: string }> {
 export function useCrudForm<T extends { id: string; date: string }>(
   config: CrudPageConfig<T>,
 ) {
-  const { user, profile, loading } = useAuth();
-  const router = useRouter();
+  const { user, profile, loading } = useAuthGuard();
 
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [fieldValues, setFieldValues] = useState<Record<string, string>>(() => {
@@ -88,13 +86,10 @@ export function useCrudForm<T extends { id: string; date: string }>(
     }
   }, [listYear, listMonth, config]);
 
+  // Initial load (auth redirect handled by useAuthGuard)
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
-      return;
-    }
     if (user) loadItems();
-  }, [user, loading, router, loadItems]);
+  }, [user, loadItems]);
 
   function setField(name: string, value: string) {
     setFieldValues((prev) => ({ ...prev, [name]: value }));

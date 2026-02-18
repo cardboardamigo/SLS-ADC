@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import {
   calculateMonthlyADC,
   getStartingCensus,
@@ -16,7 +16,7 @@ import { BONUS_TIERS } from "@/lib/config";
 const PULL_THRESHOLD = 80;
 
 export function useDashboard() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthGuard();
   const router = useRouter();
   const [monthlyData, setMonthlyData] = useState<MonthlyADC | null>(null);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
@@ -75,14 +75,10 @@ export function useDashboard() {
     }
   }, [year, month]);
 
-  // Auth redirect + initial load
+  // Initial load (auth redirect handled by useAuthGuard)
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
-      return;
-    }
     if (user) loadData();
-  }, [user, loading, router, loadData]);
+  }, [user, loadData]);
 
   // Pull-to-refresh touch handlers
   useEffect(() => {
