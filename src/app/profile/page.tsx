@@ -33,7 +33,7 @@ export default function ProfilePage() {
 
   return (
     <div
-      className="min-h-screen pb-24 content-below-header"
+      className="min-h-screen pb-24"
       style={{
         fontFamily: "'Poppins', sans-serif",
         background: "var(--bg)",
@@ -41,36 +41,54 @@ export default function ProfilePage() {
     >
       <Header />
 
-      <div className="form-wrapper py-8">
-        {/* ── Profile Card ── */}
+      {/* ── Gradient Banner ── */}
+      <div
+        className="relative safe-area-top"
+        style={{
+          paddingTop: "5rem",
+          background: isDark
+            ? "linear-gradient(165deg, #0f1724 0%, #162032 40%, #1a2d42 100%)"
+            : "linear-gradient(165deg, #1a365d 0%, #234575 50%, #2a4a7f 100%)",
+        }}
+      >
+        <div style={{ height: "120px" }} />
+
+        {/* Avatar overlapping banner bottom */}
+        <div
+          className="absolute left-1/2 z-10"
+          style={{ transform: "translateX(-50%)", bottom: "-55px" }}
+        >
+          {profile?.profilePicUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={profile.profilePicUrl}
+              alt="Profile"
+              className="w-[110px] h-[110px] rounded-full object-cover block"
+              style={{
+                border: "4px solid var(--card)",
+                boxShadow: "0 8px 30px rgba(15,42,74,0.3)",
+              }}
+            />
+          ) : (
+            <div
+              className="w-[110px] h-[110px] rounded-full flex items-center justify-center text-white text-5xl font-bold"
+              style={{
+                background: "var(--crimson)",
+                border: "4px solid var(--card)",
+                boxShadow: "0 8px 30px rgba(192,57,43,0.35)",
+              }}
+            >
+              {profile?.name ? profile.name[0].toUpperCase() : "?"}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Content below banner ── */}
+      <div className="form-wrapper py-8" style={{ paddingTop: "72px" }}>
+
+        {/* ── Profile Info Card ── */}
         <div className="card p-8 mb-12 flex flex-col items-center">
-
-          {/* Avatar */}
-          <div className="relative mb-4">
-            {profile?.profilePicUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={profile.profilePicUrl}
-                alt="Profile"
-                width={100}
-                height={100}
-                className="w-[100px] h-[100px] rounded-full object-cover block mx-auto"
-                style={{ border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`, boxShadow: "var(--avatar-shadow)" }}
-              />
-            ) : (
-              <div
-                className="w-[100px] h-[100px] rounded-full flex items-center justify-center text-white text-4xl font-bold"
-                style={{
-                  background: isDark ? "#2a4a7f" : "#1a365d",
-                  boxShadow: "var(--avatar-shadow)",
-                }}
-              >
-                {profile?.name ? profile.name[0].toUpperCase() : "?"}
-              </div>
-            )}
-          </div>
-
-          {/* Name & Email */}
           <h2
             className="text-xl font-bold mb-0.5"
             style={{ color: "var(--text)" }}
@@ -119,7 +137,7 @@ export default function ProfilePage() {
           <button
             onClick={() => router.push("/profile/edit")}
             className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors active:scale-[0.99]"
-            style={{ background: "transparent" }}
+            style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
           >
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
@@ -145,7 +163,7 @@ export default function ProfilePage() {
           <button
             onClick={toggleTheme}
             className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors active:scale-[0.99]"
-            style={{ background: "transparent" }}
+            style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
           >
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
@@ -200,7 +218,7 @@ export default function ProfilePage() {
               <button
                 onClick={promptInstall}
                 className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors active:scale-[0.99]"
-                style={{ background: "transparent" }}
+                style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
               >
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
@@ -248,7 +266,7 @@ export default function ProfilePage() {
           <button
             onClick={handleSignOut}
             className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors active:scale-[0.99]"
-            style={{ background: "transparent" }}
+            style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
           >
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
