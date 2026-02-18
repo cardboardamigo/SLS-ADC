@@ -1,6 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* ── Responsive layout tokens ── */
+:root {
+  --sidebar-width: 260px;
+  --header-height: 5rem;
+  --bottom-nav-height: 4rem;
+}
+
 :root,
 html.light {
   --primary: #1a365d;
@@ -38,16 +45,16 @@ html.light {
   --bubble-radius-sm: 28px;
   --bubble-radius-input: 50px;
 
-  /* Card tokens – airy, clearly separated islands */
+  /* Card tokens */
   --card-radius: 12px;
   --card-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
 
-  /* Spacing tokens – anti-anxiety breathing room */
-  --group-gap: 3rem;        /* 48px between input groups */
-  --label-gap: 0.75rem;     /* 12px label-to-input */
-  --input-gap: 1.5rem;      /* 24px input-to-input */
-  --section-gap: 1.25rem;   /* 20px between dashboard cards */
-  --button-island: 3rem;    /* 48px above submit button */
+  /* Spacing tokens */
+  --group-gap: 3rem;
+  --label-gap: 0.75rem;
+  --input-gap: 1.5rem;
+  --section-gap: 1.25rem;
+  --button-island: 3rem;
 
   /* Profile page gradient */
   --profile-gradient: linear-gradient(165deg, #c5ddf5 0%, #d4e6f9 40%, #ddeafa 70%, #e5eefb 100%);
@@ -85,7 +92,7 @@ html.dark {
   --status-rta: #fbbf24;
   --status-rta-bg: rgba(217,119,6,0.15);
 
-  /* Branding - slightly lighter for dark backgrounds */
+  /* Branding */
   --navy: #63b3ed;
   --navy-light: #90cdf4;
   --crimson: #e74c3c;
@@ -95,11 +102,11 @@ html.dark {
   --bubble-radius-sm: 28px;
   --bubble-radius-input: 50px;
 
-  /* Card tokens – airy, clearly separated islands */
+  /* Card tokens */
   --card-radius: 12px;
   --card-shadow: 0 1px 3px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.20);
 
-  /* Spacing tokens – anti-anxiety breathing room */
+  /* Spacing tokens */
   --group-gap: 3rem;
   --label-gap: 0.75rem;
   --input-gap: 1.5rem;
@@ -132,7 +139,6 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Mobile-first scrolling */
 body {
   overflow-x: hidden;
 }
@@ -156,61 +162,69 @@ textarea {
   font-size: 16px; /* Prevent iOS zoom on focus */
 }
 
-/* ── Style-guide: pill-shaped form fields ── */
-/* !important needed to override Tailwind v4 cascade layers */
-input[type="text"],
-input[type="date"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="tel"],
-select {
-  border-radius: 50px !important;
-  max-width: 100% !important;
-  width: 100% !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  display: block !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05) !important;
-  padding: 14px 28px !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-  text-align: center !important;
-  text-align-last: center !important;
+/* ── Pill-shaped form fields (opt-in via .pill-input or scoped contexts) ── */
+.pill-input,
+.pill-form input[type="text"],
+.pill-form input[type="date"],
+.pill-form input[type="email"],
+.pill-form input[type="password"],
+.pill-form input[type="number"],
+.pill-form input[type="tel"],
+.pill-form select,
+.pill-form textarea {
+  border-radius: 50px;
+  max-width: 100%;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  padding: 14px 28px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: center;
+  text-align-last: center;
 }
 
-/* ── Style-guide: focus "lift" effect ── */
-input[type="text"]:focus,
-input[type="date"]:focus,
-input[type="email"]:focus,
-input[type="password"]:focus,
-input[type="number"]:focus,
-input[type="tel"]:focus,
-select:focus {
-  transform: scale(1.02) !important;
-  box-shadow: 0 14px 35px -5px rgba(0, 0, 0, 0.10) !important;
-  outline: none !important;
+.pill-form textarea {
+  border-radius: var(--card-radius);
 }
 
-/* ── Style-guide: pill-shaped buttons ── */
-button {
-  border-radius: 50px !important;
+/* ── Focus "lift" effect for pill inputs ── */
+.pill-input:focus,
+.pill-form input[type="text"]:focus,
+.pill-form input[type="date"]:focus,
+.pill-form input[type="email"]:focus,
+.pill-form input[type="password"]:focus,
+.pill-form input[type="number"]:focus,
+.pill-form input[type="tel"]:focus,
+.pill-form select:focus,
+.pill-form textarea:focus {
+  transform: scale(1.02);
+  box-shadow: 0 14px 35px -5px rgba(0, 0, 0, 0.10);
+  outline: none;
+}
+
+/* ── Pill-shaped buttons (opt-in) ── */
+.pill-button {
+  border-radius: 50px;
   font-weight: 600;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-/* ── Style-guide: Global Centering – button flex centering ── */
-/* Placed in @layer base so Tailwind utility classes (justify-between, items-start, etc.)
-   can override when specific layouts need different alignment. */
+/* ── Global button base ── */
 @layer base {
   button {
     display: flex;
     justify-content: center;
     align-items: center;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
   }
 }
 
-/* ── Style-guide: Hero button (one per screen, primary action) ── */
+/* ── Hero button ── */
 .btn-hero {
   background: linear-gradient(135deg, #DC143C, #E85D5D) !important;
   color: #ffffff !important;
@@ -237,9 +251,31 @@ button {
   cursor: not-allowed;
 }
 
-/* ── Style-guide: form wrapper (Boutique: narrow centered container) ── */
-/* Global Centering: flex-column + align-items: center keeps all cards and
-   form groups horizontally centered within the 450px wrapper. */
+/* ── Responsive content container ── */
+.content-container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+@media (min-width: 640px) {
+  .content-container {
+    padding: 0 2.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .content-container {
+    max-width: 960px;
+    padding: 0 3rem;
+  }
+}
+@media (min-width: 1280px) {
+  .content-container {
+    max-width: 1200px;
+    padding: 0 3rem;
+  }
+}
+
+/* ── Legacy form-wrapper (kept for backward compat, aliases content-container on mobile) ── */
 .form-wrapper {
   max-width: 450px;
   width: 100%;
@@ -249,85 +285,127 @@ button {
   flex-direction: column;
   align-items: center;
 }
-
-/* Ensure children fill the wrapper width instead of shrink-wrapping */
 .form-wrapper > * {
   width: 100%;
 }
 
-/* ── Page-level vertical distribution ──
-   Elements float apart to fill the screen instead of clinging to the top. */
+/* ── Page content area: accounts for header/nav on mobile, sidebar on desktop ── */
+.page-content {
+  padding-top: calc(var(--header-height) + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1rem);
+  min-height: 100vh;
+}
+@media (min-width: 1024px) {
+  .page-content {
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+  }
+}
+
+/* ── Content below header (responsive) ── */
+.content-below-header {
+  padding-top: calc(var(--header-height) + env(safe-area-inset-top, 0px));
+}
+@media (min-width: 1024px) {
+  .content-below-header {
+    padding-top: 0;
+  }
+}
+
+/* ── Page-level vertical distribution ── */
 .page-breathe {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  min-height: calc(100vh - 5rem - 4rem - env(safe-area-inset-top, 0px));
-  /* subtract header (5rem) + bottom nav (4rem) + safe-area */
+  min-height: calc(100vh - var(--header-height) - var(--bottom-nav-height) - env(safe-area-inset-top, 0px));
+}
+@media (min-width: 1024px) {
+  .page-breathe {
+    min-height: auto;
+    justify-content: flex-start;
+  }
 }
 
-/* Dashboard card flow — guaranteed 20px gap, each card its own island */
+/* ── Dashboard cards: responsive grid ── */
 .dashboard-cards {
   display: flex;
   flex-direction: column;
   gap: var(--section-gap);
 }
+@media (min-width: 1024px) {
+  .dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  .dashboard-cards > .card-full-width {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 1280px) {
+  .dashboard-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
-/* ── Style-guide: dashboard stat centering ──
-   Use on parent containers for ADC hero numbers, milestone bars, etc. */
+/* ── Dashboard stat centering ── */
 .dashboard-stat-center {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Card utility */
+/* ── Card utility ── */
 .card {
   background: var(--card);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
   border: 1px solid var(--border);
+  padding: 1.5rem;
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
-
-/* ── Style-guide: centered label alignment ── */
-/* All labels span full width and center their text for a uniform look */
-label {
-  display: block !important;
-  width: 100% !important;
-  text-align: center !important;
+@media (min-width: 640px) {
+  .card {
+    padding: 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+}
+/* Cards whose children manage their own padding (settings lists, expandable panels) */
+.card-flush {
+  padding: 0;
+}
+@media (min-width: 640px) {
+  .card-flush {
+    padding: 0;
+  }
 }
 
-/* ── Style-guide: Global heading centering ── */
-/* All headings are horizontally centered by default for the Global Centering design */
-h1, h2, h3, h4, h5, h6 {
-  text-align: center !important;
+/* ── Pill-form scoped label centering (mobile only) ── */
+.pill-form label {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+@media (min-width: 1024px) {
+  .pill-form label {
+    text-align: left;
+  }
 }
 
-/* ── Style-guide: textarea centering ── */
-/* Textareas follow the same centering rules as other inputs with a softer radius */
-textarea {
-  border-radius: var(--card-radius) !important;
-  max-width: 100% !important;
-  width: 100% !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  display: block !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05) !important;
-  padding: 14px 28px !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-  text-align: center !important;
-  text-align-last: center !important;
+/* ── Pill-form placeholder centering ── */
+.pill-form ::placeholder {
+  text-align: center;
 }
-
-textarea:focus {
-  transform: scale(1.02) !important;
-  box-shadow: 0 14px 35px -5px rgba(0, 0, 0, 0.10) !important;
-  outline: none !important;
-}
-
-/* ── Style-guide: placeholder centering ── */
-::placeholder {
-  text-align: center !important;
+@media (min-width: 1024px) {
+  .pill-form ::placeholder {
+    text-align: left;
+  }
 }
 
 /* ── Form field group spacing ── */
@@ -338,7 +416,7 @@ textarea:focus {
   margin-bottom: var(--label-gap);
 }
 
-/* ── Submit button island — generous breathing room above ── */
+/* ── Submit button island ── */
 .btn-island {
   margin-top: var(--button-island);
   padding-top: var(--button-island);
@@ -352,10 +430,32 @@ textarea:focus {
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
-/* Content area below the fixed header — must clear both the header (h-20 = 5rem)
-   and any safe-area inset (notch/dynamic island). */
-.content-below-header {
-  padding-top: calc(5rem + env(safe-area-inset-top, 0px));
+
+/* ── Focus-visible styles for accessibility ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Skip to content link ── */
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 9999;
+  padding: 1rem;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-to-content:focus {
+  left: 0;
 }
 
 /* FAB animation */

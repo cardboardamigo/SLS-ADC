@@ -134,7 +134,7 @@ function LoginContent() {
         background: "linear-gradient(165deg, #c5ddf5 0%, #d4e6f9 40%, #ddeafa 70%, #e5eefb 100%)",
       }}
     >
-      <div className="relative w-full max-w-[380px] flex flex-col items-center">
+      <div className="relative w-full max-w-[380px] lg:max-w-[480px] flex flex-col items-center lg:bg-white/80 lg:backdrop-blur-xl lg:rounded-2xl lg:shadow-2xl lg:p-10">
 
         {/* ── Select User View ── */}
         {!selectedUser && (
@@ -211,7 +211,7 @@ function LoginContent() {
           <div className="w-full flex flex-col items-center">
             <button
               onClick={handleBack}
-              className="fixed top-0 left-0 flex items-center gap-2 transition z-10"
+              className="fixed lg:absolute top-0 left-0 flex items-center gap-2 transition z-10"
               style={{
                 color: "rgba(15,42,74,0.5)",
                 background: "transparent",
@@ -267,7 +267,7 @@ function LoginContent() {
 
             <form onSubmit={handleSubmit} className="w-full flex flex-col items-center" style={{ gap: "3rem" }}>
               <div className="w-full">
-                <label htmlFor="pin" className="block text-sm font-medium mb-3" style={{ color: "rgba(15,42,74,0.7)" }}>
+                <label htmlFor="pin" className="block text-sm font-medium mb-3 text-center" style={{ color: "rgba(15,42,74,0.7)" }}>
                   4-Digit PIN
                 </label>
                 <input
@@ -282,17 +282,14 @@ function LoginContent() {
                   onChange={handlePinChange}
                   maxLength={4}
                   required
-                  className="w-full placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
+                  className="w-full placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all pill-input"
                   style={{
-                    borderRadius: "50px",
                     background: "rgba(255,255,255,0.7)",
                     border: "1.5px solid var(--navy)",
                     fontFamily: "'Poppins', sans-serif",
                     color: "var(--navy)",
                     fontSize: "1.25rem",
                     letterSpacing: "0.5em",
-                    padding: "14px 28px",
-                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)",
                   }}
                   placeholder="----"
                 />

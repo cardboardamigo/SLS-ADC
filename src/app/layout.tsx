@@ -20,8 +20,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: "#1e3a5f",
 };
 
@@ -32,6 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/CT_App_Icon.png" />
       </head>
       <body className="safe-area-top safe-area-bottom">
+        <a href="#main-content" className="skip-to-content">
+          Skip to content
+        </a>
         <ThemeProvider>
           <AuthProvider>
             {children}

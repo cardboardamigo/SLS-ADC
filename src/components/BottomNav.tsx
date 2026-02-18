@@ -56,11 +56,12 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 backdrop-blur-md safe-area-bottom z-50 transition-colors"
+      className="fixed bottom-0 left-0 right-0 backdrop-blur-md safe-area-bottom z-50 transition-colors lg:hidden"
       style={{
         background: "var(--bottom-nav-bg)",
         borderTop: "1px solid var(--bottom-nav-border)",
       }}
+      aria-label="Bottom navigation"
     >
       <div className="flex justify-around items-center h-16 max-w-2xl mx-auto">
         {navItems.map((item) => {
@@ -69,7 +70,8 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center justify-center flex-1 py-1.5 transition-colors"
+              aria-current={isActive ? "page" : undefined}
+              className="flex flex-col items-center justify-center flex-1 py-1.5 transition-colors min-h-[48px]"
               style={{
                 color: isActive ? "var(--primary)" : "var(--text-muted)",
               }}
@@ -77,7 +79,7 @@ export default function BottomNav() {
               <div
                 className="p-1.5 transition-all rounded-full"
                 style={{
-                  background: isActive ? "rgba(26,54,93,0.1)" : "transparent",
+                  background: isActive ? "color-mix(in srgb, var(--primary) 10%, transparent)" : "transparent",
                 }}
               >
                 {item.icon}

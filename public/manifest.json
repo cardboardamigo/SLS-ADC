@@ -4,9 +4,10 @@
   "description": "Average Daily Census tracking application",
   "start_url": "/dashboard",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#1e3a5f",
   "theme_color": "#1e3a5f",
-  "orientation": "portrait",
+  "orientation": "any",
   "icons": [
     {
       "src": "/icon-192.png",
