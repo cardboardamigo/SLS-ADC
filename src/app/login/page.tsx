@@ -136,18 +136,17 @@ function LoginContent() {
               />
             </div>
 
-            {/* Glass card wrapping user selection */}
-            <div className="w-full px-6 py-8 sm:px-8" style={glassCard}>
+            <div className="w-full flex flex-col items-center gap-12">
               {errorBanner}
 
               <p
-                className="text-xs font-semibold uppercase tracking-[0.2em] text-center mb-8"
-                style={{ color: "rgba(15,42,74,0.4)" }}
+                className="text-sm font-medium tracking-wide text-center"
+                style={{ color: "rgba(15,42,74,0.5)" }}
               >
                 Select your account
               </p>
 
-              <div className="flex justify-center gap-10">
+              <div className="flex gap-12">
                 {USERS.map((u) => (
                   <button
                     key={u.email}
