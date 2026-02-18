@@ -56,10 +56,10 @@ export default function CrudPage<T extends { id: string; date: string }>({
     >
       <Header />
 
-      <div className="form-wrapper py-8">
+      <div className="form-wrapper py-8 page-breathe">
         {success && (
           <div
-            className="rounded-xl p-4 mb-12 text-center text-base font-medium animate-pulse"
+            className="rounded-2xl p-4 mb-8 text-center text-base font-medium animate-pulse"
             style={{
               background: "var(--status-admit-bg)",
               border: "1px solid var(--status-admit)",
@@ -74,7 +74,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
 
         {saveError && (
           <div
-            className="rounded-xl p-4 mb-12 text-center text-base font-medium"
+            className="rounded-2xl p-4 mb-8 text-center text-base font-medium"
             style={{
               background: "var(--status-discharge-bg)",
               border: "1px solid var(--status-discharge)",
@@ -85,8 +85,8 @@ export default function CrudPage<T extends { id: string; date: string }>({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="card p-8 mb-12">
-          <div className="flex items-center justify-between mb-12">
+        <form onSubmit={handleSubmit} className="card p-8">
+          <div className="flex items-center justify-between" style={{ marginBottom: "var(--group-gap)" }}>
             <h2
               className="text-lg font-semibold"
               style={{ color: "var(--text)" }}
@@ -107,9 +107,9 @@ export default function CrudPage<T extends { id: string; date: string }>({
             )}
           </div>
 
-          <div className="mb-12">
+          <div className="field-group">
             <label
-              className="block text-base font-medium mb-2"
+              className="block text-base font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
               Date
@@ -127,10 +127,10 @@ export default function CrudPage<T extends { id: string; date: string }>({
           {config.fields.map((field) => (
             <div
               key={field.name}
-              className="mb-12"
+              className="field-group"
             >
               <label
-                className="block text-base font-medium mb-2"
+                className="block text-base font-medium"
                 style={{ color: "var(--text-secondary)" }}
               >
                 {field.label}
@@ -162,20 +162,23 @@ export default function CrudPage<T extends { id: string; date: string }>({
             </div>
           ))}
 
-          <button
-            type="submit"
-            disabled={submitting || hasEmptyRequired}
-            className="btn-hero w-full mx-auto block text-white text-lg font-semibold disabled:opacity-50"
-          >
-            {submitting
-              ? "Saving..."
-              : editingId
-              ? `Update ${config.entityName}`
-              : `Record ${config.entityName}`}
-          </button>
+          {/* Submit button — its own island of space, visually detached */}
+          <div className="btn-island">
+            <button
+              type="submit"
+              disabled={submitting || hasEmptyRequired}
+              className="btn-hero w-full mx-auto block text-white text-lg font-semibold disabled:opacity-50"
+            >
+              {submitting
+                ? "Saving..."
+                : editingId
+                ? `Update ${config.entityName}`
+                : `Record ${config.entityName}`}
+            </button>
+          </div>
         </form>
 
-        <div className="card p-8">
+        <div className="card p-8" style={{ marginTop: "var(--section-gap)" }}>
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={prevMonth}

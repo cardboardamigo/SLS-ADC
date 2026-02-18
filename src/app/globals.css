@@ -38,9 +38,16 @@ html.light {
   --bubble-radius-sm: 28px;
   --bubble-radius-input: 50px;
 
-  /* Card tokens */
-  --card-radius: 12px;
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+  /* Card tokens – airy, clearly separated islands */
+  --card-radius: 16px;
+  --card-shadow: 0 2px 4px rgba(0,0,0,0.03), 0 6px 20px rgba(0,0,0,0.06);
+
+  /* Spacing tokens – anti-anxiety breathing room */
+  --group-gap: 2rem;        /* 32px between input groups */
+  --label-gap: 0.75rem;     /* 12px label-to-input */
+  --input-gap: 1.5rem;      /* 24px input-to-input */
+  --section-gap: 1.25rem;   /* 20px between dashboard cards */
+  --button-island: 3rem;    /* 48px above submit button */
 
   /* Profile page gradient */
   --profile-gradient: linear-gradient(165deg, #c5ddf5 0%, #d4e6f9 40%, #ddeafa 70%, #e5eefb 100%);
@@ -88,9 +95,16 @@ html.dark {
   --bubble-radius-sm: 28px;
   --bubble-radius-input: 50px;
 
-  /* Card tokens */
-  --card-radius: 12px;
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.3);
+  /* Card tokens – airy, clearly separated islands */
+  --card-radius: 16px;
+  --card-shadow: 0 2px 4px rgba(0,0,0,0.15), 0 6px 20px rgba(0,0,0,0.25);
+
+  /* Spacing tokens – anti-anxiety breathing room */
+  --group-gap: 2rem;
+  --label-gap: 0.75rem;
+  --input-gap: 1.5rem;
+  --section-gap: 1.25rem;
+  --button-island: 3rem;
 
   /* Profile page gradient */
   --profile-gradient: linear-gradient(165deg, #0f1724 0%, #162032 40%, #1a2638 70%, #1e2d42 100%);
@@ -218,13 +232,45 @@ button {
   padding: 0 1.5rem;
 }
 
+/* ── Page-level vertical distribution ──
+   Elements float apart to fill the screen instead of clinging to the top. */
+.page-breathe {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  min-height: calc(100vh - 5rem - 4rem - env(safe-area-inset-top, 0px));
+  /* subtract header (5rem) + bottom nav (4rem) + safe-area */
+}
+
+/* Dashboard card flow — guaranteed 20px gap, each card its own island */
+.dashboard-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-gap);
+}
+
 /* Card utility */
 .card {
   background: var(--card);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
   border: 1px solid var(--border);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* ── Form field group spacing ── */
+.field-group {
+  margin-bottom: var(--group-gap);
+}
+.field-group label {
+  margin-bottom: var(--label-gap);
+}
+
+/* ── Submit button island — generous breathing room above ── */
+.btn-island {
+  margin-top: var(--button-island);
+  padding-top: var(--button-island);
+  border-top: 1px solid var(--border);
 }
 
 /* PWA safe area */
