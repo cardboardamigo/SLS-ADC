@@ -80,7 +80,7 @@ function LoginContent() {
 
   /* ── Shared Styles ── */
   const glassCard = {
-    borderRadius: "var(--bubble-radius)",
+    borderRadius: "var(--card-radius)",
     background: "rgba(255,255,255,0.65)",
     backdropFilter: "blur(24px)",
     WebkitBackdropFilter: "blur(24px)",
@@ -97,7 +97,7 @@ function LoginContent() {
 
   const errorBanner = error ? (
     <div
-      className="text-sm p-3.5 mb-5 flex items-start gap-2.5"
+      className="text-sm p-3.5 mb-12 flex items-start gap-2.5"
       style={{
         borderRadius: "50px",
         background: "rgba(220,38,38,0.08)",
@@ -140,7 +140,7 @@ function LoginContent() {
               {errorBanner}
 
               <p
-                className="text-sm font-medium tracking-wide"
+                className="text-sm font-medium tracking-wide text-center"
                 style={{ color: "rgba(15,42,74,0.5)" }}
               >
                 Select your account
@@ -182,7 +182,7 @@ function LoginContent() {
           <div className="w-full">
             <button
               onClick={handleBack}
-              className="flex items-center gap-2 transition mb-5"
+              className="flex items-center gap-2 transition mb-12"
               style={{ color: "rgba(15,42,74,0.5)" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--navy)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(15,42,74,0.5)")}
@@ -193,7 +193,7 @@ function LoginContent() {
               <span className="text-sm font-medium">Back</span>
             </button>
 
-            <div className="flex flex-col items-center mb-8 mt-4">
+            <div className="flex flex-col items-center mb-12 mt-4">
               <div
                 className="w-20 h-20 flex items-center justify-center text-white text-2xl font-bold mb-4"
                 style={{

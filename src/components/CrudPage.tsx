@@ -86,8 +86,8 @@ export default function CrudPage<T extends { id: string; date: string }>({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="card p-8">
-          <div className="flex items-center justify-between" style={{ marginBottom: "var(--group-gap)" }}>
+        <form onSubmit={handleSubmit}>
+          <div className="text-center" style={{ marginBottom: "var(--group-gap)" }}>
             <h2
               className="text-lg font-semibold"
               style={{ color: "var(--text)" }}
@@ -100,7 +100,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="text-base"
+                className="text-base mt-2 mx-auto"
                 style={{ color: "var(--text-muted)" }}
               >
                 Cancel Edit

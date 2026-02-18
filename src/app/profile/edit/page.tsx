@@ -62,7 +62,7 @@ export default function EditProfilePage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: "var(--profile-gradient)" }}
+        style={{ background: "var(--bg)" }}
       >
         <div className="w-10 h-10 border-4 border-[var(--crimson)] border-t-transparent rounded-full animate-spin" />
       </div>
@@ -74,7 +74,7 @@ export default function EditProfilePage() {
       className="min-h-screen pb-10"
       style={{
         fontFamily: "'Poppins', sans-serif",
-        background: "var(--profile-gradient)",
+        background: "var(--bg)",
       }}
     >
       {/* ── Top Bar ── */}
@@ -103,7 +103,7 @@ export default function EditProfilePage() {
         {/* Status Messages */}
         {success && (
           <div
-            className="text-sm p-3 mb-4 text-center font-medium rounded-xl animate-in"
+            className="text-sm p-3 mb-12 text-center font-medium rounded-xl animate-in"
             style={{
               background: isDark ? "rgba(104,211,145,0.15)" : "rgba(56,161,105,0.1)",
               border: `1px solid ${isDark ? "rgba(104,211,145,0.3)" : "rgba(56,161,105,0.3)"}`,
@@ -115,7 +115,7 @@ export default function EditProfilePage() {
         )}
         {saveError && (
           <div
-            className="text-sm p-3 mb-4 text-center font-medium rounded-xl"
+            className="text-sm p-3 mb-12 text-center font-medium rounded-xl"
             style={{
               background: isDark ? "rgba(252,129,129,0.15)" : "rgba(220,38,38,0.1)",
               border: `1px solid ${isDark ? "rgba(252,129,129,0.3)" : "rgba(220,38,38,0.3)"}`,
@@ -262,12 +262,7 @@ export default function EditProfilePage() {
         {/* ── Form ── */}
         <form
           onSubmit={handleSave}
-          className="rounded-xl p-5"
-          style={{
-            background: "var(--card)",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--card-shadow)",
-          }}
+          className="card p-5"
         >
           <h2
             className="text-xs font-semibold mb-4 tracking-wide uppercase"
