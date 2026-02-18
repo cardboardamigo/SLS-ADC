@@ -29,6 +29,114 @@ Code must be **data-driven**, not hard-coded for specific hospitals, patient typ
 
 ---
 
+## 0.5. Global Centering Design Language
+
+The **Global Centering** philosophy ensures every element — labels, inputs, headings, buttons, and layout containers — defaults to a centered position. These rules apply to **every current page** (including Profile) and **any future pages** automatically via `globals.css`. No per-page overrides should be needed unless a specific layout demands it (e.g., `justify-between` on a navigation row).
+
+### Labels
+
+All `<label>` elements are centered, full-width blocks.
+
+```css
+label {
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+}
+```
+
+### Inputs, Selects & Textareas
+
+All form controls center both placeholder and active value text.
+
+```css
+input, select {
+  text-align: center !important;
+  text-align-last: center !important;   /* centers <select> values */
+}
+
+textarea {
+  text-align: center !important;
+  text-align-last: center !important;
+}
+
+::placeholder {
+  text-align: center !important;
+}
+```
+
+Textareas use `border-radius: var(--card-radius)` (16 px) instead of the pill 50 px because they are multi-line controls.
+
+### Headings (h1 – h6)
+
+All headings — and any classes used for section headers such as "ACCOUNT" or "APP" on the Profile page — are horizontally centered.
+
+```css
+h1, h2, h3, h4, h5, h6 {
+  text-align: center !important;
+}
+```
+
+### Buttons & Interactive List Items
+
+Buttons default to a Flexbox centering layout so text and icons are perfectly centered:
+
+```css
+/* In @layer base so Tailwind utilities can still override */
+@layer base {
+  button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+```
+
+> **Note:** The `@layer base` placement ensures that Tailwind utility classes (e.g., `justify-between`, `items-start`) take precedence when a specific layout is required. The existing unlayered `button { border-radius: 50px !important; }` rule is unaffected.
+
+For Profile page list items ("Edit Profile", "Dark Mode", "Sign Out"), the text spans use `text-center` instead of `text-left` so the label text is centered within its flex region.
+
+### Profile Header
+
+The profile image container and name/email block are wrapped in `flex flex-col items-center` on the profile card, ensuring the avatar, name, email, title badge, and phone number are all horizontally centered.
+
+### Layout Containers
+
+The main content wrapper (`.form-wrapper`) uses Flexbox column centering:
+
+```css
+.form-wrapper {
+  max-width: 450px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Children fill the full wrapper width */
+.form-wrapper > * {
+  width: 100%;
+}
+```
+
+This ensures all cards and form groups sit in the middle of the screen on every page.
+
+### Hard-Coded Overrides Removed
+
+The following `text-left` classes were removed from Profile and History pages to let the global centering styles take effect:
+
+| File | Element | Old Class | New Class |
+|------|---------|-----------|-----------|
+| `profile/page.tsx` | "Edit Profile" span | `text-left` | `text-center` |
+| `profile/page.tsx` | "Dark Mode" span | `text-left` | `text-center` |
+| `profile/page.tsx` | "Install App" span | `text-left` | `text-center` |
+| `profile/page.tsx` | "Sign Out" span | `text-left` | `text-center` |
+| `history/page.tsx` | Month accordion button | `text-left` | `text-center` |
+
+---
+
 ## 1. Layout & Containers — The "Anti-Cram" Layout
 
 ### Form Wrapper
@@ -408,7 +516,7 @@ button {
 ## 11. Quick-Reference Token Summary
 
 ```
-Aesthetic:           Boutique Studio
+Aesthetic:           Boutique Studio + Global Centering
 Background:          --bg: #F4F7F6 (light), #0f172a (dark)
 Form max-width:      max-width: 450px
 Vertical spacing:    gap / margin-bottom: 3rem (48px)
@@ -421,4 +529,14 @@ Hero glow:           box-shadow: 0 10px 30px -5px rgba(220,20,60,0.40)
 Internal padding:    padding: 14px 28px
 Field centering:     margin: 0 auto
 Profile avatar:      border-radius: 50%, 100x100px, centered, floating shadow
+
+Global Centering:
+  Labels:            display: block, width: 100%, text-align: center
+  Inputs/Selects:    text-align: center, text-align-last: center
+  Textareas:         text-align: center, border-radius: var(--card-radius)
+  Placeholders:      text-align: center
+  Headings (h1-h6):  text-align: center
+  Buttons:           display: flex, justify-content: center, align-items: center (@layer base)
+  .form-wrapper:     display: flex, flex-direction: column, align-items: center
+  Hard-coded:        No text-left classes; use text-center for list-item labels
 ```

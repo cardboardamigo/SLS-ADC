@@ -199,6 +199,17 @@ button {
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
+/* ── Style-guide: Global Centering – button flex centering ── */
+/* Placed in @layer base so Tailwind utility classes (justify-between, items-start, etc.)
+   can override when specific layouts need different alignment. */
+@layer base {
+  button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
 /* ── Style-guide: Hero button (one per screen, primary action) ── */
 .btn-hero {
   background: linear-gradient(135deg, #DC143C, #E85D5D) !important;
@@ -227,11 +238,21 @@ button {
 }
 
 /* ── Style-guide: form wrapper (Boutique: narrow centered container) ── */
+/* Global Centering: flex-column + align-items: center keeps all cards and
+   form groups horizontally centered within the 450px wrapper. */
 .form-wrapper {
   max-width: 450px;
   width: 100%;
   margin: 0 auto;
   padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Ensure children fill the wrapper width instead of shrink-wrapping */
+.form-wrapper > * {
+  width: 100%;
 }
 
 /* ── Page-level vertical distribution ──
@@ -272,6 +293,40 @@ button {
 /* All labels span full width and center their text for a uniform look */
 label {
   display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+}
+
+/* ── Style-guide: Global heading centering ── */
+/* All headings are horizontally centered by default for the Global Centering design */
+h1, h2, h3, h4, h5, h6 {
+  text-align: center !important;
+}
+
+/* ── Style-guide: textarea centering ── */
+/* Textareas follow the same centering rules as other inputs with a softer radius */
+textarea {
+  border-radius: var(--card-radius) !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  display: block !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05) !important;
+  padding: 14px 28px !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  text-align: center !important;
+  text-align-last: center !important;
+}
+
+textarea:focus {
+  transform: scale(1.02) !important;
+  box-shadow: 0 14px 35px -5px rgba(0, 0, 0, 0.10) !important;
+  outline: none !important;
+}
+
+/* ── Style-guide: placeholder centering ── */
+::placeholder {
   text-align: center !important;
 }
 
