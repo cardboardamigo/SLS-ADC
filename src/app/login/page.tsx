@@ -79,7 +79,7 @@ function LoginContent() {
   }
 
   /* ── Shared Styles ── */
-  const glassCard = {
+  const glassCard: React.CSSProperties = {
     borderRadius: "var(--card-radius)",
     background: "rgba(255,255,255,0.65)",
     backdropFilter: "blur(24px)",
@@ -97,7 +97,7 @@ function LoginContent() {
 
   const errorBanner = error ? (
     <div
-      className="text-sm p-3.5 mb-12 flex items-start gap-2.5"
+      className="text-sm p-3.5 mb-6 flex items-start gap-2.5"
       style={{
         borderRadius: "50px",
         background: "rgba(220,38,38,0.08)",
@@ -125,51 +125,61 @@ function LoginContent() {
         {/* ── Select User View ── */}
         {!selectedUser && (
           <>
-            <div className="flex flex-col items-center mb-12">
+            <div className="flex flex-col items-center mb-10">
               <Image
                 src="/CT_LOGO_.png"
                 alt="Census Tracker"
-                width={360}
-                height={360}
+                width={280}
+                height={280}
                 className="object-contain"
                 priority
               />
             </div>
 
-            <div className="w-full flex flex-col items-center gap-12">
+            {/* Glass card wrapping user selection */}
+            <div className="w-full px-6 py-8 sm:px-8" style={glassCard}>
               {errorBanner}
 
               <p
-                className="text-sm font-medium tracking-wide text-center"
-                style={{ color: "rgba(15,42,74,0.5)" }}
+                className="text-xs font-semibold uppercase tracking-[0.2em] text-center mb-8"
+                style={{ color: "rgba(15,42,74,0.4)" }}
               >
                 Select your account
               </p>
 
-              <div className="flex gap-12">
+              <div className="flex justify-center gap-10">
                 {USERS.map((u) => (
                   <button
                     key={u.email}
                     onClick={() => handleSelectUser(u)}
                     className="flex flex-col items-center gap-3 group"
+                    style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
                   >
                     <div
-                      className="w-20 h-20 flex items-center justify-center text-white text-2xl font-bold active:scale-[0.95] transition-all"
+                      className="w-[100px] h-[100px] flex items-center justify-center text-white text-3xl font-bold transition-transform active:scale-[0.93]"
                       style={{
                         borderRadius: "50%",
                         background: "var(--navy)",
                         fontFamily: "'Poppins', sans-serif",
-                        boxShadow: "0 6px 24px rgba(15,42,74,0.35)",
+                        boxShadow: "0 8px 30px rgba(15,42,74,0.4)",
                       }}
                     >
                       {u.initials}
                     </div>
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: "var(--navy)" }}
-                    >
-                      {u.name}
-                    </span>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span
+                        className="text-sm font-semibold"
+                        style={{ color: "var(--navy)" }}
+                      >
+                        {u.name}
+                      </span>
+                      <span
+                        className="text-[11px]"
+                        style={{ color: "rgba(15,42,74,0.4)" }}
+                      >
+                        Clinical Liaison
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -183,7 +193,7 @@ function LoginContent() {
             <button
               onClick={handleBack}
               className="flex items-center gap-2 transition mb-12"
-              style={{ color: "rgba(15,42,74,0.5)" }}
+              style={{ color: "rgba(15,42,74,0.5)", background: "transparent", boxShadow: "none", borderRadius: "0" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--navy)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(15,42,74,0.5)")}
             >
@@ -193,14 +203,14 @@ function LoginContent() {
               <span className="text-sm font-medium">Back</span>
             </button>
 
-            <div className="flex flex-col items-center mb-12 mt-4">
+            <div className="flex flex-col items-center mb-10">
               <div
-                className="w-20 h-20 flex items-center justify-center text-white text-2xl font-bold mb-4"
+                className="w-[100px] h-[100px] flex items-center justify-center text-white text-3xl font-bold mb-4"
                 style={{
                   borderRadius: "50%",
                   background: "var(--crimson)",
                   fontFamily: "'Poppins', sans-serif",
-                  boxShadow: "0 6px 24px rgba(192,57,43,0.35)",
+                  boxShadow: "0 8px 30px rgba(192,57,43,0.4)",
                 }}
               >
                 {selectedUser.initials}
@@ -213,11 +223,11 @@ function LoginContent() {
               </p>
             </div>
 
-            <div className="px-5 py-7 sm:px-7" style={glassCard}>
+            <div className="px-6 py-8 sm:px-8" style={glassCard}>
               {errorBanner}
-              <form onSubmit={handleSubmit} className="space-y-12">
+              <form onSubmit={handleSubmit} className="space-y-8">
                 <div>
-                  <label htmlFor="pin" className="block text-sm font-medium mb-2" style={{ color: "rgba(15,42,74,0.7)" }}>
+                  <label htmlFor="pin" className="block text-sm font-medium mb-3" style={{ color: "rgba(15,42,74,0.7)" }}>
                     4-Digit PIN
                   </label>
                   <div className="relative">
