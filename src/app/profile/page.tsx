@@ -22,7 +22,7 @@ export default function ProfilePage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: "var(--profile-gradient)" }}
+        style={{ background: "var(--bg)" }}
       >
         <div className="w-10 h-10 border-4 border-[var(--crimson)] border-t-transparent rounded-full animate-spin" />
       </div>
@@ -36,21 +36,15 @@ export default function ProfilePage() {
       className="min-h-screen pb-24 content-below-header"
       style={{
         fontFamily: "'Poppins', sans-serif",
-        background: "var(--profile-gradient)",
+        background: "var(--bg)",
       }}
     >
       <Header />
 
       <div className="form-wrapper py-8">
         {/* ── Profile Card ── */}
-        <div
-          className="rounded-xl p-8 mb-12 flex flex-col items-center"
-          style={{
-            background: "var(--card)",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--card-shadow)",
-          }}
-        >
+        <div className="card p-8 mb-12 flex flex-col items-center">
+
           {/* Avatar */}
           <div className="relative mb-4">
             {profile?.profilePicUrl ? (
@@ -112,14 +106,8 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Settings List ── */}
-        <div
-          className="rounded-xl overflow-hidden mb-12"
-          style={{
-            background: "var(--card)",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--card-shadow)",
-          }}
-        >
+        <div className="card overflow-hidden mb-12">
+
           <h3
             className="text-xs font-semibold uppercase tracking-wider px-5 pt-4 pb-2"
             style={{ color: "var(--text-muted)" }}
@@ -197,14 +185,8 @@ export default function ProfilePage() {
         </div>
 
         {/* ── App Section ── */}
-        <div
-          className="rounded-xl overflow-hidden mb-12"
-          style={{
-            background: "var(--card)",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--card-shadow)",
-          }}
-        >
+        <div className="card overflow-hidden mb-12">
+
           <h3
             className="text-xs font-semibold uppercase tracking-wider px-5 pt-4 pb-2"
             style={{ color: "var(--text-muted)" }}
@@ -254,7 +236,7 @@ export default function ProfilePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                   </svg>
                 </div>
-                <span className="text-sm font-medium" style={{ color: "var(--success)" }}>
+                <span className="text-sm font-medium flex-1 text-center" style={{ color: "var(--success)" }}>
                   App Installed
                 </span>
               </div>
@@ -286,7 +268,7 @@ export default function ProfilePage() {
 
         {/* Version info */}
         <p
-          className="text-center text-xs mt-4"
+          className="text-center text-xs mt-12"
           style={{ color: "var(--text-muted)", opacity: 0.6 }}
         >
           Census Tracker v1.0

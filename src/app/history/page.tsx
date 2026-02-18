@@ -108,7 +108,7 @@ export default function HistoryPage() {
 
         {/* ========== LIST VIEW ========== */}
         {viewMode === "list" && (
-          <div className="space-y-4">
+          <div className="space-y-12">
             {months.map((m) => {
               const bonus = calculateBonus(m.adc.averageDailyCensus);
               const isExpanded = expandedMonth === m.adc.month;
@@ -173,7 +173,7 @@ export default function HistoryPage() {
 
                       {bonus.amount > 0 && (
                         <div
-                          className="rounded-lg p-4 text-center mb-4"
+                          className="rounded-xl p-4 text-center mb-4"
                           style={{ background: "var(--status-rta-bg)" }}
                         >
                           <p className="text-base" style={{ color: "var(--status-rta)" }}>
@@ -402,7 +402,7 @@ function DayDetailModal({ day, onClose }: { day: DayCensusData; onClose: () => v
         onClick={onClose}
       />
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-xl max-h-[80vh] overflow-y-auto"
+        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl max-h-[80vh] overflow-y-auto"
         style={{
           background: "var(--card)",
           boxShadow: "0 -4px 24px rgba(0,0,0,0.15)",

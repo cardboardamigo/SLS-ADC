@@ -141,24 +141,22 @@ export default function DashboardPage() {
 
         {/* Starting Census */}
         <div className="card p-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-base" style={{ color: "var(--text-muted)" }}>Starting Census (Month)</p>
-              <p className="text-2xl font-semibold" style={{ color: "var(--text)" }}>{startCensus}</p>
-            </div>
+          <div className="text-center">
+            <p className="text-base" style={{ color: "var(--text-muted)" }}>Starting Census (Month)</p>
+            <p className="text-2xl font-semibold" style={{ color: "var(--text)" }}>{startCensus}</p>
             {!editingCensus ? (
               <button
                 onClick={() => {
                   setCensusInput(String(startCensus));
                   setEditingCensus(true);
                 }}
-                className="text-base font-medium px-4 py-2"
+                className="text-base font-medium px-4 py-2 mx-auto mt-2"
                 style={{ color: "var(--accent)" }}
               >
                 Edit
               </button>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2 mt-3">
                 <input
                   type="number"
                   value={censusInput}
@@ -220,11 +218,11 @@ export default function DashboardPage() {
 
         {/* Recent Activity */}
         <div className="card p-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold" style={{ color: "var(--text)" }}>Recent Activity</h2>
+          <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--text)" }}>Recent Activity</h2>
+          <div className="text-center mb-4">
             <button
               onClick={() => router.push("/history")}
-              className="text-base font-medium"
+              className="text-base font-medium mx-auto"
               style={{ color: "var(--accent)" }}
             >
               View All
@@ -289,7 +287,7 @@ export default function DashboardPage() {
         </div>{/* end dashboard-cards */}
 
         {/* Hidden bonus access - triple tap area */}
-        <div className="mt-6 text-center" onClick={handleTripleTap}>
+        <div className="mt-12 text-center" onClick={handleTripleTap}>
           <p className="text-sm select-none" style={{ color: "var(--text-muted)", opacity: 0.5 }}>v1.0 - SLS Census Tracker</p>
         </div>
       </div>
