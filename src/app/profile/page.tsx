@@ -123,7 +123,7 @@ export default function ProfilePage() {
               {/* ── Settings List ── */}
               <div className="card overflow-hidden mb-12">
                 <h3
-                  className="text-xs font-semibold uppercase tracking-wider pb-2"
+                  className="text-xs font-semibold uppercase tracking-wider pb-2 text-center"
                   style={{ color: "var(--text-muted)" }}
                 >
                   Account
@@ -201,7 +201,7 @@ export default function ProfilePage() {
               {/* ── App Section ── */}
               <div className="card overflow-hidden mb-12">
                 <h3
-                  className="text-xs font-semibold uppercase tracking-wider pb-2"
+                  className="text-xs font-semibold uppercase tracking-wider pb-2 text-center"
                   style={{ color: "var(--text-muted)" }}
                 >
                   App

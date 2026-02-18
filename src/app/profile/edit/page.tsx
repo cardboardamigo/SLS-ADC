@@ -111,7 +111,7 @@ export default function EditProfilePage() {
             )}
 
             {/* ── Avatar Section ── */}
-            <div className="flex flex-col items-center mb-12">
+            <div className="flex flex-col items-center mb-16">
               <div className="relative mb-4">
                 {displayUrl ? (
                   <>
@@ -248,13 +248,13 @@ export default function EditProfilePage() {
               className="card"
             >
               <h2
-                className="text-xs font-semibold mb-4 tracking-wide uppercase text-center lg:text-left"
+                className="text-xs font-semibold mb-8 tracking-wide uppercase text-center lg:text-left"
                 style={{ color: "var(--text-muted)" }}
               >
                 Profile Information
               </h2>
 
-              <div className="space-y-12">
+              <div className="space-y-16">
                 <div>
                   <label
                     className="block text-xs font-medium mb-1 text-center lg:text-left"
@@ -327,7 +327,7 @@ export default function EditProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="btn-hero w-full mx-auto block text-white text-sm font-semibold disabled:opacity-50 mt-12"
+                className="btn-hero w-full mx-auto block text-white text-sm font-semibold disabled:opacity-50 mt-16"
                 style={{
                   fontFamily: "'Poppins', sans-serif",
                 }}
