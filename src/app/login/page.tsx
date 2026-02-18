@@ -3,6 +3,8 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useAuth, friendlyAuthError } from "@/contexts/AuthContext";
 import { USERS } from "@/lib/config";
 
@@ -25,6 +27,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pinInputRef = useRef<HTMLInputElement>(null);
+  const [profilePics, setProfilePics] = useState<Record<string, string>>({});
 
   const redirectTo = searchParams.get("redirect") || "/dashboard";
 
@@ -33,6 +36,27 @@ function LoginContent() {
       router.replace(redirectTo);
     }
   }, [user, authLoading, router, redirectTo]);
+
+  useEffect(() => {
+    async function fetchProfilePics() {
+      try {
+        const emails = USERS.map((u) => u.email);
+        const q = query(collection(db, "users"), where("email", "in", emails));
+        const snap = await getDocs(q);
+        const pics: Record<string, string> = {};
+        snap.forEach((doc) => {
+          const data = doc.data();
+          if (data.email && data.profilePicUrl) {
+            pics[data.email] = data.profilePicUrl;
+          }
+        });
+        setProfilePics(pics);
+      } catch {
+        // Profile pics are cosmetic — fail silently
+      }
+    }
+    fetchProfilePics();
+  }, []);
 
   useEffect(() => {
     if (selectedUser) {
@@ -77,16 +101,6 @@ function LoginContent() {
     const value = e.target.value.replace(/\D/g, "").slice(0, 4);
     setPin(value);
   }
-
-  /* ── Shared Styles ── */
-  const glassCard: React.CSSProperties = {
-    borderRadius: "var(--card-radius)",
-    background: "rgba(255,255,255,0.65)",
-    backdropFilter: "blur(24px)",
-    WebkitBackdropFilter: "blur(24px)",
-    border: "1px solid rgba(15,42,74,0.12)",
-    boxShadow: "0 8px 32px rgba(15,42,74,0.08)",
-  };
 
   const spinner = (
     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -136,16 +150,9 @@ function LoginContent() {
               />
             </div>
 
-            {/* Glass card wrapping user selection */}
-            <div className="w-full px-6 py-8 sm:px-8" style={glassCard}>
+            {/* User selection area */}
+            <div className="w-full px-6 py-8 sm:px-8">
               {errorBanner}
-
-              <p
-                className="text-xs font-semibold uppercase tracking-[0.2em] text-center mb-8"
-                style={{ color: "rgba(15,42,74,0.4)" }}
-              >
-                Choose your account
-              </p>
 
               <div className="flex justify-center gap-10">
                 {USERS.map((u) => (
@@ -153,19 +160,31 @@ function LoginContent() {
                     key={u.email}
                     onClick={() => handleSelectUser(u)}
                     className="flex flex-col items-center gap-3 group"
-                    style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
+                    style={{ background: "transparent", boxShadow: "none", borderRadius: "0", border: "none" }}
                   >
-                    <div
-                      className="w-[100px] h-[100px] flex items-center justify-center text-white text-3xl font-bold transition-transform active:scale-[0.93]"
-                      style={{
-                        borderRadius: "50%",
-                        background: "var(--navy)",
-                        fontFamily: "'Poppins', sans-serif",
-                        boxShadow: "0 8px 30px rgba(15,42,74,0.4)",
-                      }}
-                    >
-                      {u.initials}
-                    </div>
+                    {profilePics[u.email] ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={profilePics[u.email]}
+                        alt={u.name}
+                        className="w-[100px] h-[100px] rounded-full object-cover transition-transform active:scale-[0.93]"
+                        style={{
+                          boxShadow: "0 8px 30px rgba(15,42,74,0.4)",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="w-[100px] h-[100px] flex items-center justify-center text-white text-3xl font-bold transition-transform active:scale-[0.93]"
+                        style={{
+                          borderRadius: "50%",
+                          background: "var(--navy)",
+                          fontFamily: "'Poppins', sans-serif",
+                          boxShadow: "0 8px 30px rgba(15,42,74,0.4)",
+                        }}
+                      >
+                        {u.initials}
+                      </div>
+                    )}
                     <div className="flex flex-col items-center gap-0.5">
                       <span
                         className="text-sm font-semibold"
@@ -189,11 +208,18 @@ function LoginContent() {
 
         {/* ── Enter PIN View ── */}
         {selectedUser && (
-          <div className="w-full">
+          <div className="w-full flex flex-col items-center">
             <button
               onClick={handleBack}
-              className="flex items-center gap-2 transition mb-12"
-              style={{ color: "rgba(15,42,74,0.5)", background: "transparent", boxShadow: "none", borderRadius: "0" }}
+              className="fixed top-0 left-0 flex items-center gap-2 transition z-10"
+              style={{
+                color: "rgba(15,42,74,0.5)",
+                background: "transparent",
+                boxShadow: "none",
+                borderRadius: "0",
+                padding: "1rem 1.25rem",
+                paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
+              }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--navy)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(15,42,74,0.5)")}
             >
@@ -203,18 +229,32 @@ function LoginContent() {
               <span className="text-sm font-medium">Back</span>
             </button>
 
-            <div className="flex flex-col items-center mb-10">
-              <div
-                className="w-[100px] h-[100px] flex items-center justify-center text-white text-3xl font-bold mb-4"
-                style={{
-                  borderRadius: "50%",
-                  background: "var(--crimson)",
-                  fontFamily: "'Poppins', sans-serif",
-                  boxShadow: "0 8px 30px rgba(192,57,43,0.4)",
-                }}
-              >
-                {selectedUser.initials}
-              </div>
+            <div className="flex flex-col items-center" style={{ marginBottom: "6rem" }}>
+              {profilePics[selectedUser.email] ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={profilePics[selectedUser.email]}
+                  alt={selectedUser.name}
+                  className="w-[100px] h-[100px] rounded-full object-cover"
+                  style={{
+                    marginBottom: "1.5rem",
+                    boxShadow: "0 8px 30px rgba(192,57,43,0.4)",
+                  }}
+                />
+              ) : (
+                <div
+                  className="w-[100px] h-[100px] flex items-center justify-center text-white text-3xl font-bold"
+                  style={{
+                    marginBottom: "1.5rem",
+                    borderRadius: "50%",
+                    background: "var(--crimson)",
+                    fontFamily: "'Poppins', sans-serif",
+                    boxShadow: "0 8px 30px rgba(192,57,43,0.4)",
+                  }}
+                >
+                  {selectedUser.initials}
+                </div>
+              )}
               <h2 className="text-2xl font-bold" style={{ color: "var(--navy)" }}>
                 {selectedUser.name}
               </h2>
@@ -223,77 +263,59 @@ function LoginContent() {
               </p>
             </div>
 
-            <div className="px-6 py-8 sm:px-8" style={glassCard}>
-              {errorBanner}
-              <form onSubmit={handleSubmit} className="space-y-8">
-                <div>
-                  <label htmlFor="pin" className="block text-sm font-medium mb-3" style={{ color: "rgba(15,42,74,0.7)" }}>
-                    4-Digit PIN
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                      <svg className="w-5 h-5" style={{ color: "rgba(15,42,74,0.4)" }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                      </svg>
-                    </div>
-                    <input
-                      ref={pinInputRef}
-                      id="pin"
-                      name="pin"
-                      type="password"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      autoComplete="off"
-                      value={pin}
-                      onChange={handlePinChange}
-                      maxLength={4}
-                      required
-                      className="h-14 w-full pl-14 pr-5 text-sm text-center tracking-[0.5em] placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
-                      style={{
-                        borderRadius: "50px",
-                        background: "rgba(255,255,255,0.7)",
-                        border: "1.5px solid var(--navy)",
-                        fontFamily: "'Poppins', sans-serif",
-                        color: "var(--navy)",
-                        fontSize: "1.25rem",
-                        letterSpacing: "0.5em",
-                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)",
-                        maxWidth: "100%",
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "var(--crimson)";
-                        e.target.style.boxShadow = "0 0 0 3px rgba(192,57,43,0.12)";
-                        e.target.style.background = "rgba(255,255,255,0.9)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "var(--navy)";
-                        e.target.style.boxShadow = "none";
-                        e.target.style.background = "rgba(255,255,255,0.7)";
-                      }}
-                      placeholder="----"
-                    />
-                  </div>
-                </div>
+            {errorBanner}
 
-                <button
-                  type="submit"
-                  disabled={loading || pin.length !== 4}
-                  className="btn-hero h-14 w-full mx-auto block text-white text-sm font-semibold disabled:opacity-50"
+            <form onSubmit={handleSubmit} className="w-full flex flex-col items-center" style={{ gap: "3rem" }}>
+              <div className="w-full">
+                <label htmlFor="pin" className="block text-sm font-medium mb-3" style={{ color: "rgba(15,42,74,0.7)" }}>
+                  4-Digit PIN
+                </label>
+                <input
+                  ref={pinInputRef}
+                  id="pin"
+                  name="pin"
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
+                  value={pin}
+                  onChange={handlePinChange}
+                  maxLength={4}
+                  required
+                  className="w-full placeholder-[rgba(15,42,74,0.35)] focus:outline-none transition-all"
                   style={{
+                    borderRadius: "50px",
+                    background: "rgba(255,255,255,0.7)",
+                    border: "1.5px solid var(--navy)",
                     fontFamily: "'Poppins', sans-serif",
+                    color: "var(--navy)",
+                    fontSize: "1.25rem",
+                    letterSpacing: "0.5em",
+                    padding: "14px 28px",
+                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)",
                   }}
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      {spinner}
-                      Signing in...
-                    </span>
-                  ) : (
-                    "Sign In"
-                  )}
-                </button>
-              </form>
-            </div>
+                  placeholder="----"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || pin.length !== 4}
+                className="btn-hero h-14 w-full text-white text-sm font-semibold disabled:opacity-50"
+                style={{
+                  fontFamily: "'Poppins', sans-serif",
+                }}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    {spinner}
+                    Signing in...
+                  </span>
+                ) : (
+                  "Sign In"
+                )}
+              </button>
+            </form>
           </div>
         )}
       </div>
