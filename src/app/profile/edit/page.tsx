@@ -24,8 +24,6 @@ export default function EditProfilePage() {
     setImgLoaded,
     isUploading,
     displayUrl,
-    diagLog,
-    setDiagLog,
     handlePhotoUpload,
     cancelUpload,
     handleSave,
@@ -125,26 +123,6 @@ export default function EditProfilePage() {
             }}
           >
             {saveError}
-          </div>
-        )}
-
-        {/* ── TEMPORARY DIAG BANNER (remove after upload confirmed working) ── */}
-        {diagLog.length > 0 && (
-          <div
-            className="text-xs p-3 mb-4 rounded-xl font-mono leading-relaxed"
-            style={{
-              background: isDark ? "rgba(99,179,237,0.12)" : "rgba(26,54,93,0.08)",
-              border: `1px solid ${isDark ? "rgba(99,179,237,0.3)" : "rgba(26,54,93,0.2)"}`,
-              color: isDark ? "#90cdf4" : "#1a365d",
-            }}
-          >
-            <div className="flex justify-between items-center mb-1">
-              <span className="font-semibold text-[10px] uppercase tracking-wider opacity-60">Upload Debug</span>
-              <button onClick={() => setDiagLog([])} className="opacity-40 text-[10px]">clear</button>
-            </div>
-            {diagLog.map((line, i) => (
-              <div key={i}>{line}</div>
-            ))}
           </div>
         )}
 
