@@ -1,9 +1,25 @@
 "use client";
 
+import { useState } from "react";
 import AppLayout from "@/components/AppLayout";
+import AutocompleteInput from "@/components/AutocompleteInput";
 import { useHistory } from "@/hooks/useHistory";
 import type { DayCensusData } from "@/hooks/useHistory";
+import { useAuth } from "@/contexts/AuthContext";
 import { calculateBonus, formatCurrency } from "@/lib/bonus";
+import {
+  addAdmission, updateAdmission, deleteAdmission,
+  addDischarge, updateDischarge, deleteDischarge,
+  addRTA, updateRTA, deleteRTA,
+  getHospitalNames, saveHospitalIfNew,
+  recordActivity,
+} from "@/lib/census";
+import { Admission, Discharge, RTA } from "@/lib/types";
+import {
+  PATIENT_TYPES, CLINICAL_LIAISONS,
+  DISCHARGE_TYPES,
+  RTA_HOSPITALS, RTA_REASONS,
+} from "@/lib/config";
 import { subMonths, addMonths, format } from "date-fns";
 
 export default function HistoryPage() {
@@ -27,6 +43,7 @@ export default function HistoryPage() {
     weekDays,
     hasActivity,
     loadData,
+    loadCalendarData,
   } = useHistory();
 
   if (loading || dataLoading) {
@@ -290,14 +307,15 @@ export default function HistoryPage() {
                         const hasAct = hasActivity(day);
                         const todayStr = format(new Date(), "yyyy-MM-dd");
                         const isToday = day.date === todayStr;
+                        const isClickable = !isFuture;
 
                         return (
                           <button
                             key={day.date}
-                            onClick={() => hasAct && setSelectedDay(day)}
-                            disabled={!hasAct}
+                            onClick={() => isClickable && setSelectedDay(day)}
+                            disabled={!isClickable}
                             className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all ${
-                              hasAct ? "cursor-pointer active:scale-95" : "cursor-default"
+                              isClickable ? "cursor-pointer active:scale-95" : "cursor-default"
                             }`}
                             style={{
                               background: isToday
@@ -376,7 +394,13 @@ export default function HistoryPage() {
 
         {/* ========== DAY DETAIL MODAL ========== */}
         {selectedDay && (
-          <DayDetailModal day={selectedDay} onClose={() => setSelectedDay(null)} />
+          <DayDetailModal
+            day={selectedDay}
+            onClose={() => setSelectedDay(null)}
+            onDataChanged={async () => {
+              await loadCalendarData();
+            }}
+          />
         )}
       </div>
     </AppLayout>
@@ -385,7 +409,184 @@ export default function HistoryPage() {
 
 // ── Day detail: bottom sheet on mobile, centered modal on desktop ──
 
-function DayDetailModal({ day, onClose }: { day: DayCensusData; onClose: () => void }) {
+type AddFormType = "admission" | "discharge" | "rta" | null;
+
+interface EditState {
+  type: "admission" | "discharge" | "rta";
+  id: string;
+  values: Record<string, string>;
+}
+
+function DayDetailModal({
+  day,
+  onClose,
+  onDataChanged,
+}: {
+  day: DayCensusData;
+  onClose: () => void;
+  onDataChanged: () => Promise<void>;
+}) {
+  const { user, profile } = useAuth();
+
+  // Add form state
+  const [addForm, setAddForm] = useState<AddFormType>(null);
+  const [addValues, setAddValues] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  // Edit state
+  const [editState, setEditState] = useState<EditState | null>(null);
+
+  // Local copy of day data so we can update after CRUD
+  const [localDay, setLocalDay] = useState(day);
+
+  const inputStyle: React.CSSProperties = {
+    background: "var(--input-bg)",
+    borderColor: "var(--border)",
+    color: "var(--text)",
+    borderRadius: "12px",
+    padding: "10px 14px",
+    width: "100%",
+    fontSize: "0.875rem",
+  };
+
+  function showFeedback(type: "success" | "error", msg: string) {
+    setFeedback({ type, msg });
+    setTimeout(() => setFeedback(null), 2000);
+  }
+
+  // ── Open add form ──
+  function openAddForm(type: AddFormType) {
+    setEditState(null);
+    setAddForm(type);
+    if (type === "admission") {
+      const defaultCL = profile?.name && CLINICAL_LIAISONS.find((cl) => profile.name?.startsWith(cl));
+      setAddValues({
+        hospitalName: "",
+        patientType: PATIENT_TYPES[0],
+        clinicalLiaison: defaultCL || CLINICAL_LIAISONS[0],
+      });
+    } else if (type === "discharge") {
+      setAddValues({ dischargeType: DISCHARGE_TYPES[0], dischargeName: "" });
+    } else if (type === "rta") {
+      setAddValues({ hospital: RTA_HOSPITALS[0], reason: RTA_REASONS[0] });
+    }
+  }
+
+  // ── Submit add ──
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+    setSubmitting(true);
+    try {
+      const base = { date: localDay.date, createdBy: user.uid, createdAt: new Date().toISOString() };
+      if (addForm === "admission") {
+        const id = await addAdmission({ ...base, hospitalName: addValues.hospitalName.trim(), patientType: addValues.patientType as Admission["patientType"], clinicalLiaison: addValues.clinicalLiaison as Admission["clinicalLiaison"] });
+        setLocalDay((prev) => ({ ...prev, admissions: [...prev.admissions, { id, ...base, hospitalName: addValues.hospitalName.trim(), patientType: addValues.patientType as Admission["patientType"], clinicalLiaison: addValues.clinicalLiaison as Admission["clinicalLiaison"] }] }));
+        recordActivity({ type: "Admit", patientName: addValues.hospitalName.trim(), liaisonName: profile?.name ?? "", userUID: user.uid }).catch(() => {});
+        saveHospitalIfNew(addValues.hospitalName).catch(() => {});
+      } else if (addForm === "discharge") {
+        const id = await addDischarge({ ...base, dischargeType: addValues.dischargeType as Discharge["dischargeType"], dischargeName: addValues.dischargeName.trim() });
+        setLocalDay((prev) => ({ ...prev, discharges: [...prev.discharges, { id, ...base, dischargeType: addValues.dischargeType as Discharge["dischargeType"], dischargeName: addValues.dischargeName.trim() }] }));
+        recordActivity({ type: "DC", patientName: addValues.dischargeName.trim(), liaisonName: profile?.name ?? "", userUID: user.uid }).catch(() => {});
+      } else if (addForm === "rta") {
+        const id = await addRTA({ ...base, hospital: addValues.hospital as RTA["hospital"], reason: addValues.reason as RTA["reason"] });
+        setLocalDay((prev) => ({ ...prev, rtas: [...prev.rtas, { id, ...base, hospital: addValues.hospital as RTA["hospital"], reason: addValues.reason as RTA["reason"] }] }));
+        recordActivity({ type: "RTA", patientName: addValues.hospital, liaisonName: profile?.name ?? "", userUID: user.uid }).catch(() => {});
+      }
+      showFeedback("success", "Saved successfully");
+      setAddForm(null);
+      onDataChanged();
+    } catch {
+      showFeedback("error", "Failed to save. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // ── Start edit ──
+  function startEditAdmission(a: Admission) {
+    setAddForm(null);
+    setEditState({ type: "admission", id: a.id, values: { hospitalName: a.hospitalName, patientType: a.patientType, clinicalLiaison: a.clinicalLiaison } });
+  }
+  function startEditDischarge(d: Discharge) {
+    setAddForm(null);
+    setEditState({ type: "discharge", id: d.id, values: { dischargeType: d.dischargeType, dischargeName: d.dischargeName } });
+  }
+  function startEditRTA(r: RTA) {
+    setAddForm(null);
+    setEditState({ type: "rta", id: r.id, values: { hospital: r.hospital, reason: r.reason } });
+  }
+
+  // ── Submit edit ──
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editState) return;
+    setSubmitting(true);
+    try {
+      if (editState.type === "admission") {
+        await updateAdmission(editState.id, { hospitalName: editState.values.hospitalName.trim(), patientType: editState.values.patientType as Admission["patientType"], clinicalLiaison: editState.values.clinicalLiaison as Admission["clinicalLiaison"] });
+        setLocalDay((prev) => ({ ...prev, admissions: prev.admissions.map((a) => a.id === editState.id ? { ...a, hospitalName: editState.values.hospitalName.trim(), patientType: editState.values.patientType as Admission["patientType"], clinicalLiaison: editState.values.clinicalLiaison as Admission["clinicalLiaison"] } : a) }));
+        saveHospitalIfNew(editState.values.hospitalName).catch(() => {});
+      } else if (editState.type === "discharge") {
+        await updateDischarge(editState.id, { dischargeType: editState.values.dischargeType as Discharge["dischargeType"], dischargeName: editState.values.dischargeName.trim() });
+        setLocalDay((prev) => ({ ...prev, discharges: prev.discharges.map((d) => d.id === editState.id ? { ...d, dischargeType: editState.values.dischargeType as Discharge["dischargeType"], dischargeName: editState.values.dischargeName.trim() } : d) }));
+      } else if (editState.type === "rta") {
+        await updateRTA(editState.id, { hospital: editState.values.hospital as RTA["hospital"], reason: editState.values.reason as RTA["reason"] });
+        setLocalDay((prev) => ({ ...prev, rtas: prev.rtas.map((r) => r.id === editState.id ? { ...r, hospital: editState.values.hospital as RTA["hospital"], reason: editState.values.reason as RTA["reason"] } : r) }));
+      }
+      showFeedback("success", "Updated successfully");
+      setEditState(null);
+      onDataChanged();
+    } catch {
+      showFeedback("error", "Failed to update. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // ── Delete ──
+  async function handleDeleteAdmission(id: string) {
+    if (!confirm("Delete this admission?")) return;
+    try {
+      await deleteAdmission(id);
+      setLocalDay((prev) => ({ ...prev, admissions: prev.admissions.filter((a) => a.id !== id) }));
+      if (editState?.id === id) setEditState(null);
+      showFeedback("success", "Deleted");
+      onDataChanged();
+    } catch {
+      showFeedback("error", "Failed to delete.");
+    }
+  }
+  async function handleDeleteDischarge(id: string) {
+    if (!confirm("Delete this discharge?")) return;
+    try {
+      await deleteDischarge(id);
+      setLocalDay((prev) => ({ ...prev, discharges: prev.discharges.filter((d) => d.id !== id) }));
+      if (editState?.id === id) setEditState(null);
+      showFeedback("success", "Deleted");
+      onDataChanged();
+    } catch {
+      showFeedback("error", "Failed to delete.");
+    }
+  }
+  async function handleDeleteRTA(id: string) {
+    if (!confirm("Delete this RTA?")) return;
+    try {
+      await deleteRTA(id);
+      setLocalDay((prev) => ({ ...prev, rtas: prev.rtas.filter((r) => r.id !== id) }));
+      if (editState?.id === id) setEditState(null);
+      showFeedback("success", "Deleted");
+      onDataChanged();
+    } catch {
+      showFeedback("error", "Failed to delete.");
+    }
+  }
+
+  function setEditValue(key: string, value: string) {
+    setEditState((prev) => prev ? { ...prev, values: { ...prev.values, [key]: value } } : prev);
+  }
+
   return (
     <>
       <div
@@ -394,7 +595,7 @@ function DayDetailModal({ day, onClose }: { day: DayCensusData; onClose: () => v
         onClick={onClose}
       />
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl max-h-[80vh] overflow-y-auto lg:bottom-auto lg:left-1/2 lg:top-1/2 lg:right-auto lg:w-full lg:max-w-lg lg:rounded-2xl lg:-translate-x-1/2 lg:-translate-y-1/2"
+        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl max-h-[85vh] overflow-y-auto lg:bottom-auto lg:left-1/2 lg:top-1/2 lg:right-auto lg:w-full lg:max-w-lg lg:rounded-2xl lg:-translate-x-1/2 lg:-translate-y-1/2"
         style={{
           background: "var(--card)",
           boxShadow: "0 -4px 24px rgba(0,0,0,0.15)",
@@ -413,11 +614,11 @@ function DayDetailModal({ day, onClose }: { day: DayCensusData; onClose: () => v
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold" style={{ color: "var(--text)" }}>
-                {format(new Date(day.date + "T12:00:00"), "EEEE, MMM d")}
+                {format(new Date(localDay.date + "T12:00:00"), "EEEE, MMM d")}
               </h3>
-              {day.endingCensus !== -1 && (
+              {localDay.endingCensus !== -1 && (
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                  Ending Census: <span className="font-semibold" style={{ color: "var(--text)" }}>{day.endingCensus}</span>
+                  Ending Census: <span className="font-semibold" style={{ color: "var(--text)" }}>{localDay.endingCensus}</span>
                 </p>
               )}
             </div>
@@ -432,6 +633,19 @@ function DayDetailModal({ day, onClose }: { day: DayCensusData; onClose: () => v
             </button>
           </div>
 
+          {/* Feedback banner */}
+          {feedback && (
+            <div
+              className="rounded-xl p-3 mb-4 text-center text-sm font-medium"
+              style={{
+                background: feedback.type === "success" ? "var(--status-admit-bg)" : "var(--status-discharge-bg)",
+                color: feedback.type === "success" ? "var(--status-admit)" : "var(--status-discharge)",
+              }}
+            >
+              {feedback.msg}
+            </div>
+          )}
+
           {/* Summary badges */}
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div
@@ -439,7 +653,7 @@ function DayDetailModal({ day, onClose }: { day: DayCensusData; onClose: () => v
               style={{ background: "var(--status-admit-bg)" }}
             >
               <p className="text-xl font-bold" style={{ color: "var(--status-admit)" }}>
-                {day.admissions.length}
+                {localDay.admissions.length}
               </p>
               <p className="text-xs font-medium" style={{ color: "var(--status-admit)" }}>Admits</p>
             </div>
@@ -448,7 +662,7 @@ function DayDetailModal({ day, onClose }: { day: DayCensusData; onClose: () => v
               style={{ background: "var(--status-discharge-bg)" }}
             >
               <p className="text-xl font-bold" style={{ color: "var(--status-discharge)" }}>
-                {day.discharges.length}
+                {localDay.discharges.length}
               </p>
               <p className="text-xs font-medium" style={{ color: "var(--status-discharge)" }}>D/C</p>
             </div>
@@ -457,105 +671,338 @@ function DayDetailModal({ day, onClose }: { day: DayCensusData; onClose: () => v
               style={{ background: "var(--status-rta-bg)" }}
             >
               <p className="text-xl font-bold" style={{ color: "var(--status-rta)" }}>
-                {day.rtas.length}
+                {localDay.rtas.length}
               </p>
               <p className="text-xs font-medium" style={{ color: "var(--status-rta)" }}>RTA</p>
             </div>
           </div>
 
-          {/* Admission Details */}
-          {day.admissions.length > 0 && (
+          {/* ── Add buttons ── */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <button
+              onClick={() => addForm === "admission" ? setAddForm(null) : openAddForm("admission")}
+              className="flex items-center justify-center gap-1 rounded-xl py-2.5 text-xs font-semibold transition-all"
+              style={{
+                background: addForm === "admission" ? "var(--status-admit)" : "var(--surface)",
+                color: addForm === "admission" ? "#fff" : "var(--status-admit)",
+                border: `1px solid ${addForm === "admission" ? "var(--status-admit)" : "var(--border)"}`,
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Admit
+            </button>
+            <button
+              onClick={() => addForm === "discharge" ? setAddForm(null) : openAddForm("discharge")}
+              className="flex items-center justify-center gap-1 rounded-xl py-2.5 text-xs font-semibold transition-all"
+              style={{
+                background: addForm === "discharge" ? "var(--status-discharge)" : "var(--surface)",
+                color: addForm === "discharge" ? "#fff" : "var(--status-discharge)",
+                border: `1px solid ${addForm === "discharge" ? "var(--status-discharge)" : "var(--border)"}`,
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              D/C
+            </button>
+            <button
+              onClick={() => addForm === "rta" ? setAddForm(null) : openAddForm("rta")}
+              className="flex items-center justify-center gap-1 rounded-xl py-2.5 text-xs font-semibold transition-all"
+              style={{
+                background: addForm === "rta" ? "var(--status-rta)" : "var(--surface)",
+                color: addForm === "rta" ? "#fff" : "var(--status-rta)",
+                border: `1px solid ${addForm === "rta" ? "var(--status-rta)" : "var(--border)"}`,
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              RTA
+            </button>
+          </div>
+
+          {/* ── Inline add form ── */}
+          {addForm === "admission" && (
+            <form onSubmit={handleAdd} className="rounded-xl p-4 mb-4 space-y-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <p className="text-sm font-semibold" style={{ color: "var(--status-admit)" }}>New Admission</p>
+              <AutocompleteInput
+                value={addValues.hospitalName || ""}
+                onChange={(v) => setAddValues((p) => ({ ...p, hospitalName: v }))}
+                getSuggestions={getHospitalNames}
+                placeholder="Hospital name"
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              />
+              <select
+                value={addValues.patientType}
+                onChange={(e) => setAddValues((p) => ({ ...p, patientType: e.target.value }))}
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              >
+                {PATIENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <select
+                value={addValues.clinicalLiaison}
+                onChange={(e) => setAddValues((p) => ({ ...p, clinicalLiaison: e.target.value }))}
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              >
+                {CLINICAL_LIAISONS.map((cl) => <option key={cl} value={cl}>{cl}</option>)}
+              </select>
+              <div className="flex gap-2">
+                <button type="submit" disabled={submitting || !addValues.hospitalName?.trim()} className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-admit)" }}>
+                  {submitting ? "Saving..." : "Save"}
+                </button>
+                <button type="button" onClick={() => setAddForm(null)} className="rounded-xl py-2.5 px-4 text-sm" style={{ color: "var(--text-muted)" }}>Cancel</button>
+              </div>
+            </form>
+          )}
+
+          {addForm === "discharge" && (
+            <form onSubmit={handleAdd} className="rounded-xl p-4 mb-4 space-y-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <p className="text-sm font-semibold" style={{ color: "var(--status-discharge)" }}>New Discharge</p>
+              <select
+                value={addValues.dischargeType}
+                onChange={(e) => setAddValues((p) => ({ ...p, dischargeType: e.target.value }))}
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              >
+                {DISCHARGE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <input
+                type="text"
+                value={addValues.dischargeName || ""}
+                onChange={(e) => setAddValues((p) => ({ ...p, dischargeName: e.target.value }))}
+                placeholder="Patient name"
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              />
+              <div className="flex gap-2">
+                <button type="submit" disabled={submitting || !addValues.dischargeName?.trim()} className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-discharge)" }}>
+                  {submitting ? "Saving..." : "Save"}
+                </button>
+                <button type="button" onClick={() => setAddForm(null)} className="rounded-xl py-2.5 px-4 text-sm" style={{ color: "var(--text-muted)" }}>Cancel</button>
+              </div>
+            </form>
+          )}
+
+          {addForm === "rta" && (
+            <form onSubmit={handleAdd} className="rounded-xl p-4 mb-4 space-y-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <p className="text-sm font-semibold" style={{ color: "var(--status-rta)" }}>New Return to Acute</p>
+              <select
+                value={addValues.hospital}
+                onChange={(e) => setAddValues((p) => ({ ...p, hospital: e.target.value }))}
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              >
+                {RTA_HOSPITALS.map((h) => <option key={h} value={h}>{h}</option>)}
+              </select>
+              <select
+                value={addValues.reason}
+                onChange={(e) => setAddValues((p) => ({ ...p, reason: e.target.value }))}
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              >
+                {RTA_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <div className="flex gap-2">
+                <button type="submit" disabled={submitting} className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-rta)" }}>
+                  {submitting ? "Saving..." : "Save"}
+                </button>
+                <button type="button" onClick={() => setAddForm(null)} className="rounded-xl py-2.5 px-4 text-sm" style={{ color: "var(--text-muted)" }}>Cancel</button>
+              </div>
+            </form>
+          )}
+
+          {/* ── Admission Details ── */}
+          {localDay.admissions.length > 0 && (
             <div className="mb-4">
               <p className="text-sm font-semibold mb-2" style={{ color: "var(--status-admit)" }}>
                 Admissions
               </p>
-              {day.admissions.map((a) => (
-                <div
-                  key={a.id}
-                  className="flex items-center gap-2 py-2 border-b last:border-0"
-                  style={{ borderColor: "var(--border)" }}
-                >
+              {localDay.admissions.map((a) => (
+                editState?.type === "admission" && editState.id === a.id ? (
+                  <form key={a.id} onSubmit={handleEdit} className="rounded-xl p-3 mb-2 space-y-2" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                    <AutocompleteInput
+                      value={editState.values.hospitalName || ""}
+                      onChange={(v) => setEditValue("hospitalName", v)}
+                      getSuggestions={getHospitalNames}
+                      placeholder="Hospital name"
+                      className="border focus:outline-none text-sm"
+                      style={inputStyle}
+                    />
+                    <select value={editState.values.patientType} onChange={(e) => setEditValue("patientType", e.target.value)} className="border focus:outline-none text-sm" style={inputStyle}>
+                      {PATIENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <select value={editState.values.clinicalLiaison} onChange={(e) => setEditValue("clinicalLiaison", e.target.value)} className="border focus:outline-none text-sm" style={inputStyle}>
+                      {CLINICAL_LIAISONS.map((cl) => <option key={cl} value={cl}>{cl}</option>)}
+                    </select>
+                    <div className="flex gap-2">
+                      <button type="submit" disabled={submitting || !editState.values.hospitalName?.trim()} className="flex-1 rounded-xl py-2 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-admit)" }}>
+                        {submitting ? "Saving..." : "Update"}
+                      </button>
+                      <button type="button" onClick={() => setEditState(null)} className="rounded-xl py-2 px-3 text-sm" style={{ color: "var(--text-muted)" }}>Cancel</button>
+                    </div>
+                  </form>
+                ) : (
                   <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ background: "var(--status-admit)" }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                      {a.hospitalName}
-                    </p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      {a.patientType} &middot; CL: {a.clinicalLiaison}
-                    </p>
+                    key={a.id}
+                    className="flex items-center gap-2 py-2 border-b last:border-0"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ background: "var(--status-admit)" }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                        {a.hospitalName}
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {a.patientType} &middot; CL: {a.clinicalLiaison}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-0 flex-shrink-0">
+                      <button onClick={() => startEditAdmission(a)} className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center" style={{ color: "var(--accent)" }} title="Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                        </svg>
+                      </button>
+                      <button onClick={() => handleDeleteAdmission(a.id)} className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center" style={{ color: "var(--danger)" }} title="Delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )
               ))}
             </div>
           )}
 
-          {/* Discharge Details */}
-          {day.discharges.length > 0 && (
+          {/* ── Discharge Details ── */}
+          {localDay.discharges.length > 0 && (
             <div className="mb-4">
               <p className="text-sm font-semibold mb-2" style={{ color: "var(--status-discharge)" }}>
                 Discharges
               </p>
-              {day.discharges.map((d) => (
-                <div
-                  key={d.id}
-                  className="flex items-center gap-2 py-2 border-b last:border-0"
-                  style={{ borderColor: "var(--border)" }}
-                >
+              {localDay.discharges.map((d) => (
+                editState?.type === "discharge" && editState.id === d.id ? (
+                  <form key={d.id} onSubmit={handleEdit} className="rounded-xl p-3 mb-2 space-y-2" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                    <select value={editState.values.dischargeType} onChange={(e) => setEditValue("dischargeType", e.target.value)} className="border focus:outline-none text-sm" style={inputStyle}>
+                      {DISCHARGE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <input type="text" value={editState.values.dischargeName || ""} onChange={(e) => setEditValue("dischargeName", e.target.value)} placeholder="Patient name" className="border focus:outline-none text-sm" style={inputStyle} />
+                    <div className="flex gap-2">
+                      <button type="submit" disabled={submitting || !editState.values.dischargeName?.trim()} className="flex-1 rounded-xl py-2 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-discharge)" }}>
+                        {submitting ? "Saving..." : "Update"}
+                      </button>
+                      <button type="button" onClick={() => setEditState(null)} className="rounded-xl py-2 px-3 text-sm" style={{ color: "var(--text-muted)" }}>Cancel</button>
+                    </div>
+                  </form>
+                ) : (
                   <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ background: "var(--status-discharge)" }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                      {d.dischargeName}
-                    </p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      {d.dischargeType}
-                    </p>
+                    key={d.id}
+                    className="flex items-center gap-2 py-2 border-b last:border-0"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ background: "var(--status-discharge)" }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                        {d.dischargeName}
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {d.dischargeType}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-0 flex-shrink-0">
+                      <button onClick={() => startEditDischarge(d)} className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center" style={{ color: "var(--accent)" }} title="Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                        </svg>
+                      </button>
+                      <button onClick={() => handleDeleteDischarge(d.id)} className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center" style={{ color: "var(--danger)" }} title="Delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )
               ))}
             </div>
           )}
 
-          {/* RTA Details */}
-          {day.rtas.length > 0 && (
+          {/* ── RTA Details ── */}
+          {localDay.rtas.length > 0 && (
             <div className="mb-4">
               <p className="text-sm font-semibold mb-2" style={{ color: "var(--status-rta)" }}>
                 Returns to Acute
               </p>
-              {day.rtas.map((r) => (
-                <div
-                  key={r.id}
-                  className="flex items-center gap-2 py-2 border-b last:border-0"
-                  style={{ borderColor: "var(--border)" }}
-                >
+              {localDay.rtas.map((r) => (
+                editState?.type === "rta" && editState.id === r.id ? (
+                  <form key={r.id} onSubmit={handleEdit} className="rounded-xl p-3 mb-2 space-y-2" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                    <select value={editState.values.hospital} onChange={(e) => setEditValue("hospital", e.target.value)} className="border focus:outline-none text-sm" style={inputStyle}>
+                      {RTA_HOSPITALS.map((h) => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                    <select value={editState.values.reason} onChange={(e) => setEditValue("reason", e.target.value)} className="border focus:outline-none text-sm" style={inputStyle}>
+                      {RTA_REASONS.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
+                    </select>
+                    <div className="flex gap-2">
+                      <button type="submit" disabled={submitting} className="flex-1 rounded-xl py-2 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-rta)" }}>
+                        {submitting ? "Saving..." : "Update"}
+                      </button>
+                      <button type="button" onClick={() => setEditState(null)} className="rounded-xl py-2 px-3 text-sm" style={{ color: "var(--text-muted)" }}>Cancel</button>
+                    </div>
+                  </form>
+                ) : (
                   <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ background: "var(--status-rta)" }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                      {r.hospital}
-                    </p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      {r.reason}
-                    </p>
+                    key={r.id}
+                    className="flex items-center gap-2 py-2 border-b last:border-0"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ background: "var(--status-rta)" }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                        {r.hospital}
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {r.reason}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-0 flex-shrink-0">
+                      <button onClick={() => startEditRTA(r)} className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center" style={{ color: "var(--accent)" }} title="Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                        </svg>
+                      </button>
+                      <button onClick={() => handleDeleteRTA(r.id)} className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center" style={{ color: "var(--danger)" }} title="Delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )
               ))}
             </div>
           )}
 
           {/* No activity message */}
-          {day.admissions.length === 0 &&
-            day.discharges.length === 0 &&
-            day.rtas.length === 0 && (
-              <p className="text-center py-6 text-base" style={{ color: "var(--text-muted)" }}>
-                No activity for this day
+          {localDay.admissions.length === 0 &&
+            localDay.discharges.length === 0 &&
+            localDay.rtas.length === 0 &&
+            !addForm && (
+              <p className="text-center py-4 text-sm" style={{ color: "var(--text-muted)" }}>
+                No activity for this day. Use the buttons above to add entries.
               </p>
             )}
         </div>

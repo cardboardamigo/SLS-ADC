@@ -162,5 +162,6 @@ export function useHistory() {
     hasActivity,
     // Actions
     loadData,
+    loadCalendarData,
   };
 }
