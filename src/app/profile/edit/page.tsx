@@ -53,7 +53,7 @@ export default function EditProfilePage() {
 
   return (
     <AppLayout>
-      <div className="pb-10">
+      <div className="content-below-header pb-24 lg:pb-8">
         {/* ── Top Bar (mobile only, desktop uses sidebar) ── */}
         <div
           className="sticky top-0 z-40 safe-area-top lg:hidden"
@@ -111,66 +111,62 @@ export default function EditProfilePage() {
             )}
 
             {/* ── Avatar Section ── */}
-            <div className="flex flex-col items-center" style={{ marginBottom: '4rem' }}>
-              <div className="relative mb-4">
-                {displayUrl ? (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={displayUrl}
-                      alt="Profile"
-                      width={110}
-                      height={110}
-                      className="w-[110px] h-[110px] rounded-full object-cover block mx-auto"
-                      style={{
-                        border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`,
-                        opacity: imgLoaded || displayUrl.startsWith("blob:") ? 1 : 0,
-                        transition: "opacity 0.2s ease-in",
-                        boxShadow: "var(--avatar-shadow)",
-                      }}
-                      onLoad={() => setImgLoaded(true)}
-                      onError={() => setImgLoaded(true)}
-                    />
-                    {!imgLoaded && !displayUrl.startsWith("blob:") && (
+            <div className="flex flex-col items-center" style={{ marginBottom: '2rem', paddingTop: '1.5rem' }}>
+              {isUploading ? (
+                /* Uploading state: image centered with cancel below */
+                <div className="flex flex-col items-center gap-3">
+                  <div className="relative">
+                    {displayUrl ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={displayUrl}
+                          alt="Profile"
+                          width={110}
+                          height={110}
+                          className="w-[110px] h-[110px] rounded-full object-cover block mx-auto"
+                          style={{
+                            border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`,
+                            opacity: imgLoaded || displayUrl.startsWith("blob:") ? 1 : 0,
+                            transition: "opacity 0.2s ease-in",
+                            boxShadow: "var(--avatar-shadow)",
+                          }}
+                          onLoad={() => setImgLoaded(true)}
+                          onError={() => setImgLoaded(true)}
+                        />
+                        {!imgLoaded && !displayUrl.startsWith("blob:") && (
+                          <div
+                            className="absolute inset-0 w-[110px] h-[110px] rounded-full animate-pulse"
+                            style={{
+                              background: isDark ? "#2a4a7f" : "#c5ddf5",
+                              border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`,
+                            }}
+                          />
+                        )}
+                      </>
+                    ) : (
                       <div
-                        className="absolute inset-0 w-[110px] h-[110px] rounded-full animate-pulse"
+                        className="w-[110px] h-[110px] rounded-full flex items-center justify-center text-white text-4xl font-bold"
                         style={{
-                          background: isDark ? "#2a4a7f" : "#c5ddf5",
-                          border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`,
+                          background: isDark ? "#2a4a7f" : "#1a365d",
+                          boxShadow: "var(--avatar-shadow)",
                         }}
-                      />
+                      >
+                        {name ? name[0].toUpperCase() : "?"}
+                      </div>
                     )}
-                  </>
-                ) : (
-                  <div
-                    className="w-[110px] h-[110px] rounded-full flex items-center justify-center text-white text-4xl font-bold"
-                    style={{
-                      background: isDark ? "#2a4a7f" : "#1a365d",
-                      boxShadow: "var(--avatar-shadow)",
-                    }}
-                  >
-                    {name ? name[0].toUpperCase() : "?"}
+                    {/* Upload overlay */}
+                    <div className="absolute inset-0 rounded-full bg-black/50 flex flex-col items-center justify-center gap-1">
+                      <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span className="text-white text-[10px] font-medium">
+                        {uploadStatus === "compressing"
+                          ? "Processing\u2026"
+                          : uploadProgress > 0
+                            ? `Uploading ${uploadProgress}%`
+                            : "Uploading\u2026"}
+                      </span>
+                    </div>
                   </div>
-                )}
-
-                {/* Upload overlay */}
-                {isUploading && (
-                  <div className="absolute inset-0 rounded-full bg-black/50 flex flex-col items-center justify-center gap-1">
-                    <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span className="text-white text-[10px] font-medium">
-                      {uploadStatus === "compressing"
-                        ? "Processing\u2026"
-                        : uploadProgress > 0
-                          ? `Uploading ${uploadProgress}%`
-                          : "Uploading\u2026"}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Camera, Gallery & Cancel Buttons */}
-              <div className="flex gap-3">
-                {isUploading ? (
                   <button
                     onClick={cancelUpload}
                     className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-medium rounded-full transition-all active:scale-95 min-h-[44px]"
@@ -185,44 +181,91 @@ export default function EditProfilePage() {
                     </svg>
                     Cancel
                   </button>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => cameraInputRef.current?.click()}
-                      className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-medium rounded-full transition-all active:scale-95 min-h-[44px]"
-                      style={{
-                        background: isDark ? "#2a4a7f" : "#1a365d",
-                        color: "white",
-                        boxShadow: isDark
-                          ? "0 2px 8px rgba(0,0,0,0.4)"
-                          : "0 2px 8px rgba(15,42,74,0.25)",
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
-                      </svg>
-                      Camera
-                    </button>
-                    <button
-                      onClick={() => galleryInputRef.current?.click()}
-                      className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-medium rounded-full transition-all active:scale-95 min-h-[44px]"
-                      style={{
-                        background: isDark ? "#c0392b" : "var(--crimson)",
-                        color: "white",
-                        boxShadow: isDark
-                          ? "0 2px 8px rgba(0,0,0,0.4)"
-                          : "0 2px 8px rgba(192,57,43,0.25)",
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-                      </svg>
-                      Gallery
-                    </button>
-                  </>
-                )}
-              </div>
+                </div>
+              ) : (
+                /* Normal state: Camera (9 o'clock) | Image | Gallery (3 o'clock) */
+                <div className="flex items-center gap-4">
+                  {/* Camera button — 9 o'clock */}
+                  <button
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-full transition-all active:scale-95 min-h-[44px]"
+                    style={{
+                      background: isDark ? "#2a4a7f" : "#1a365d",
+                      color: "white",
+                      boxShadow: isDark
+                        ? "0 2px 8px rgba(0,0,0,0.4)"
+                        : "0 2px 8px rgba(15,42,74,0.25)",
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
+                    </svg>
+                    Camera
+                  </button>
+
+                  {/* Profile image — center */}
+                  <div className="relative">
+                    {displayUrl ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={displayUrl}
+                          alt="Profile"
+                          width={110}
+                          height={110}
+                          className="w-[110px] h-[110px] rounded-full object-cover block mx-auto"
+                          style={{
+                            border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`,
+                            opacity: imgLoaded || displayUrl.startsWith("blob:") ? 1 : 0,
+                            transition: "opacity 0.2s ease-in",
+                            boxShadow: "var(--avatar-shadow)",
+                          }}
+                          onLoad={() => setImgLoaded(true)}
+                          onError={() => setImgLoaded(true)}
+                        />
+                        {!imgLoaded && !displayUrl.startsWith("blob:") && (
+                          <div
+                            className="absolute inset-0 w-[110px] h-[110px] rounded-full animate-pulse"
+                            style={{
+                              background: isDark ? "#2a4a7f" : "#c5ddf5",
+                              border: `3px solid ${isDark ? "var(--border)" : "rgba(15,42,74,0.15)"}`,
+                            }}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <div
+                        className="w-[110px] h-[110px] rounded-full flex items-center justify-center text-white text-4xl font-bold"
+                        style={{
+                          background: isDark ? "#2a4a7f" : "#1a365d",
+                          boxShadow: "var(--avatar-shadow)",
+                        }}
+                      >
+                        {name ? name[0].toUpperCase() : "?"}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Gallery button — 3 o'clock */}
+                  <button
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-full transition-all active:scale-95 min-h-[44px]"
+                    style={{
+                      background: isDark ? "#c0392b" : "var(--crimson)",
+                      color: "white",
+                      boxShadow: isDark
+                        ? "0 2px 8px rgba(0,0,0,0.4)"
+                        : "0 2px 8px rgba(192,57,43,0.25)",
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+                    </svg>
+                    Gallery
+                  </button>
+                </div>
+              )}
 
               {/* Hidden file inputs */}
               <input
