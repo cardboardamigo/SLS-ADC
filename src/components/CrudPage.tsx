@@ -52,14 +52,14 @@ export default function CrudPage<T extends { id: string; date: string }>({
   return (
     <AppLayout>
       <div className="content-below-header pb-24 lg:pb-8">
-        <div className="content-container py-8">
+        <div className="content-container py-4">
           {/* Desktop: side-by-side layout */}
           <div className="lg:grid lg:grid-cols-2 lg:gap-8">
             {/* Left column: Form */}
             <div className="lg:sticky lg:top-8 lg:self-start">
               {success && (
                 <div
-                  className="rounded-2xl p-4 mb-12 text-center text-base font-medium animate-pulse"
+                  className="rounded-2xl p-4 mb-6 text-center text-base font-medium animate-pulse"
                   style={{
                     background: "var(--status-admit-bg)",
                     border: "1px solid var(--status-admit)",
@@ -74,7 +74,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
 
               {saveError && (
                 <div
-                  className="rounded-2xl p-4 mb-12 text-center text-base font-medium"
+                  className="rounded-2xl p-4 mb-6 text-center text-base font-medium"
                   style={{
                     background: "var(--status-discharge-bg)",
                     border: "1px solid var(--status-discharge)",
@@ -86,16 +86,14 @@ export default function CrudPage<T extends { id: string; date: string }>({
               )}
 
               <form onSubmit={handleSubmit} className="pill-form">
-                <div className="text-center lg:text-left" style={{ marginBottom: "var(--group-gap)" }}>
-                  <h2
-                    className="text-lg font-semibold"
-                    style={{ color: "var(--text)" }}
-                  >
-                    {editingId
-                      ? `Edit ${config.entityName}`
-                      : `Record ${config.entityName}`}
-                  </h2>
-                  {editingId && (
+                {editingId && (
+                  <div className="text-center lg:text-left" style={{ marginBottom: "var(--group-gap)" }}>
+                    <h2
+                      className="text-lg font-semibold"
+                      style={{ color: "var(--text)" }}
+                    >
+                      Edit {config.entityName}
+                    </h2>
                     <button
                       type="button"
                       onClick={cancelEdit}
@@ -104,8 +102,8 @@ export default function CrudPage<T extends { id: string; date: string }>({
                     >
                       Cancel Edit
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <div className="field-group">
                   <label
@@ -179,7 +177,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
             </div>
 
             {/* Right column: Monthly list */}
-            <div className="mt-8 lg:mt-0">
+            <div className="mt-12 lg:mt-0">
               <div className="card">
                 <div className="flex items-center justify-between mb-4">
                   <button
