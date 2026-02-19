@@ -5,8 +5,8 @@
 
 /** Login users */
 export const USERS = [
-  { initials: "WB", name: "West Brewer", email: "jbrewer@slspecialty.org" },
-  { initials: "TW", name: "Thad Webb", email: "twebb@slspecialty.org" },
+  { initials: "WB", name: "West Brewer", email: "jbrewer@slspecialty.org", profilePic: "/Profile wb.jpg" },
+  { initials: "TW", name: "Thad Webb", email: "twebb@slspecialty.org", profilePic: null },
 ] as const;
 
 /** Clinical data arrays */
