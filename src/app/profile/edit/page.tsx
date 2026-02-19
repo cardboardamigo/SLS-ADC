@@ -166,8 +166,9 @@ export default function EditProfilePage() {
                   {/* Camera button — 9 o'clock */}
                   <button
                     onClick={() => cameraInputRef.current?.click()}
-                    className="flex items-center gap-2 px-5 py-3 text-xs font-medium rounded-full transition-all active:scale-95 min-h-[48px]"
+                    className="flex items-center gap-2 px-5 py-3 font-medium rounded-full transition-all active:scale-95 min-h-[48px]"
                     style={{
+                      fontSize: 9,
                       background: isDark ? "#2a4a7f" : "#1a365d",
                       color: "white",
                       boxShadow: isDark
@@ -228,8 +229,9 @@ export default function EditProfilePage() {
                   {/* Gallery button — 3 o'clock */}
                   <button
                     onClick={() => galleryInputRef.current?.click()}
-                    className="flex items-center gap-2 px-5 py-3 text-xs font-medium rounded-full transition-all active:scale-95 min-h-[48px]"
+                    className="flex items-center gap-2 px-5 py-3 font-medium rounded-full transition-all active:scale-95 min-h-[48px]"
                     style={{
+                      fontSize: 9,
                       background: isDark ? "#c0392b" : "var(--crimson)",
                       color: "white",
                       boxShadow: isDark
