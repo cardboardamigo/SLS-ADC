@@ -177,7 +177,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
             </div>
 
             {/* Right column: Monthly list */}
-            <div className="mt-12 lg:mt-0">
+            <div className="mt-24 lg:mt-0">
               <div className="card">
                 <div className="flex items-center justify-between mb-4">
                   <button
