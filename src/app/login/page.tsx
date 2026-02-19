@@ -162,10 +162,10 @@ function LoginContent() {
                     className="flex flex-col items-center gap-3 group"
                     style={{ background: "transparent", boxShadow: "none", borderRadius: "0", border: "none" }}
                   >
-                    {profilePics[u.email] ? (
+                    {profilePics[u.email] || u.profilePic ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
-                        src={profilePics[u.email]}
+                        src={profilePics[u.email] || u.profilePic || ""}
                         alt={u.name}
                         className="w-[100px] h-[100px] rounded-full object-cover transition-transform active:scale-[0.93]"
                         style={{
@@ -230,10 +230,10 @@ function LoginContent() {
             </button>
 
             <div className="flex flex-col items-center" style={{ marginBottom: "2.5rem" }}>
-              {profilePics[selectedUser.email] ? (
+              {profilePics[selectedUser.email] || selectedUser.profilePic ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={profilePics[selectedUser.email]}
+                  src={profilePics[selectedUser.email] || selectedUser.profilePic || ""}
                   alt={selectedUser.name}
                   className="w-[100px] h-[100px] rounded-full object-cover"
                   style={{
