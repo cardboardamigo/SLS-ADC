@@ -11,6 +11,29 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { db, withTimeout, getDocsResilient, getDocResilient } from "./firebase";
+
+// --- Hospitals (autocomplete suggestions) ---
+export async function getHospitalNames(): Promise<string[]> {
+  const q = query(collection(db, "hospitals"), orderBy("name"));
+  const snapshot = await getDocsResilient(q);
+  return snapshot.docs.map((d) => d.data().name as string);
+}
+
+export async function saveHospitalIfNew(name: string): Promise<void> {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  const existing = await getHospitalNames();
+  const alreadyExists = existing.some(
+    (h) => h.toLowerCase() === trimmed.toLowerCase()
+  );
+  if (alreadyExists) return;
+  await withTimeout(
+    addDoc(collection(db, "hospitals"), {
+      name: trimmed,
+      createdAt: new Date().toISOString(),
+    })
+  );
+}
 import { Admission, Discharge, RTA, MonthlyADC, ActivityType, ActivityEntry } from "./types";
 import { calculateBonus } from "./bonus";
 import { format, getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
