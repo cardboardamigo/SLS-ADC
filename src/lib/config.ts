@@ -45,4 +45,5 @@ export const PAGE_TITLES: Record<string, string> = {
   "/history": "Monthly History",
   "/bonus": "Bonus Tracker",
   "/profile": "My Profile",
+  "/profile/edit": "Edit Profile",
 };
