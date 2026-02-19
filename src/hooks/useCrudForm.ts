@@ -126,7 +126,9 @@ export function useCrudForm<T extends { id: string; date: string }>(
       const data: Record<string, string> = { date };
       config.fields.forEach((f) => {
         data[f.name] =
-          f.type === "text" ? fieldValues[f.name].trim() : fieldValues[f.name];
+          f.type === "text" || f.type === "autocomplete"
+            ? fieldValues[f.name].trim()
+            : fieldValues[f.name];
       });
 
       if (editingId) {
