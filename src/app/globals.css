@@ -123,10 +123,12 @@ html.dark {
   --avatar-shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 html,
@@ -419,6 +421,16 @@ textarea {
 /* ── Submit button island ── */
 .btn-island {
   margin-top: 1.25rem;
+}
+
+/* ── Gap between record button and activity list (mobile) ── */
+.activity-section-gap {
+  margin-top: 2.5rem;
+}
+@media (min-width: 1024px) {
+  .activity-section-gap {
+    margin-top: 0;
+  }
 }
 
 /* PWA safe area */
