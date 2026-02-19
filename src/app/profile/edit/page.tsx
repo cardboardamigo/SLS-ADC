@@ -54,29 +54,7 @@ export default function EditProfilePage() {
   return (
     <AppLayout>
       <div className="content-below-header pb-24 lg:pb-8">
-        {/* ── Top Bar (mobile only, desktop uses sidebar) ── */}
-        <div
-          className="sticky top-0 z-40 safe-area-top lg:hidden"
-          style={{
-            background: "var(--header-bg)",
-          }}
-        >
-          <div className="flex items-center justify-between h-14 px-4 max-w-[420px] mx-auto">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-1.5 text-white/90 active:text-white/60 transition-colors min-h-[48px]"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-              </svg>
-              <span className="text-sm font-medium">Back</span>
-            </button>
-            <h1 className="text-base font-semibold text-white">Edit Profile</h1>
-            <div className="w-14" />
-          </div>
-        </div>
-
-        <div className="content-container py-8">
+        <div className="content-container py-4">
           {/* Center the form on desktop */}
           <div className="max-w-lg mx-auto">
             {/* Desktop: show title */}
@@ -111,7 +89,7 @@ export default function EditProfilePage() {
             )}
 
             {/* ── Avatar Section ── */}
-            <div className="flex flex-col items-center" style={{ marginBottom: '2rem', paddingTop: '1.5rem' }}>
+            <div className="flex flex-col items-center" style={{ marginBottom: '2rem', paddingTop: '0.5rem' }}>
               {isUploading ? (
                 /* Uploading state: image centered with cancel below */
                 <div className="flex flex-col items-center gap-3">
