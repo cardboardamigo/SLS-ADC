@@ -118,7 +118,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required
-                    className="border focus:outline-none transition text-base"
+                    className={`border focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
                     style={inputStyle}
                   />
                 </div>
@@ -140,7 +140,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
                         onChange={(v) => setField(field.name, v)}
                         getSuggestions={field.getSuggestions}
                         placeholder={field.placeholder}
-                        className="border focus:outline-none transition text-base"
+                        className={`border focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
                         style={inputStyle}
                       />
                     ) : field.type === "text" ? (
@@ -150,14 +150,14 @@ export default function CrudPage<T extends { id: string; date: string }>({
                         onChange={(e) => setField(field.name, e.target.value)}
                         required
                         placeholder={field.placeholder}
-                        className="border focus:outline-none transition text-base"
+                        className={`border focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
                         style={inputStyle}
                       />
                     ) : (
                       <select
                         value={fieldValues[field.name] || field.defaultValue}
                         onChange={(e) => setField(field.name, e.target.value)}
-                        className="border focus:outline-none transition text-base"
+                        className={`border focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
                         style={inputStyle}
                       >
                         {field.options?.map((opt) => (
@@ -174,7 +174,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
                   <button
                     type="submit"
                     disabled={submitting || hasEmptyRequired}
-                    className="btn-hero w-full mx-auto block text-white text-lg font-semibold disabled:opacity-70"
+                    className="btn-hero w-full mx-auto block text-white text-lg font-semibold disabled:opacity-85"
                   >
                     {submitting
                       ? "Saving..."
