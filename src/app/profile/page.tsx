@@ -132,11 +132,11 @@ export default function ProfilePage() {
                 {/* Edit Profile */}
                 <button
                   onClick={() => router.push("/profile/edit")}
-                  className="w-full flex items-center gap-4 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
+                  className="w-full relative flex items-center justify-center py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
                   style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
                 >
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    className="absolute left-0 w-9 h-9 rounded-full flex items-center justify-center"
                     style={{
                       background: isDark ? "rgba(99,179,237,0.15)" : "rgba(26,54,93,0.08)",
                     }}
@@ -145,10 +145,10 @@ export default function ProfilePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                     </svg>
                   </div>
-                  <span className="text-sm font-medium flex-1 text-center lg:text-left" style={{ color: "var(--text)" }}>
+                  <span className="text-sm font-medium text-center" style={{ color: "var(--text)" }}>
                     Edit Profile
                   </span>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="var(--text-muted)" className="w-4 h-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="var(--text-muted)" className="w-4 h-4 absolute right-0">
                     <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
                   </svg>
                 </button>
@@ -158,11 +158,11 @@ export default function ProfilePage() {
                 {/* Dark Mode Toggle */}
                 <button
                   onClick={toggleTheme}
-                  className="w-full flex items-center gap-4 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
+                  className="w-full relative flex items-center justify-center py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
                   style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
                 >
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    className="absolute left-0 w-9 h-9 rounded-full flex items-center justify-center"
                     style={{
                       background: isDark ? "rgba(251,191,36,0.15)" : "rgba(107,70,193,0.08)",
                     }}
@@ -177,12 +177,12 @@ export default function ProfilePage() {
                       </svg>
                     )}
                   </div>
-                  <span className="text-sm font-medium flex-1 text-center lg:text-left" style={{ color: "var(--text)" }}>
+                  <span className="text-sm font-medium text-center" style={{ color: "var(--text)" }}>
                     Dark Mode
                   </span>
                   {/* Toggle Switch */}
                   <div
-                    className="relative w-12 h-7 rounded-full transition-colors"
+                    className="absolute right-0 w-12 h-7 rounded-full transition-colors"
                     style={{
                       background: isDark ? "#63b3ed" : "#cbd5e0",
                     }}
@@ -212,11 +212,11 @@ export default function ProfilePage() {
                   <>
                     <button
                       onClick={promptInstall}
-                      className="w-full flex items-center gap-4 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
+                      className="w-full relative flex items-center justify-center py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
                       style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
                     >
                       <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                        className="absolute left-0 w-9 h-9 rounded-full flex items-center justify-center"
                         style={{
                           background: isDark ? "rgba(104,211,145,0.15)" : "rgba(56,161,105,0.08)",
                         }}
@@ -225,10 +225,10 @@ export default function ProfilePage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                         </svg>
                       </div>
-                      <span className="text-sm font-medium flex-1 text-center lg:text-left" style={{ color: "var(--text)" }}>
+                      <span className="text-sm font-medium text-center" style={{ color: "var(--text)" }}>
                         Install App
                       </span>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="var(--text-muted)" className="w-4 h-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="var(--text-muted)" className="w-4 h-4 absolute right-0">
                         <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
                       </svg>
                     </button>
@@ -238,9 +238,9 @@ export default function ProfilePage() {
 
                 {isInstalled && (
                   <>
-                    <div className="flex items-center gap-4 py-3.5 min-h-[48px]">
+                    <div className="relative flex items-center justify-center py-3.5 min-h-[48px]">
                       <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                        className="absolute left-0 w-9 h-9 rounded-full flex items-center justify-center"
                         style={{
                           background: isDark ? "rgba(104,211,145,0.15)" : "rgba(56,161,105,0.08)",
                         }}
@@ -249,7 +249,7 @@ export default function ProfilePage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                         </svg>
                       </div>
-                      <span className="text-sm font-medium flex-1 text-center lg:text-left" style={{ color: "var(--success)" }}>
+                      <span className="text-sm font-medium text-center" style={{ color: "var(--success)" }}>
                         App Installed
                       </span>
                     </div>
@@ -260,11 +260,11 @@ export default function ProfilePage() {
                 {/* Sign Out */}
                 <button
                   onClick={handleSignOut}
-                  className="w-full flex items-center gap-4 py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
+                  className="w-full relative flex items-center justify-center py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
                   style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
                 >
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    className="absolute left-0 w-9 h-9 rounded-full flex items-center justify-center"
                     style={{
                       background: isDark ? "rgba(252,129,129,0.15)" : "rgba(229,62,62,0.08)",
                     }}
@@ -273,7 +273,7 @@ export default function ProfilePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
                     </svg>
                   </div>
-                  <span className="text-sm font-medium flex-1 text-center lg:text-left" style={{ color: "var(--danger)" }}>
+                  <span className="text-sm font-medium text-center" style={{ color: "var(--danger)" }}>
                     Sign Out
                   </span>
                 </button>
