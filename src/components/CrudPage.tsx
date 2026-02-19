@@ -174,7 +174,7 @@ export default function CrudPage<T extends { id: string; date: string }>({
                   <button
                     type="submit"
                     disabled={submitting || hasEmptyRequired}
-                    className="btn-hero w-full mx-auto block text-white text-lg font-semibold disabled:opacity-50"
+                    className="btn-hero w-full mx-auto block text-white text-lg font-semibold disabled:opacity-70"
                   >
                     {submitting
                       ? "Saving..."
