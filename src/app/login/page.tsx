@@ -7,6 +7,7 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth, friendlyAuthError } from "@/contexts/AuthContext";
 import { USERS } from "@/lib/config";
+import InstallPrompt from "@/components/InstallPrompt";
 
 type SelectedUser = (typeof USERS)[number] | null;
 
@@ -202,6 +203,11 @@ function LoginContent() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* ── Install App Invitation ── */}
+            <div className="w-full px-6 sm:px-8">
+              <InstallPrompt />
             </div>
           </>
         )}
