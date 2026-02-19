@@ -9,11 +9,15 @@ import { format, subMonths, addMonths } from "date-fns";
 export interface CrudField {
   name: string;
   label: string;
-  type: "text" | "select";
+  type: "text" | "select" | "autocomplete";
   options?: readonly string[];
   defaultValue: string;
   placeholder?: string;
   disableSubmitWhenEmpty?: boolean;
+  /** For autocomplete fields: returns the list of stored suggestions */
+  getSuggestions?: () => Promise<string[]>;
+  /** For autocomplete fields: saves a new value if it doesn't already exist */
+  saveSuggestion?: (value: string) => Promise<void>;
 }
 
 export interface CrudPageConfig<T extends { id: string; date: string }> {
@@ -141,6 +145,15 @@ export function useCrudForm<T extends { id: string; date: string }>(
           userUID: user.uid,
         }).catch((err) => console.warn("Activity log failed (non-critical):", err));
       }
+      // Save new autocomplete values in the background
+      config.fields.forEach((f) => {
+        if (f.type === "autocomplete" && f.saveSuggestion) {
+          f.saveSuggestion(fieldValues[f.name]).catch((err) =>
+            console.warn("Autocomplete save failed (non-critical):", err)
+          );
+        }
+      });
+
       setSuccess(true);
       setDate(format(new Date(), "yyyy-MM-dd"));
       setFieldValues(getDefaults());

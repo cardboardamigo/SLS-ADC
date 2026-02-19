@@ -1,6 +1,7 @@
 "use client";
 
 import AppLayout from "@/components/AppLayout";
+import AutocompleteInput from "@/components/AutocompleteInput";
 import { useCrudForm } from "@/hooks/useCrudForm";
 import { format } from "date-fns";
 
@@ -133,7 +134,16 @@ export default function CrudPage<T extends { id: string; date: string }>({
                     >
                       {field.label}
                     </label>
-                    {field.type === "text" ? (
+                    {field.type === "autocomplete" && field.getSuggestions ? (
+                      <AutocompleteInput
+                        value={fieldValues[field.name] || ""}
+                        onChange={(v) => setField(field.name, v)}
+                        getSuggestions={field.getSuggestions}
+                        placeholder={field.placeholder}
+                        className="border focus:outline-none transition text-base"
+                        style={inputStyle}
+                      />
+                    ) : field.type === "text" ? (
                       <input
                         type="text"
                         value={fieldValues[field.name] || ""}
