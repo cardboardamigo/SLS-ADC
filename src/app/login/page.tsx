@@ -229,7 +229,7 @@ function LoginContent() {
               <span className="text-sm font-medium">Back</span>
             </button>
 
-            <div className="flex flex-col items-center" style={{ marginBottom: "6rem" }}>
+            <div className="flex flex-col items-center" style={{ marginBottom: "2.5rem" }}>
               {profilePics[selectedUser.email] ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -237,7 +237,7 @@ function LoginContent() {
                   alt={selectedUser.name}
                   className="w-[100px] h-[100px] rounded-full object-cover"
                   style={{
-                    marginBottom: "1.5rem",
+                    marginBottom: "1rem",
                     boxShadow: "0 8px 30px rgba(192,57,43,0.4)",
                   }}
                 />
@@ -245,7 +245,7 @@ function LoginContent() {
                 <div
                   className="w-[100px] h-[100px] flex items-center justify-center text-white text-3xl font-bold"
                   style={{
-                    marginBottom: "1.5rem",
+                    marginBottom: "1rem",
                     borderRadius: "50%",
                     background: "var(--crimson)",
                     fontFamily: "'Poppins', sans-serif",
