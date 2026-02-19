@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import InstallPrompt from "@/components/InstallPrompt";
 import NotificationManager from "@/components/NotificationManager";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
@@ -37,7 +36,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             {children}
             <ServiceWorkerRegistrar />
-            <InstallPrompt />
             <NotificationManager />
           </AuthProvider>
         </ThemeProvider>
