@@ -7,7 +7,7 @@ import { calculateMonthlyADC } from "@/lib/census";
 import { BONUS_TIERS, calculateBonus, formatCurrency } from "@/lib/bonus";
 import { MonthlyADC } from "@/lib/types";
 import { subMonths } from "date-fns";
-import { generateBonusPDF } from "@/lib/pdfGenerator";
+import { generateBonusPDF, generateBonusReportPDF } from "@/lib/pdfGenerator";
 
 export default function BonusPage() {
   const { user, profile, loading } = useAuthGuard();
@@ -16,6 +16,7 @@ export default function BonusPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -61,6 +62,31 @@ export default function BonusPage() {
       setPdfError("Failed to generate PDF. Please try again.");
     } finally {
       setGeneratingPDF(false);
+    }
+  }
+
+  async function handleExportReport(monthData: MonthlyADC) {
+    if (!profile) return;
+    setGeneratingReport(true);
+    setPdfError(null);
+    try {
+      await generateBonusReportPDF({
+        userName: profile.name,
+        userEmail: profile.email,
+        userTitle: profile.title,
+        facility: "SL Specialty Hospital",
+        month: monthData.monthName,
+        year: monthData.year,
+        adc: monthData.averageDailyCensus,
+        bonusAmount: monthData.bonusAmount,
+        daysTracked: monthData.daysInMonth,
+        totalCensusDays: monthData.totalCensusDays,
+      });
+    } catch (err) {
+      console.error("Failed to generate report PDF:", err);
+      setPdfError("Failed to generate report. Please try again.");
+    } finally {
+      setGeneratingReport(false);
     }
   }
 
@@ -119,14 +145,39 @@ export default function BonusPage() {
                   ADC: {currentMonth?.averageDailyCensus.toFixed(1)}
                   {currentBonus.tier && ` (${currentBonus.tier.adcThreshold}+ tier)`}
                 </p>
+                {currentMonth && (
+                  <button
+                    onClick={() => handleExportReport(currentMonth)}
+                    disabled={generatingReport}
+                    className="mt-5 bg-white/20 hover:bg-white/30 text-white text-base font-semibold transition w-full max-w-[400px] mx-auto flex items-center justify-center gap-2 pill-button"
+                    style={{ padding: "14px 28px" }}
+                  >
+                    {generatingReport ? (
+                      <>
+                        <svg className="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Export Monthly Report
+                      </>
+                    )}
+                  </button>
+                )}
                 {currentMonth && currentBonus.amount > 0 && (
                   <button
                     onClick={() => handleGeneratePDF(currentMonth)}
                     disabled={generatingPDF}
-                    className="mt-5 bg-white/20 hover:bg-white/30 text-white text-base font-semibold transition w-full max-w-[400px] mx-auto block pill-button"
-                    style={{ padding: "14px 28px" }}
+                    className="mt-3 bg-white/10 hover:bg-white/20 text-white/90 text-sm font-medium transition w-full max-w-[400px] mx-auto block pill-button"
+                    style={{ padding: "10px 24px" }}
                   >
-                    {generatingPDF ? "Generating..." : "Generate Bonus Submission Form (PDF)"}
+                    {generatingPDF ? "Generating..." : "Generate Submission Form (PDF)"}
                   </button>
                 )}
               </div>
@@ -221,15 +272,24 @@ export default function BonusPage() {
                             >
                               {formatCurrency(bonus.amount)}
                             </p>
-                            {bonus.amount > 0 && (
+                            <div className="flex gap-3 mt-1">
                               <button
-                                onClick={() => handleGeneratePDF(m)}
-                                className="text-sm mt-1"
+                                onClick={() => handleExportReport(m)}
+                                className="text-sm"
                                 style={{ color: "var(--accent)" }}
                               >
-                                Get PDF
+                                Report
                               </button>
-                            )}
+                              {bonus.amount > 0 && (
+                                <button
+                                  onClick={() => handleGeneratePDF(m)}
+                                  className="text-sm"
+                                  style={{ color: "var(--text-muted)" }}
+                                >
+                                  Form
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
