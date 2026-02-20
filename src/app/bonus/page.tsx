@@ -7,7 +7,7 @@ import { calculateMonthlyADC } from "@/lib/census";
 import { BONUS_TIERS, calculateBonus, formatCurrency } from "@/lib/bonus";
 import { MonthlyADC } from "@/lib/types";
 import { subMonths } from "date-fns";
-import { generateBonusPDF } from "@/lib/pdfGenerator";
+import { generateBonusPDF, generateBonusReportPDF } from "@/lib/pdfGenerator";
 
 export default function BonusPage() {
   const { user, profile, loading } = useAuthGuard();
@@ -16,6 +16,7 @@ export default function BonusPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -61,6 +62,30 @@ export default function BonusPage() {
       setPdfError("Failed to generate PDF. Please try again.");
     } finally {
       setGeneratingPDF(false);
+    }
+  }
+
+  async function handleExportReport(monthData: MonthlyADC) {
+    if (!profile) return;
+    setGeneratingReport(true);
+    setPdfError(null);
+    try {
+      await generateBonusReportPDF({
+        userName: profile.name,
+        userEmail: profile.email,
+        userTitle: profile.title,
+        month: monthData.monthName,
+        year: monthData.year,
+        adc: monthData.averageDailyCensus,
+        bonusAmount: monthData.bonusAmount,
+        daysTracked: monthData.daysInMonth,
+        totalCensusDays: monthData.totalCensusDays,
+      });
+    } catch (err) {
+      console.error("Failed to generate report PDF:", err);
+      setPdfError("Failed to generate report. Please try again.");
+    } finally {
+      setGeneratingReport(false);
     }
   }
 
@@ -119,14 +144,24 @@ export default function BonusPage() {
                   ADC: {currentMonth?.averageDailyCensus.toFixed(1)}
                   {currentBonus.tier && ` (${currentBonus.tier.adcThreshold}+ tier)`}
                 </p>
+                {currentMonth && (
+                  <button
+                    onClick={() => handleExportReport(currentMonth)}
+                    disabled={generatingReport}
+                    className="mt-5 bg-white/20 hover:bg-white/30 text-white text-base font-semibold transition w-full max-w-[400px] mx-auto block pill-button"
+                    style={{ padding: "14px 28px" }}
+                  >
+                    {generatingReport ? "Generating..." : "Export Monthly Report (PDF)"}
+                  </button>
+                )}
                 {currentMonth && currentBonus.amount > 0 && (
                   <button
                     onClick={() => handleGeneratePDF(currentMonth)}
                     disabled={generatingPDF}
-                    className="mt-5 bg-white/20 hover:bg-white/30 text-white text-base font-semibold transition w-full max-w-[400px] mx-auto block pill-button"
-                    style={{ padding: "14px 28px" }}
+                    className="mt-3 bg-white/10 hover:bg-white/20 text-white/90 text-sm font-medium transition w-full max-w-[400px] mx-auto block pill-button"
+                    style={{ padding: "10px 24px" }}
                   >
-                    {generatingPDF ? "Generating..." : "Generate Bonus Submission Form (PDF)"}
+                    {generatingPDF ? "Generating..." : "Generate Submission Form (PDF)"}
                   </button>
                 )}
               </div>
@@ -221,15 +256,24 @@ export default function BonusPage() {
                             >
                               {formatCurrency(bonus.amount)}
                             </p>
-                            {bonus.amount > 0 && (
+                            <div className="flex gap-3 mt-1">
                               <button
-                                onClick={() => handleGeneratePDF(m)}
-                                className="text-sm mt-1"
+                                onClick={() => handleExportReport(m)}
+                                className="text-sm"
                                 style={{ color: "var(--accent)" }}
                               >
-                                Get PDF
+                                Report
                               </button>
-                            )}
+                              {bonus.amount > 0 && (
+                                <button
+                                  onClick={() => handleGeneratePDF(m)}
+                                  className="text-sm"
+                                  style={{ color: "var(--text-muted)" }}
+                                >
+                                  Form
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );

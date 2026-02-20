@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import { formatCurrency } from "./bonus";
+import { formatCurrency, BONUS_TIERS } from "./bonus";
 
 interface BonusPDFData {
   userName: string;
@@ -8,6 +8,18 @@ interface BonusPDFData {
   month: string;
   adc: number;
   bonusAmount: number;
+}
+
+interface BonusReportPDFData {
+  userName: string;
+  userEmail: string;
+  userTitle: string;
+  month: string;
+  year: number;
+  adc: number;
+  bonusAmount: number;
+  daysTracked: number;
+  totalCensusDays: number;
 }
 
 export async function generateBonusPDF(data: BonusPDFData): Promise<void> {
@@ -173,4 +185,189 @@ export async function generateBonusPDF(data: BonusPDFData): Promise<void> {
     // Open email client
     window.open(`mailto:?subject=${subject}&body=${body}`, "_self");
   }
+}
+
+export async function generateBonusReportPDF(data: BonusReportPDFData): Promise<void> {
+  const pdf = new jsPDF("p", "mm", "letter");
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const margin = 20;
+  const contentWidth = pageWidth - 2 * margin;
+  let y = 20;
+
+  // ── Header band ──
+  pdf.setFillColor(30, 58, 95);
+  pdf.rect(0, 0, pageWidth, 44, "F");
+
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(20);
+  pdf.setFont("helvetica", "bold");
+  pdf.text("Monthly Bonus Report", pageWidth / 2, 18, { align: "center" });
+
+  pdf.setFontSize(14);
+  pdf.setFont("helvetica", "normal");
+  pdf.text(data.month, pageWidth / 2, 30, { align: "center" });
+
+  pdf.setFontSize(9);
+  pdf.text(`Generated ${new Date().toLocaleDateString("en-US")}`, pageWidth / 2, 39, { align: "center" });
+
+  pdf.setTextColor(0, 0, 0);
+  y = 56;
+
+  // ── Employee Information ──
+  pdf.setFillColor(245, 247, 250);
+  pdf.roundedRect(margin, y - 4, contentWidth, 38, 3, 3, "F");
+  pdf.setDrawColor(220, 225, 235);
+  pdf.setLineWidth(0.3);
+  pdf.roundedRect(margin, y - 4, contentWidth, 38, 3, 3, "S");
+
+  pdf.setFontSize(10);
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(30, 58, 95);
+  pdf.text("Employee Information", margin + 5, y + 3);
+  pdf.setTextColor(0, 0, 0);
+  y += 10;
+
+  pdf.setFontSize(10);
+  const infoFields = [
+    ["Name:", data.userName],
+    ["Title:", data.userTitle || "N/A"],
+    ["Email:", data.userEmail],
+  ];
+  for (const [label, value] of infoFields) {
+    pdf.setFont("helvetica", "bold");
+    pdf.text(label, margin + 5, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(value, margin + 30, y);
+    y += 6;
+  }
+
+  y += 10;
+
+  // ── ADC & Bonus highlights ──
+  const boxWidth = (contentWidth - 8) / 2;
+
+  // ADC box
+  pdf.setFillColor(240, 245, 250);
+  pdf.roundedRect(margin, y, boxWidth, 36, 3, 3, "F");
+  pdf.setDrawColor(30, 58, 95);
+  pdf.setLineWidth(0.4);
+  pdf.roundedRect(margin, y, boxWidth, 36, 3, 3, "S");
+
+  pdf.setFontSize(9);
+  pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(80, 80, 80);
+  pdf.text("Average Daily Census", margin + boxWidth / 2, y + 10, { align: "center" });
+
+  pdf.setFontSize(24);
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(30, 58, 95);
+  pdf.text(data.adc.toFixed(1), margin + boxWidth / 2, y + 25, { align: "center" });
+
+  // Bonus box
+  const bonusBoxX = margin + boxWidth + 8;
+  pdf.setFillColor(16, 120, 100);
+  pdf.roundedRect(bonusBoxX, y, boxWidth, 36, 3, 3, "F");
+
+  pdf.setFontSize(9);
+  pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(255, 255, 255);
+  pdf.text("Monthly Bonus", bonusBoxX + boxWidth / 2, y + 10, { align: "center" });
+
+  pdf.setFontSize(24);
+  pdf.setFont("helvetica", "bold");
+  pdf.text(formatCurrency(data.bonusAmount), bonusBoxX + boxWidth / 2, y + 25, { align: "center" });
+
+  pdf.setTextColor(0, 0, 0);
+  y += 46;
+
+  // ── Census Details ──
+  pdf.setFontSize(10);
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(30, 58, 95);
+  pdf.text("Census Details", margin, y);
+  pdf.setTextColor(0, 0, 0);
+  y += 8;
+
+  pdf.setFontSize(10);
+  pdf.setFont("helvetica", "normal");
+  const detailRows = [
+    ["Days Tracked:", String(data.daysTracked)],
+    ["Total Census-Days:", String(data.totalCensusDays)],
+    ["Average Daily Census:", data.adc.toFixed(2)],
+    ["Bonus Tier Reached:", data.bonusAmount > 0 ? `${BONUS_TIERS.find(t => t.bonusAmount === data.bonusAmount)?.adcThreshold ?? "—"}+ ADC` : "None"],
+    ["Bonus Amount:", formatCurrency(data.bonusAmount)],
+  ];
+
+  for (const [label, value] of detailRows) {
+    pdf.setFont("helvetica", "bold");
+    pdf.text(label, margin + 5, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(value, margin + 55, y);
+    y += 7;
+  }
+
+  y += 8;
+
+  // ── Tier Schedule Table ──
+  pdf.setFontSize(10);
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(30, 58, 95);
+  pdf.text("Bonus Tier Schedule", margin, y);
+  pdf.setTextColor(0, 0, 0);
+  y += 6;
+
+  // Table header
+  pdf.setFillColor(30, 58, 95);
+  pdf.rect(margin, y, contentWidth, 8, "F");
+  pdf.setFontSize(9);
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(255, 255, 255);
+  pdf.text("ADC Threshold", margin + 5, y + 5.5);
+  pdf.text("Bonus Amount", pageWidth - margin - 5, y + 5.5, { align: "right" });
+  pdf.setTextColor(0, 0, 0);
+  y += 8;
+
+  // Table rows
+  const sortedTiers = [...BONUS_TIERS].reverse();
+  for (let i = 0; i < sortedTiers.length; i++) {
+    const tier = sortedTiers[i];
+    const isCurrentTier = data.bonusAmount === tier.bonusAmount && data.bonusAmount > 0;
+
+    if (i % 2 === 0) {
+      pdf.setFillColor(248, 249, 252);
+      pdf.rect(margin, y - 1, contentWidth, 7, "F");
+    }
+    if (isCurrentTier) {
+      pdf.setFillColor(220, 252, 231);
+      pdf.rect(margin, y - 1, contentWidth, 7, "F");
+    }
+
+    pdf.setFontSize(9);
+    pdf.setFont("helvetica", isCurrentTier ? "bold" : "normal");
+    pdf.text(`${tier.adcThreshold}+ ADC`, margin + 5, y + 4);
+    pdf.text(formatCurrency(tier.bonusAmount), pageWidth - margin - 5, y + 4, { align: "right" });
+    y += 7;
+  }
+
+  // ── Footer ──
+  pdf.setFontSize(8);
+  pdf.setTextColor(150, 150, 150);
+  pdf.text(
+    "SL Specialty Hospital  •  Census Tracker",
+    pageWidth / 2,
+    pdf.internal.pageSize.getHeight() - 12,
+    { align: "center" }
+  );
+  pdf.text(
+    "This report is for informational purposes.",
+    pageWidth / 2,
+    pdf.internal.pageSize.getHeight() - 7,
+    { align: "center" }
+  );
+
+  // Save / download
+  const monthSlug = data.month.replace(/\s+/g, "_");
+  const nameSlug = data.userName.replace(/\s+/g, "_");
+  const fileName = `Bonus_Report_${nameSlug}_${monthSlug}.pdf`;
+  pdf.save(fileName);
 }
