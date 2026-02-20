@@ -74,6 +74,7 @@ export default function BonusPage() {
         userName: profile.name,
         userEmail: profile.email,
         userTitle: profile.title,
+        facility: "SL Specialty Hospital",
         month: monthData.monthName,
         year: monthData.year,
         adc: monthData.averageDailyCensus,
@@ -148,10 +149,25 @@ export default function BonusPage() {
                   <button
                     onClick={() => handleExportReport(currentMonth)}
                     disabled={generatingReport}
-                    className="mt-5 bg-white/20 hover:bg-white/30 text-white text-base font-semibold transition w-full max-w-[400px] mx-auto block pill-button"
+                    className="mt-5 bg-white/20 hover:bg-white/30 text-white text-base font-semibold transition w-full max-w-[400px] mx-auto flex items-center justify-center gap-2 pill-button"
                     style={{ padding: "14px 28px" }}
                   >
-                    {generatingReport ? "Generating..." : "Export Monthly Report (PDF)"}
+                    {generatingReport ? (
+                      <>
+                        <svg className="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Export Monthly Report
+                      </>
+                    )}
                   </button>
                 )}
                 {currentMonth && currentBonus.amount > 0 && (

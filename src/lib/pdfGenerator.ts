@@ -14,6 +14,7 @@ interface BonusReportPDFData {
   userName: string;
   userEmail: string;
   userTitle: string;
+  facility: string;
   month: string;
   year: number;
   adc: number;
@@ -196,48 +197,53 @@ export async function generateBonusReportPDF(data: BonusReportPDFData): Promise<
 
   // ── Header band ──
   pdf.setFillColor(30, 58, 95);
-  pdf.rect(0, 0, pageWidth, 44, "F");
+  pdf.rect(0, 0, pageWidth, 48, "F");
 
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(20);
   pdf.setFont("helvetica", "bold");
-  pdf.text("Monthly Bonus Report", pageWidth / 2, 18, { align: "center" });
+  pdf.text("Monthly Bonus Report", pageWidth / 2, 16, { align: "center" });
 
-  pdf.setFontSize(14);
+  pdf.setFontSize(16);
   pdf.setFont("helvetica", "normal");
-  pdf.text(data.month, pageWidth / 2, 30, { align: "center" });
+  pdf.text(data.month, pageWidth / 2, 28, { align: "center" });
 
   pdf.setFontSize(9);
-  pdf.text(`Generated ${new Date().toLocaleDateString("en-US")}`, pageWidth / 2, 39, { align: "center" });
+  pdf.setTextColor(200, 215, 235);
+  pdf.text(data.facility, pageWidth / 2, 37, { align: "center" });
+  pdf.text(`Generated ${new Date().toLocaleDateString("en-US")}`, pageWidth / 2, 43, { align: "center" });
 
   pdf.setTextColor(0, 0, 0);
-  y = 56;
+  y = 60;
 
-  // ── Employee Information ──
+  // ── Contract Information ──
+  const contractBoxHeight = 50;
   pdf.setFillColor(245, 247, 250);
-  pdf.roundedRect(margin, y - 4, contentWidth, 38, 3, 3, "F");
+  pdf.roundedRect(margin, y - 4, contentWidth, contractBoxHeight, 3, 3, "F");
   pdf.setDrawColor(220, 225, 235);
   pdf.setLineWidth(0.3);
-  pdf.roundedRect(margin, y - 4, contentWidth, 38, 3, 3, "S");
+  pdf.roundedRect(margin, y - 4, contentWidth, contractBoxHeight, 3, 3, "S");
 
   pdf.setFontSize(10);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(30, 58, 95);
-  pdf.text("Employee Information", margin + 5, y + 3);
+  pdf.text("Contract Information", margin + 5, y + 3);
   pdf.setTextColor(0, 0, 0);
   y += 10;
 
   pdf.setFontSize(10);
-  const infoFields = [
+  const contractFields = [
     ["Name:", data.userName],
     ["Title:", data.userTitle || "N/A"],
     ["Email:", data.userEmail],
+    ["Facility:", data.facility],
+    ["Report Period:", data.month],
   ];
-  for (const [label, value] of infoFields) {
+  for (const [label, value] of contractFields) {
     pdf.setFont("helvetica", "bold");
     pdf.text(label, margin + 5, y);
     pdf.setFont("helvetica", "normal");
-    pdf.text(value, margin + 30, y);
+    pdf.text(value, margin + 38, y);
     y += 6;
   }
 
@@ -256,7 +262,7 @@ export async function generateBonusReportPDF(data: BonusReportPDFData): Promise<
   pdf.setFontSize(9);
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(80, 80, 80);
-  pdf.text("Average Daily Census", margin + boxWidth / 2, y + 10, { align: "center" });
+  pdf.text("Monthly ADC Total", margin + boxWidth / 2, y + 10, { align: "center" });
 
   pdf.setFontSize(24);
   pdf.setFont("helvetica", "bold");
@@ -271,7 +277,7 @@ export async function generateBonusReportPDF(data: BonusReportPDFData): Promise<
   pdf.setFontSize(9);
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(255, 255, 255);
-  pdf.text("Monthly Bonus", bonusBoxX + boxWidth / 2, y + 10, { align: "center" });
+  pdf.text("Bonus Amount", bonusBoxX + boxWidth / 2, y + 10, { align: "center" });
 
   pdf.setFontSize(24);
   pdf.setFont("helvetica", "bold");
@@ -294,7 +300,7 @@ export async function generateBonusReportPDF(data: BonusReportPDFData): Promise<
     ["Days Tracked:", String(data.daysTracked)],
     ["Total Census-Days:", String(data.totalCensusDays)],
     ["Average Daily Census:", data.adc.toFixed(2)],
-    ["Bonus Tier Reached:", data.bonusAmount > 0 ? `${BONUS_TIERS.find(t => t.bonusAmount === data.bonusAmount)?.adcThreshold ?? "—"}+ ADC` : "None"],
+    ["Bonus Tier Reached:", data.bonusAmount > 0 ? `${BONUS_TIERS.find(t => t.bonusAmount === data.bonusAmount)?.adcThreshold ?? "\u2014"}+ ADC` : "None"],
     ["Bonus Amount:", formatCurrency(data.bonusAmount)],
   ];
 
@@ -308,11 +314,11 @@ export async function generateBonusReportPDF(data: BonusReportPDFData): Promise<
 
   y += 8;
 
-  // ── Tier Schedule Table ──
+  // ── Bonus Contract Schedule ──
   pdf.setFontSize(10);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(30, 58, 95);
-  pdf.text("Bonus Tier Schedule", margin, y);
+  pdf.text("Bonus Contract Schedule", margin, y);
   pdf.setTextColor(0, 0, 0);
   y += 6;
 
@@ -353,7 +359,7 @@ export async function generateBonusReportPDF(data: BonusReportPDFData): Promise<
   pdf.setFontSize(8);
   pdf.setTextColor(150, 150, 150);
   pdf.text(
-    "SL Specialty Hospital  •  Census Tracker",
+    `${data.facility}  \u2022  Census Tracker`,
     pageWidth / 2,
     pdf.internal.pageSize.getHeight() - 12,
     { align: "center" }
