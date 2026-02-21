@@ -2,7 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { getMonthSummary, getStartingCensus } from "@/lib/census";
+import {
+  getMonthSummary,
+  getStartingCensus,
+  getAdmissionsForDateRange,
+  getDischargesForDateRange,
+  getRTAsForDateRange,
+} from "@/lib/census";
 import { MonthlyADC, Admission, Discharge, RTA } from "@/lib/types";
 import { subMonths, getDaysInMonth, getDay, format } from "date-fns";
 
@@ -24,7 +30,32 @@ export interface DayCensusData {
   rtas: RTA[];
 }
 
-export type ViewMode = "list" | "calendar";
+export type ViewMode = "list" | "calendar" | "search";
+export type SearchCategory = "admissions" | "discharges" | "rtas";
+
+export interface SearchFilters {
+  startDate: string;
+  endDate: string;
+  category: SearchCategory;
+  // Admission filters
+  clinicalLiaison: string;
+  hospital: string;
+  patientType: string;
+  // Discharge filters
+  dischargeType: string;
+  facilityName: string;
+  // RTA filters
+  rtaReason: string;
+  rtaLocation: string;
+  // Chart toggle
+  showChart: boolean;
+}
+
+export interface SearchResults {
+  admissions: Admission[];
+  discharges: Discharge[];
+  rtas: RTA[];
+}
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 
@@ -48,6 +79,31 @@ export function useHistory() {
   const isCurrentMonth =
     calendarDate.getMonth() === new Date().getMonth() &&
     calendarDate.getFullYear() === new Date().getFullYear();
+
+  // Search state
+  const today = format(new Date(), "yyyy-MM-dd");
+  const thirtyDaysAgo = format(subMonths(new Date(), 1), "yyyy-MM-dd");
+
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    startDate: thirtyDaysAgo,
+    endDate: today,
+    category: "admissions",
+    clinicalLiaison: "",
+    hospital: "",
+    patientType: "",
+    dischargeType: "",
+    facilityName: "",
+    rtaReason: "",
+    rtaLocation: "",
+    showChart: false,
+  });
+  const [searchResults, setSearchResults] = useState<SearchResults>({
+    admissions: [],
+    discharges: [],
+    rtas: [],
+  });
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // ── Data loaders ─────────────────────────────────────────────────────
 
@@ -82,7 +138,7 @@ export function useHistory() {
       ]);
 
       const daysInMonth = getDaysInMonth(new Date(calendarYear, calendarMonth - 1));
-      const today = format(new Date(), "yyyy-MM-dd");
+      const todayStr = format(new Date(), "yyyy-MM-dd");
       const days: DayCensusData[] = [];
       let runningCensus = startCensus;
 
@@ -98,7 +154,7 @@ export function useHistory() {
         days.push({
           date: dateStr,
           dayNumber: d,
-          endingCensus: dateStr <= today ? runningCensus : -1,
+          endingCensus: dateStr <= todayStr ? runningCensus : -1,
           admissions: dayAdmissions,
           discharges: dayDischarges,
           rtas: dayRtas,
@@ -112,6 +168,79 @@ export function useHistory() {
       setCalendarLoading(false);
     }
   }, [calendarYear, calendarMonth]);
+
+  // ── Search ─────────────────────────────────────────────────────────
+
+  const executeSearch = useCallback(async () => {
+    if (!searchFilters.startDate || !searchFilters.endDate) return;
+    setSearchLoading(true);
+    setHasSearched(true);
+    try {
+      const { startDate, endDate, category } = searchFilters;
+
+      if (category === "admissions") {
+        let results = await getAdmissionsForDateRange(startDate, endDate);
+        if (searchFilters.clinicalLiaison) {
+          results = results.filter((a) => a.clinicalLiaison === searchFilters.clinicalLiaison);
+        }
+        if (searchFilters.hospital) {
+          results = results.filter((a) =>
+            a.hospitalName.toLowerCase().includes(searchFilters.hospital.toLowerCase())
+          );
+        }
+        if (searchFilters.patientType) {
+          results = results.filter((a) => a.patientType === searchFilters.patientType);
+        }
+        setSearchResults({ admissions: results, discharges: [], rtas: [] });
+      } else if (category === "discharges") {
+        let results = await getDischargesForDateRange(startDate, endDate);
+        if (searchFilters.dischargeType) {
+          results = results.filter((d) => d.dischargeType === searchFilters.dischargeType);
+        }
+        if (searchFilters.facilityName) {
+          results = results.filter((d) =>
+            d.dischargeName.toLowerCase().includes(searchFilters.facilityName.toLowerCase())
+          );
+        }
+        setSearchResults({ admissions: [], discharges: results, rtas: [] });
+      } else {
+        let results = await getRTAsForDateRange(startDate, endDate);
+        if (searchFilters.rtaReason) {
+          results = results.filter((r) => r.reason === searchFilters.rtaReason);
+        }
+        if (searchFilters.rtaLocation) {
+          results = results.filter((r) => r.hospital === searchFilters.rtaLocation);
+        }
+        setSearchResults({ admissions: [], discharges: [], rtas: results });
+      }
+    } catch (err) {
+      console.error("Search failed:", err);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [searchFilters]);
+
+  function updateSearchFilter<K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) {
+    setSearchFilters((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function resetSearchFilters() {
+    setSearchFilters({
+      startDate: thirtyDaysAgo,
+      endDate: today,
+      category: searchFilters.category,
+      clinicalLiaison: "",
+      hospital: "",
+      patientType: "",
+      dischargeType: "",
+      facilityName: "",
+      rtaReason: "",
+      rtaLocation: "",
+      showChart: false,
+    });
+    setSearchResults({ admissions: [], discharges: [], rtas: [] });
+    setHasSearched(false);
+  }
 
   // ── Effects ──────────────────────────────────────────────────────────
 
@@ -160,6 +289,14 @@ export function useHistory() {
     daysInMonth,
     weekDays,
     hasActivity,
+    // Search
+    searchFilters,
+    searchResults,
+    searchLoading,
+    hasSearched,
+    updateSearchFilter,
+    executeSearch,
+    resetSearchFilters,
     // Actions
     loadData,
     loadCalendarData,
