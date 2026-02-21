@@ -27,18 +27,19 @@ export default function AutocompleteInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
-  // Load suggestions once on mount
-  useEffect(() => {
-    let cancelled = false;
+  // Fetch (or re-fetch) the suggestion list from the data source.
+  // Called on mount and again on every focus so locally-written entries
+  // and background cache refreshes are always picked up.
+  const loadSuggestions = useCallback(() => {
     getSuggestions()
-      .then((names) => {
-        if (!cancelled) setSuggestions(names);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
+      .then((names) => setSuggestions(names))
+      .catch((err) => console.warn("AutocompleteInput: failed to load suggestions", err));
   }, [getSuggestions]);
+
+  // Load suggestions on mount
+  useEffect(() => {
+    loadSuggestions();
+  }, [loadSuggestions]);
 
   // Filter suggestions as user types
   useEffect(() => {
@@ -111,6 +112,7 @@ export default function AutocompleteInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => {
+          loadSuggestions(); // Re-fetch to pick up newly saved entries
           if (value.trim() && filtered.length > 0) setOpen(true);
         }}
         onKeyDown={handleKeyDown}
