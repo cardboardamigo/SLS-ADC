@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { Platform } from "@/hooks/useInstallPrompt";
 
 interface Props {
@@ -19,12 +20,15 @@ export default function AddToHomeScreen({
   isDark,
 }: Props) {
   const [showModal, setShowModal] = useState(false);
+  const [installing, setInstalling] = useState(false);
 
   if (isInstalled) return null;
 
   async function handleClick() {
     if (isInstallable) {
+      setInstalling(true);
       await promptInstall();
+      setInstalling(false);
     } else {
       setShowModal(true);
     }
@@ -34,6 +38,7 @@ export default function AddToHomeScreen({
     <>
       <button
         onClick={handleClick}
+        disabled={installing}
         className="w-full relative flex items-center justify-center py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
         style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
       >
@@ -43,19 +48,43 @@ export default function AddToHomeScreen({
             background: isDark ? "rgba(99,179,237,0.15)" : "rgba(26,54,93,0.08)",
           }}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke={isDark ? "#90cdf4" : "#1a365d"} className="w-[18px] h-[18px]">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
-          </svg>
+          {isInstallable ? (
+            <Image
+              src="/CT_App_Icon.png"
+              alt="App Icon"
+              width={20}
+              height={20}
+              className="rounded"
+            />
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke={isDark ? "#90cdf4" : "#1a365d"} className="w-[18px] h-[18px]">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+            </svg>
+          )}
         </div>
         <span className="text-sm font-medium text-center" style={{ color: "var(--text)" }}>
-          Add to Home Screen
+          {installing ? "Installing..." : isInstallable ? "Install App" : "Add to Home Screen"}
         </span>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="var(--text-muted)" className="w-4 h-4 absolute right-0">
-          <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-        </svg>
+        {isInstallable ? (
+          <div
+            className="absolute right-0 text-xs font-semibold px-3 py-1 rounded-full"
+            style={{
+              background: isDark
+                ? "linear-gradient(135deg, #63b3ed 0%, #4299e1 100%)"
+                : "linear-gradient(135deg, #1a365d 0%, #2a5a8a 100%)",
+              color: "#fff",
+            }}
+          >
+            Install
+          </div>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="var(--text-muted)" className="w-4 h-4 absolute right-0">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+          </svg>
+        )}
       </button>
 
-      {/* Instructions Modal */}
+      {/* iOS Instructions Modal — only shown when native install prompt is unavailable */}
       {showModal && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
@@ -73,12 +102,22 @@ export default function AddToHomeScreen({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3
-                className="text-base font-semibold"
-                style={{ color: "var(--text)" }}
-              >
-                Add to Home Screen
-              </h3>
+              <div className="flex items-center gap-3">
+                <Image
+                  src="/CT_App_Icon.png"
+                  alt="Census Tracker"
+                  width={40}
+                  height={40}
+                  className="rounded-xl"
+                  style={{ boxShadow: "0 2px 8px rgba(15,42,74,0.15)" }}
+                />
+                <h3
+                  className="text-base font-semibold"
+                  style={{ color: "var(--text)" }}
+                >
+                  Add to Home Screen
+                </h3>
+              </div>
               <button
                 onClick={() => setShowModal(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center"
