@@ -23,6 +23,11 @@ const config: CrudPageConfig<Admission> = {
   getItemSubtitle: (a) => `${a.date} \u00b7 ${a.patientType} \u00b7 CL: ${a.clinicalLiaison}`,
   activityType: "Admit",
   getActivityPatientName: (fields) => fields.hospitalName.trim(),
+  groupByOptions: [
+    { label: "Total", field: "total" },
+    { label: "By Hospital", field: "hospitalName" },
+    { label: "By Patient Type", field: "patientType" },
+  ],
   getProfileDefaults: (profile): Record<string, string> => {
     const match = CLINICAL_LIAISONS.find((cl) => profile.name?.startsWith(cl));
     return match ? { clinicalLiaison: match } : {};

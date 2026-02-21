@@ -20,6 +20,11 @@ export interface CrudField {
   saveSuggestion?: (value: string) => Promise<void>;
 }
 
+export interface GroupByOption {
+  label: string;
+  field: string; // "total" for flat list, or a field name like "hospitalName"
+}
+
 export interface CrudPageConfig<T extends { id: string; date: string }> {
   entityName: string;
   entityNamePlural: string;
@@ -35,6 +40,7 @@ export interface CrudPageConfig<T extends { id: string; date: string }> {
   activityType: ActivityType;
   getActivityPatientName: (fieldValues: Record<string, string>) => string;
   getProfileDefaults?: (profile: UserProfile) => Record<string, string>;
+  groupByOptions?: GroupByOption[];
 }
 
 export function useCrudForm<T extends { id: string; date: string }>(

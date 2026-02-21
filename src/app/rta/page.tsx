@@ -22,6 +22,11 @@ const config: CrudPageConfig<RTA> = {
   getItemSubtitle: (r) => `${r.date} \u00b7 ${r.reason}`,
   activityType: "RTA",
   getActivityPatientName: (fields) => fields.hospital,
+  groupByOptions: [
+    { label: "Total", field: "total" },
+    { label: "By Reason", field: "reason" },
+    { label: "By Facility", field: "hospital" },
+  ],
 };
 
 export default function RTAPage() {
