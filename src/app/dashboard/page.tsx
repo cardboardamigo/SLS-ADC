@@ -114,6 +114,16 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex justify-between mt-6 pt-5 border-t border-white/20">
+                <div
+                  className="text-center flex-1 cursor-pointer"
+                  onClick={() => {
+                    setCensusInput(String(startCensus));
+                    setEditingCensus(true);
+                  }}
+                >
+                  <p className="text-3xl font-semibold">{startCensus}</p>
+                  <p className="text-white/60 text-sm">Starting</p>
+                </div>
                 <div className="text-center flex-1">
                   <p className="text-3xl font-semibold">{currentCensus}</p>
                   <p className="text-white/60 text-sm">Current</p>
@@ -133,24 +143,12 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Starting Census */}
-            <div className="card">
-              <div className="text-center">
-                <p className="text-base" style={{ color: "var(--text-muted)" }}>Starting Census (Month)</p>
-                <p className="text-2xl font-semibold" style={{ color: "var(--text)" }}>{startCensus}</p>
-                {!editingCensus ? (
-                  <button
-                    onClick={() => {
-                      setCensusInput(String(startCensus));
-                      setEditingCensus(true);
-                    }}
-                    className="text-base font-medium px-4 py-2 mx-auto mt-2"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    Edit
-                  </button>
-                ) : (
-                  <div className="flex items-center justify-center gap-2 mt-3">
+            {/* Starting Census Edit Modal */}
+            {editingCensus && (
+              <div className="card card-full-width">
+                <div className="text-center">
+                  <p className="text-base mb-2" style={{ color: "var(--text-muted)" }}>Edit Starting Census</p>
+                  <div className="flex items-center justify-center gap-2">
                     <input
                       type="number"
                       value={censusInput}
@@ -179,9 +177,9 @@ export default function DashboardPage() {
                       Cancel
                     </button>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Bonus Hint */}
             {nextTier && (
