@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { formatCurrency, BONUS_TIERS } from "./bonus";
+import type { Admission, Discharge, RTA } from "./types";
 
 interface BonusPDFData {
   userName: string;
@@ -376,4 +377,201 @@ export async function generateBonusReportPDF(data: BonusReportPDFData): Promise<
   const nameSlug = data.userName.replace(/\s+/g, "_");
   const fileName = `Bonus_Report_${nameSlug}_${monthSlug}.pdf`;
   pdf.save(fileName);
+}
+
+// ── Search Results PDF ──────────────────────────────────────────────────────
+
+interface SearchReportPDFData {
+  title: string;
+  dateRange: string;
+  filters: string;
+  admissions?: Admission[];
+  discharges?: Discharge[];
+  rtas?: RTA[];
+  chartImageDataUrl?: string;
+}
+
+export async function generateSearchReportPDF(data: SearchReportPDFData): Promise<void> {
+  const pdf = new jsPDF("p", "mm", "letter");
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 18;
+  const contentWidth = pageWidth - 2 * margin;
+  let y = 18;
+
+  function checkPageBreak(needed: number) {
+    if (y + needed > pageHeight - 20) {
+      pdf.addPage();
+      y = 18;
+    }
+  }
+
+  // ── Header band ──
+  pdf.setFillColor(30, 58, 95);
+  pdf.rect(0, 0, pageWidth, 40, "F");
+
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(18);
+  pdf.setFont("helvetica", "bold");
+  pdf.text(data.title, pageWidth / 2, 14, { align: "center" });
+
+  pdf.setFontSize(11);
+  pdf.setFont("helvetica", "normal");
+  pdf.text(data.dateRange, pageWidth / 2, 23, { align: "center" });
+
+  pdf.setFontSize(9);
+  pdf.setTextColor(200, 215, 235);
+  pdf.text(`Filters: ${data.filters || "None"}`, pageWidth / 2, 31, { align: "center" });
+  pdf.text(`Generated ${new Date().toLocaleDateString("en-US")}`, pageWidth / 2, 37, { align: "center" });
+
+  pdf.setTextColor(0, 0, 0);
+  y = 48;
+
+  // ── Chart image (if provided) ──
+  if (data.chartImageDataUrl) {
+    checkPageBreak(70);
+    pdf.setFontSize(11);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(30, 58, 95);
+    pdf.text("Trend Chart", margin, y);
+    pdf.setTextColor(0, 0, 0);
+    y += 4;
+
+    const chartWidth = contentWidth;
+    const chartHeight = 55;
+    pdf.addImage(data.chartImageDataUrl, "PNG", margin, y, chartWidth, chartHeight);
+    y += chartHeight + 8;
+  }
+
+  // ── Admissions table ──
+  if (data.admissions && data.admissions.length > 0) {
+    checkPageBreak(20);
+    pdf.setFontSize(11);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(30, 58, 95);
+    pdf.text(`Admissions (${data.admissions.length})`, margin, y);
+    pdf.setTextColor(0, 0, 0);
+    y += 6;
+
+    // Table header
+    pdf.setFillColor(5, 150, 105);
+    pdf.rect(margin, y, contentWidth, 7, "F");
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(255, 255, 255);
+    pdf.text("Date", margin + 3, y + 5);
+    pdf.text("Hospital", margin + 28, y + 5);
+    pdf.text("Patient Type", margin + 90, y + 5);
+    pdf.text("CL", margin + 135, y + 5);
+    pdf.setTextColor(0, 0, 0);
+    y += 7;
+
+    for (let i = 0; i < data.admissions.length; i++) {
+      checkPageBreak(7);
+      const a = data.admissions[i];
+      if (i % 2 === 0) {
+        pdf.setFillColor(248, 249, 252);
+        pdf.rect(margin, y, contentWidth, 6, "F");
+      }
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(a.date, margin + 3, y + 4);
+      pdf.text(a.hospitalName.substring(0, 30), margin + 28, y + 4);
+      pdf.text(a.patientType, margin + 90, y + 4);
+      pdf.text(a.clinicalLiaison, margin + 135, y + 4);
+      y += 6;
+    }
+    y += 6;
+  }
+
+  // ── Discharges table ──
+  if (data.discharges && data.discharges.length > 0) {
+    checkPageBreak(20);
+    pdf.setFontSize(11);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(30, 58, 95);
+    pdf.text(`Discharges (${data.discharges.length})`, margin, y);
+    pdf.setTextColor(0, 0, 0);
+    y += 6;
+
+    pdf.setFillColor(225, 29, 72);
+    pdf.rect(margin, y, contentWidth, 7, "F");
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(255, 255, 255);
+    pdf.text("Date", margin + 3, y + 5);
+    pdf.text("Facility Name", margin + 28, y + 5);
+    pdf.text("Discharge Type", margin + 120, y + 5);
+    pdf.setTextColor(0, 0, 0);
+    y += 7;
+
+    for (let i = 0; i < data.discharges.length; i++) {
+      checkPageBreak(7);
+      const d = data.discharges[i];
+      if (i % 2 === 0) {
+        pdf.setFillColor(248, 249, 252);
+        pdf.rect(margin, y, contentWidth, 6, "F");
+      }
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(d.date, margin + 3, y + 4);
+      pdf.text(d.dischargeName.substring(0, 45), margin + 28, y + 4);
+      pdf.text(d.dischargeType, margin + 120, y + 4);
+      y += 6;
+    }
+    y += 6;
+  }
+
+  // ── RTAs table ──
+  if (data.rtas && data.rtas.length > 0) {
+    checkPageBreak(20);
+    pdf.setFontSize(11);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(30, 58, 95);
+    pdf.text(`Returns to Acute (${data.rtas.length})`, margin, y);
+    pdf.setTextColor(0, 0, 0);
+    y += 6;
+
+    pdf.setFillColor(217, 119, 6);
+    pdf.rect(margin, y, contentWidth, 7, "F");
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(255, 255, 255);
+    pdf.text("Date", margin + 3, y + 5);
+    pdf.text("Location", margin + 28, y + 5);
+    pdf.text("Reason", margin + 100, y + 5);
+    pdf.setTextColor(0, 0, 0);
+    y += 7;
+
+    for (let i = 0; i < data.rtas.length; i++) {
+      checkPageBreak(7);
+      const r = data.rtas[i];
+      if (i % 2 === 0) {
+        pdf.setFillColor(248, 249, 252);
+        pdf.rect(margin, y, contentWidth, 6, "F");
+      }
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(r.date, margin + 3, y + 4);
+      pdf.text(r.hospital, margin + 28, y + 4);
+      pdf.text(r.reason, margin + 100, y + 4);
+      y += 6;
+    }
+    y += 6;
+  }
+
+  // ── Footer ──
+  pdf.setFontSize(8);
+  pdf.setTextColor(150, 150, 150);
+  pdf.text(
+    "SL Specialty Hospital  \u2022  Census Tracker",
+    pageWidth / 2,
+    pageHeight - 10,
+    { align: "center" }
+  );
+
+  // Save / download
+  const slug = data.title.replace(/\s+/g, "_");
+  const dateSlug = data.dateRange.replace(/\s+/g, "_").replace(/\//g, "-");
+  pdf.save(`${slug}_${dateSlug}.pdf`);
 }

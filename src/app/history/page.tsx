@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import AppLayout from "@/components/AppLayout";
 import AutocompleteInput from "@/components/AutocompleteInput";
 import { useHistory } from "@/hooks/useHistory";
-import type { DayCensusData } from "@/hooks/useHistory";
+import type { DayCensusData, SearchCategory } from "@/hooks/useHistory";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateBonus, formatCurrency } from "@/lib/bonus";
 import {
@@ -20,6 +20,7 @@ import {
   DISCHARGE_TYPES,
   RTA_HOSPITALS, RTA_REASONS,
 } from "@/lib/config";
+import { generateSearchReportPDF } from "@/lib/pdfGenerator";
 import { subMonths, addMonths, format } from "date-fns";
 
 function groupBy<T>(items: T[], field: keyof T): [string, number][] {
@@ -79,9 +80,19 @@ export default function HistoryPage() {
     firstDayOfWeek,
     weekDays,
     hasActivity,
+    searchFilters,
+    searchResults,
+    searchLoading,
+    hasSearched,
+    updateSearchFilter,
+    executeSearch,
+    resetSearchFilters,
     loadData,
     loadCalendarData,
   } = useHistory();
+
+  const chartRef = useRef<SVGSVGElement>(null);
+  const [exporting, setExporting] = useState(false);
 
   if (loading || dataLoading) {
     return (
@@ -123,7 +134,7 @@ export default function HistoryPage() {
           {/* Title + View Toggle */}
           <div className="flex items-center justify-between mb-12">
             <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>
-              {viewMode === "list" ? "Monthly History" : "Census Calendar"}
+              {viewMode === "list" ? "Monthly History" : viewMode === "calendar" ? "Census Calendar" : "Search & Export"}
             </h2>
             <div
               className="flex rounded-full overflow-hidden border"
@@ -131,7 +142,7 @@ export default function HistoryPage() {
             >
               <button
                 onClick={() => setViewMode("list")}
-                className="px-4 py-2 text-sm font-medium transition-colors min-h-[44px]"
+                className="px-3 py-2 text-sm font-medium transition-colors min-h-[44px]"
                 style={{
                   background: viewMode === "list" ? "var(--primary)" : "var(--card)",
                   color: viewMode === "list" ? "#fff" : "var(--text-muted)",
@@ -141,13 +152,23 @@ export default function HistoryPage() {
               </button>
               <button
                 onClick={() => setViewMode("calendar")}
-                className="px-4 py-2 text-sm font-medium transition-colors min-h-[44px]"
+                className="px-3 py-2 text-sm font-medium transition-colors min-h-[44px]"
                 style={{
                   background: viewMode === "calendar" ? "var(--primary)" : "var(--card)",
                   color: viewMode === "calendar" ? "#fff" : "var(--text-muted)",
                 }}
               >
                 Calendar
+              </button>
+              <button
+                onClick={() => setViewMode("search")}
+                className="px-3 py-2 text-sm font-medium transition-colors min-h-[44px]"
+                style={{
+                  background: viewMode === "search" ? "var(--primary)" : "var(--card)",
+                  color: viewMode === "search" ? "#fff" : "var(--text-muted)",
+                }}
+              >
+                Search
               </button>
             </div>
           </div>
@@ -460,6 +481,22 @@ export default function HistoryPage() {
               </div>
             </>
           )}
+
+          {/* ========== SEARCH VIEW ========== */}
+          {viewMode === "search" && (
+            <SearchView
+              searchFilters={searchFilters}
+              searchResults={searchResults}
+              searchLoading={searchLoading}
+              hasSearched={hasSearched}
+              updateSearchFilter={updateSearchFilter}
+              executeSearch={executeSearch}
+              resetSearchFilters={resetSearchFilters}
+              chartRef={chartRef}
+              exporting={exporting}
+              setExporting={setExporting}
+            />
+          )}
         </div>
 
         {/* ========== DAY DETAIL MODAL ========== */}
@@ -474,6 +511,596 @@ export default function HistoryPage() {
         )}
       </div>
     </AppLayout>
+  );
+}
+
+// ── SVG Line Chart ──────────────────────────────────────────────────────
+
+function LineChart({
+  items,
+  dateField,
+  color,
+  label,
+  svgRef,
+}: {
+  items: { date: string }[];
+  dateField: string;
+  color: string;
+  label: string;
+  svgRef?: React.Ref<SVGSVGElement>;
+}) {
+  if (items.length === 0) return null;
+
+  // Group by date and count
+  const counts: Record<string, number> = {};
+  for (const item of items) {
+    const d = (item as Record<string, string>)[dateField] || "";
+    counts[d] = (counts[d] || 0) + 1;
+  }
+
+  const sortedDates = Object.keys(counts).sort();
+  const values = sortedDates.map((d) => counts[d]);
+  const maxVal = Math.max(...values, 1);
+
+  const W = 600;
+  const H = 200;
+  const padL = 40;
+  const padR = 20;
+  const padT = 20;
+  const padB = 50;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const xStep = sortedDates.length > 1 ? chartW / (sortedDates.length - 1) : chartW / 2;
+
+  const points = sortedDates.map((_, i) => {
+    const x = padL + (sortedDates.length > 1 ? i * xStep : chartW / 2);
+    const y = padT + chartH - (values[i] / maxVal) * chartH;
+    return { x, y };
+  });
+
+  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+
+  // Show every Nth label to avoid crowding
+  const labelStep = Math.max(1, Math.floor(sortedDates.length / 8));
+
+  return (
+    <div className="card mt-4 overflow-x-auto">
+      <p className="text-sm font-semibold mb-3" style={{ color: "var(--text-muted)" }}>
+        {label} Over Time ({items.length} total)
+      </p>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        style={{ minWidth: 320, maxHeight: 260, background: "var(--card)" }}
+      >
+        {/* Y-axis grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
+          const y = padT + chartH - frac * chartH;
+          const val = Math.round(frac * maxVal);
+          return (
+            <g key={frac}>
+              <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="var(--border)" strokeWidth={0.5} />
+              <text x={padL - 6} y={y + 4} textAnchor="end" fontSize={10} fill="var(--text-muted)">
+                {val}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Line */}
+        <path d={linePath} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Area fill */}
+        <path
+          d={`${linePath} L ${points[points.length - 1].x} ${padT + chartH} L ${points[0].x} ${padT + chartH} Z`}
+          fill={color}
+          opacity={0.08}
+        />
+
+        {/* Dots + X labels */}
+        {points.map((p, i) => (
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r={3.5} fill={color} />
+            <text x={p.x} y={p.y - 8} textAnchor="middle" fontSize={9} fill="var(--text)" fontWeight="600">
+              {values[i]}
+            </text>
+            {i % labelStep === 0 && (
+              <text
+                x={p.x}
+                y={padT + chartH + 16}
+                textAnchor="middle"
+                fontSize={8}
+                fill="var(--text-muted)"
+                transform={`rotate(-35 ${p.x} ${padT + chartH + 16})`}
+              >
+                {sortedDates[i].substring(5)}
+              </text>
+            )}
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+// ── Search View Component ───────────────────────────────────────────────
+
+function SearchView({
+  searchFilters,
+  searchResults,
+  searchLoading,
+  hasSearched,
+  updateSearchFilter,
+  executeSearch,
+  resetSearchFilters,
+  chartRef,
+  exporting,
+  setExporting,
+}: {
+  searchFilters: ReturnType<typeof import("@/hooks/useHistory").useHistory>["searchFilters"];
+  searchResults: ReturnType<typeof import("@/hooks/useHistory").useHistory>["searchResults"];
+  searchLoading: boolean;
+  hasSearched: boolean;
+  updateSearchFilter: ReturnType<typeof import("@/hooks/useHistory").useHistory>["updateSearchFilter"];
+  executeSearch: () => Promise<void>;
+  resetSearchFilters: () => void;
+  chartRef: React.RefObject<SVGSVGElement | null>;
+  exporting: boolean;
+  setExporting: (v: boolean) => void;
+}) {
+  const inputStyle: React.CSSProperties = {
+    background: "var(--input-bg)",
+    borderColor: "var(--border)",
+    color: "var(--text)",
+    borderRadius: "12px",
+    padding: "10px 14px",
+    width: "100%",
+    fontSize: "0.875rem",
+  };
+
+  const categoryTabs: { key: SearchCategory; label: string; color: string }[] = [
+    { key: "admissions", label: "Admissions", color: "var(--status-admit)" },
+    { key: "discharges", label: "Discharges", color: "var(--status-discharge)" },
+    { key: "rtas", label: "RTAs", color: "var(--status-rta)" },
+  ];
+
+  const currentTab = categoryTabs.find((t) => t.key === searchFilters.category)!;
+  const resultCount =
+    searchResults.admissions.length + searchResults.discharges.length + searchResults.rtas.length;
+
+  const handleExportPDF = useCallback(async () => {
+    setExporting(true);
+    try {
+      let chartImageDataUrl: string | undefined;
+      if (searchFilters.showChart && chartRef.current) {
+        const svgEl = chartRef.current;
+        const svgData = new XMLSerializer().serializeToString(svgEl);
+        const canvas = document.createElement("canvas");
+        canvas.width = 1200;
+        canvas.height = 400;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, 1200, 400);
+          const img = new Image();
+          const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          await new Promise<void>((resolve) => {
+            img.onload = () => {
+              ctx.drawImage(img, 0, 0, 1200, 400);
+              URL.revokeObjectURL(url);
+              chartImageDataUrl = canvas.toDataURL("image/png");
+              resolve();
+            };
+            img.onerror = () => {
+              URL.revokeObjectURL(url);
+              resolve();
+            };
+            img.src = url;
+          });
+        }
+      }
+
+      const filtersDesc: string[] = [];
+      if (searchFilters.category === "admissions") {
+        if (searchFilters.clinicalLiaison) filtersDesc.push(`CL: ${searchFilters.clinicalLiaison}`);
+        if (searchFilters.hospital) filtersDesc.push(`Hospital: ${searchFilters.hospital}`);
+        if (searchFilters.patientType) filtersDesc.push(`Type: ${searchFilters.patientType}`);
+      } else if (searchFilters.category === "discharges") {
+        if (searchFilters.dischargeType) filtersDesc.push(`Type: ${searchFilters.dischargeType}`);
+        if (searchFilters.facilityName) filtersDesc.push(`Facility: ${searchFilters.facilityName}`);
+      } else {
+        if (searchFilters.rtaReason) filtersDesc.push(`Reason: ${searchFilters.rtaReason}`);
+        if (searchFilters.rtaLocation) filtersDesc.push(`Location: ${searchFilters.rtaLocation}`);
+      }
+
+      const titleMap: Record<SearchCategory, string> = {
+        admissions: "Admissions Report",
+        discharges: "Discharges Report",
+        rtas: "RTAs Report",
+      };
+
+      await generateSearchReportPDF({
+        title: titleMap[searchFilters.category],
+        dateRange: `${searchFilters.startDate} to ${searchFilters.endDate}`,
+        filters: filtersDesc.join(", ") || "None",
+        admissions: searchResults.admissions.length > 0 ? searchResults.admissions : undefined,
+        discharges: searchResults.discharges.length > 0 ? searchResults.discharges : undefined,
+        rtas: searchResults.rtas.length > 0 ? searchResults.rtas : undefined,
+        chartImageDataUrl,
+      });
+    } catch (err) {
+      console.error("PDF export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  }, [searchFilters, searchResults, chartRef, setExporting]);
+
+  return (
+    <div className="space-y-6">
+      {/* Category Tabs */}
+      <div className="card">
+        <div className="flex rounded-xl overflow-hidden border mb-6" style={{ borderColor: "var(--border)" }}>
+          {categoryTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => {
+                updateSearchFilter("category", tab.key);
+                resetSearchFilters();
+              }}
+              className="flex-1 py-2.5 text-sm font-semibold transition-colors min-h-[44px]"
+              style={{
+                background: searchFilters.category === tab.key ? tab.color : "var(--card)",
+                color: searchFilters.category === tab.key ? "#fff" : "var(--text-muted)",
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Date Range */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={searchFilters.startDate}
+              onChange={(e) => updateSearchFilter("startDate", e.target.value)}
+              className="border focus:outline-none text-sm"
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
+              End Date
+            </label>
+            <input
+              type="date"
+              value={searchFilters.endDate}
+              onChange={(e) => updateSearchFilter("endDate", e.target.value)}
+              className="border focus:outline-none text-sm"
+              style={inputStyle}
+            />
+          </div>
+        </div>
+
+        {/* Category-specific filters */}
+        {searchFilters.category === "admissions" && (
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
+                Clinical Liaison
+              </label>
+              <select
+                value={searchFilters.clinicalLiaison}
+                onChange={(e) => updateSearchFilter("clinicalLiaison", e.target.value)}
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              >
+                <option value="">All</option>
+                {CLINICAL_LIAISONS.map((cl) => (
+                  <option key={cl} value={cl}>{cl}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
+                Hospital
+              </label>
+              <input
+                type="text"
+                value={searchFilters.hospital}
+                onChange={(e) => updateSearchFilter("hospital", e.target.value)}
+                placeholder="Filter by hospital name..."
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
+                Patient Type
+              </label>
+              <select
+                value={searchFilters.patientType}
+                onChange={(e) => updateSearchFilter("patientType", e.target.value)}
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              >
+                <option value="">All</option>
+                {PATIENT_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {searchFilters.category === "discharges" && (
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
+                Discharge Type
+              </label>
+              <select
+                value={searchFilters.dischargeType}
+                onChange={(e) => updateSearchFilter("dischargeType", e.target.value)}
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              >
+                <option value="">All</option>
+                {DISCHARGE_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
+                Facility Name
+              </label>
+              <input
+                type="text"
+                value={searchFilters.facilityName}
+                onChange={(e) => updateSearchFilter("facilityName", e.target.value)}
+                placeholder="Filter by facility name..."
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+        )}
+
+        {searchFilters.category === "rtas" && (
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
+                Reason
+              </label>
+              <select
+                value={searchFilters.rtaReason}
+                onChange={(e) => updateSearchFilter("rtaReason", e.target.value)}
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              >
+                <option value="">All</option>
+                {RTA_REASONS.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
+                Location
+              </label>
+              <select
+                value={searchFilters.rtaLocation}
+                onChange={(e) => updateSearchFilter("rtaLocation", e.target.value)}
+                className="border focus:outline-none text-sm"
+                style={inputStyle}
+              >
+                <option value="">All</option>
+                {RTA_HOSPITALS.map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Chart toggle */}
+        {searchFilters.category === "admissions" && (
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              onClick={() => updateSearchFilter("showChart", !searchFilters.showChart)}
+              className="flex items-center gap-2 py-2 px-4 rounded-xl text-sm font-medium transition-colors"
+              style={{
+                background: searchFilters.showChart ? "var(--status-admit-bg)" : "var(--surface)",
+                color: searchFilters.showChart ? "var(--status-admit)" : "var(--text-muted)",
+                border: `1px solid ${searchFilters.showChart ? "var(--status-admit)" : "var(--border)"}`,
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+              </svg>
+              Line Graph
+            </button>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={executeSearch}
+            disabled={searchLoading}
+            className="flex-1 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all"
+            style={{ background: currentTab.color }}
+          >
+            {searchLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#fff", borderTopColor: "transparent" }} />
+                Searching...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+                Search
+              </span>
+            )}
+          </button>
+          <button
+            onClick={resetSearchFilters}
+            className="py-3 px-5 rounded-xl text-sm font-medium transition-colors"
+            style={{ color: "var(--text-muted)", background: "var(--surface)" }}
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+
+      {/* Results */}
+      {hasSearched && !searchLoading && (
+        <>
+          {/* Result count + export */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>
+              {resultCount} result{resultCount !== 1 ? "s" : ""} found
+            </p>
+            {resultCount > 0 && (
+              <button
+                onClick={handleExportPDF}
+                disabled={exporting}
+                className="flex items-center gap-2 py-2 px-4 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all"
+                style={{ background: "var(--primary)" }}
+              >
+                {exporting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#fff", borderTopColor: "transparent" }} />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Export PDF
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Line Chart (admissions only) */}
+          {searchFilters.showChart && searchFilters.category === "admissions" && searchResults.admissions.length > 0 && (
+            <LineChart
+              items={searchResults.admissions}
+              dateField="date"
+              color="#059669"
+              label="Admissions"
+              svgRef={chartRef}
+            />
+          )}
+
+          {/* Admission Results */}
+          {searchResults.admissions.length > 0 && (
+            <div className="card">
+              <p className="text-sm font-semibold mb-3" style={{ color: "var(--status-admit)" }}>
+                Admissions ({searchResults.admissions.length})
+              </p>
+              <div className="space-y-0">
+                {searchResults.admissions.map((a) => (
+                  <div
+                    key={a.id}
+                    className="flex items-center gap-3 py-2.5 border-b last:border-0"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "var(--status-admit)" }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                        {a.hospitalName}
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {a.date} &middot; {a.patientType} &middot; CL: {a.clinicalLiaison}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Discharge Results */}
+          {searchResults.discharges.length > 0 && (
+            <div className="card">
+              <p className="text-sm font-semibold mb-3" style={{ color: "var(--status-discharge)" }}>
+                Discharges ({searchResults.discharges.length})
+              </p>
+              <div className="space-y-0">
+                {searchResults.discharges.map((d) => (
+                  <div
+                    key={d.id}
+                    className="flex items-center gap-3 py-2.5 border-b last:border-0"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "var(--status-discharge)" }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                        {d.dischargeName}
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {d.date} &middot; {d.dischargeType}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* RTA Results */}
+          {searchResults.rtas.length > 0 && (
+            <div className="card">
+              <p className="text-sm font-semibold mb-3" style={{ color: "var(--status-rta)" }}>
+                Returns to Acute ({searchResults.rtas.length})
+              </p>
+              <div className="space-y-0">
+                {searchResults.rtas.map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-3 py-2.5 border-b last:border-0"
+                    style={{ borderColor: "var(--border)" }}
+                  >
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "var(--status-rta)" }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                        {r.hospital}
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {r.date} &middot; {r.reason}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* No results */}
+          {resultCount === 0 && (
+            <div className="card text-center py-8">
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                No records found matching your search criteria.
+              </p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 

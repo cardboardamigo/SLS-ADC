@@ -298,6 +298,41 @@ export async function calculateMonthlyADC(year: number, month: number): Promise<
   return computeADC(year, month, admissions, discharges, rtas, startingCensus);
 }
 
+// --- Date-range queries (cross-month search) ---
+
+export async function getAdmissionsForDateRange(startDate: string, endDate: string): Promise<Admission[]> {
+  const q = query(
+    collection(db, "admissions"),
+    where("date", ">=", startDate),
+    where("date", "<=", endDate),
+    orderBy("date", "desc")
+  );
+  const snapshot = await getDocsResilient(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Admission));
+}
+
+export async function getDischargesForDateRange(startDate: string, endDate: string): Promise<Discharge[]> {
+  const q = query(
+    collection(db, "discharges"),
+    where("date", ">=", startDate),
+    where("date", "<=", endDate),
+    orderBy("date", "desc")
+  );
+  const snapshot = await getDocsResilient(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Discharge));
+}
+
+export async function getRTAsForDateRange(startDate: string, endDate: string): Promise<RTA[]> {
+  const q = query(
+    collection(db, "rtas"),
+    where("date", ">=", startDate),
+    where("date", "<=", endDate),
+    orderBy("date", "desc")
+  );
+  const snapshot = await getDocsResilient(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as RTA));
+}
+
 // --- Check if entries exist for a date ---
 export async function hasEntriesForDate(dateStr: string): Promise<boolean> {
   const admQ = query(collection(db, "admissions"), where("date", "==", dateStr));
