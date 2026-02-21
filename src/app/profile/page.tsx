@@ -5,11 +5,12 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import AppLayout from "@/components/AppLayout";
+import AddToHomeScreen from "@/components/AddToHomeScreen";
 
 export default function ProfilePage() {
   const { user, profile, loading, signOut } = useAuthGuard();
   const { theme, toggleTheme } = useTheme();
-  const { isInstallable, isInstalled, promptInstall } = useInstallPrompt();
+  const { isInstallable, isInstalled, promptInstall, platform } = useInstallPrompt();
   const router = useRouter();
 
   async function handleSignOut() {
@@ -207,31 +208,16 @@ export default function ProfilePage() {
                   App
                 </h3>
 
-                {/* Install App */}
-                {isInstallable && (
+                {/* Add to Home Screen */}
+                {!isInstalled && (
                   <>
-                    <button
-                      onClick={promptInstall}
-                      className="w-full relative flex items-center justify-center py-3.5 transition-colors active:scale-[0.99] min-h-[48px]"
-                      style={{ background: "transparent", boxShadow: "none", borderRadius: "0" }}
-                    >
-                      <div
-                        className="absolute left-0 w-9 h-9 rounded-full flex items-center justify-center"
-                        style={{
-                          background: isDark ? "rgba(104,211,145,0.15)" : "rgba(56,161,105,0.08)",
-                        }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke={isDark ? "#68d391" : "#38a169"} className="w-[18px] h-[18px]">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                        </svg>
-                      </div>
-                      <span className="text-sm font-medium text-center" style={{ color: "var(--text)" }}>
-                        Install App
-                      </span>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="var(--text-muted)" className="w-4 h-4 absolute right-0">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                      </svg>
-                    </button>
+                    <AddToHomeScreen
+                      platform={platform}
+                      isInstallable={isInstallable}
+                      isInstalled={isInstalled}
+                      promptInstall={promptInstall}
+                      isDark={isDark}
+                    />
                     <div style={{ borderBottom: "1px solid var(--border)" }} />
                   </>
                 )}
