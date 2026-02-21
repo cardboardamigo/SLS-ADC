@@ -22,6 +22,11 @@ const config: CrudPageConfig<Discharge> = {
   getItemSubtitle: (d) => `${d.date} \u00b7 ${d.dischargeType}`,
   activityType: "DC",
   getActivityPatientName: (fields) => fields.dischargeName.trim(),
+  groupByOptions: [
+    { label: "Total", field: "total" },
+    { label: "By Facility Type", field: "dischargeType" },
+    { label: "By Name", field: "dischargeName" },
+  ],
 };
 
 export default function DischargesPage() {

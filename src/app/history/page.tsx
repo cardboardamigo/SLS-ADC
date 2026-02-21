@@ -22,6 +22,43 @@ import {
 } from "@/lib/config";
 import { subMonths, addMonths, format } from "date-fns";
 
+function groupBy<T>(items: T[], field: keyof T): [string, number][] {
+  const counts: Record<string, number> = {};
+  for (const item of items) {
+    const key = String(item[field]) || "Unknown";
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+}
+
+function GroupedSummary({ title, groups, color }: { title: string; groups: [string, number][]; color: string }) {
+  if (groups.length === 0) return null;
+  return (
+    <div className="mt-4">
+      <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-muted)" }}>
+        {title}
+      </p>
+      <div className="space-y-1">
+        {groups.map(([name, count]) => (
+          <div
+            key={name}
+            className="flex items-center justify-between py-1.5 px-3 rounded-lg"
+            style={{ background: "var(--surface)" }}
+          >
+            <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{name}</span>
+            <span
+              className="text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{ background: color, color: "#fff" }}
+            >
+              {count}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function HistoryPage() {
   const {
     loading,
@@ -193,10 +230,43 @@ export default function HistoryPage() {
                           )}
                         </div>
 
+                        {/* Grouped summaries */}
+                        <GroupedSummary
+                          title="Admissions by Hospital"
+                          groups={groupBy(m.admissions, "hospitalName")}
+                          color="var(--status-admit)"
+                        />
+                        <GroupedSummary
+                          title="Admissions by Patient Type"
+                          groups={groupBy(m.admissions, "patientType")}
+                          color="var(--status-admit)"
+                        />
+                        <GroupedSummary
+                          title="Discharges by Facility Type"
+                          groups={groupBy(m.discharges, "dischargeType")}
+                          color="var(--status-discharge)"
+                        />
+                        <GroupedSummary
+                          title="Discharges by Name"
+                          groups={groupBy(m.discharges, "dischargeName")}
+                          color="var(--status-discharge)"
+                        />
+                        <GroupedSummary
+                          title="RTAs by Reason"
+                          groups={groupBy(m.rtas, "reason")}
+                          color="var(--status-rta)"
+                        />
+                        <GroupedSummary
+                          title="RTAs by Facility"
+                          groups={groupBy(m.rtas, "hospital")}
+                          color="var(--status-rta)"
+                        />
+
+                        {/* Detailed activity lists */}
                         {m.admissions.length > 0 && (
-                          <div className="mt-4">
+                          <div className="mt-6 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
                             <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-muted)" }}>
-                              Admissions
+                              All Admissions
                             </p>
                             {m.admissions.map((a) => (
                               <p key={a.id} className="text-sm py-1" style={{ color: "var(--text-secondary)" }}>
@@ -209,7 +279,7 @@ export default function HistoryPage() {
                         {m.discharges.length > 0 && (
                           <div className="mt-4">
                             <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-muted)" }}>
-                              Discharges
+                              All Discharges
                             </p>
                             {m.discharges.map((d) => (
                               <p key={d.id} className="text-sm py-1" style={{ color: "var(--text-secondary)" }}>
@@ -222,7 +292,7 @@ export default function HistoryPage() {
                         {m.rtas.length > 0 && (
                           <div className="mt-4">
                             <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-muted)" }}>
-                              Returns to Acute
+                              All Returns to Acute
                             </p>
                             {m.rtas.map((r) => (
                               <p key={r.id} className="text-sm py-1" style={{ color: "var(--text-secondary)" }}>
