@@ -104,7 +104,7 @@ export default function DashboardPage() {
         <div className="content-container py-8">
           <div className="dashboard-cards">
             {/* ADC Hero Card */}
-            <div className="card card-full-width bg-gradient-to-br from-[#1a365d] to-[#2a4a7f] text-white shadow-lg" style={{ border: "none" }}>
+            <div className="card card-full-width text-white shadow-lg" style={{ border: "none", background: "linear-gradient(to bottom right, #1a365d, #2a4a7f)" }}>
               <div className="dashboard-stat-center flex-col text-center">
                 <p className="text-white/70 text-base mb-1">{format(now, "MMMM yyyy")} ADC</p>
                 <p className="text-6xl font-bold mb-2">{adc.toFixed(1)}</p>
