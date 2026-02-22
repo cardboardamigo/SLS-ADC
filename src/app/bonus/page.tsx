@@ -134,7 +134,7 @@ export default function BonusPage() {
             {/* Left column: Hero + Tier chart */}
             <div>
               {/* Current Month Bonus */}
-              <div className="card bg-gradient-to-br from-amber-500 to-amber-600 text-white mb-12 shadow-lg" style={{ border: "none" }}>
+              <div className="card text-white mb-12 shadow-lg" style={{ border: "none", background: "linear-gradient(to bottom right, #f59e0b, #d97706)" }}>
                 <p className="text-white/80 text-base mb-1 text-center lg:text-left">
                   {currentMonth?.monthName} Projected Bonus
                 </p>
