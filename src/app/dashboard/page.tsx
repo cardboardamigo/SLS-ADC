@@ -109,7 +109,7 @@ export default function DashboardPage() {
         )}
 
         <div className="content-container py-8">
-          <div className="dashboard-cards">
+          <div className="dashboard-cards pt-4">
             {/* ADC Hero Card */}
             <div className="card card-full-width text-white shadow-lg" style={{ border: "none", background: "linear-gradient(to bottom right, #1a365d, #2a4a7f)" }}>
               <div className="dashboard-stat-center flex-col text-center">
