@@ -170,11 +170,14 @@ export default function CrudPage<T extends { id: string; date: string }>({
                       />
                     ) : (
                       <select
-                        value={fieldValues[field.name] || field.defaultValue}
+                        value={fieldValues[field.name] ?? field.defaultValue}
                         onChange={(e) => setField(field.name, e.target.value)}
                         className={`border focus:outline-none focus:ring-2 ${config.focusRingClass} transition text-base`}
                         style={inputStyle}
                       >
+                        {field.placeholder && (
+                          <option value="">{field.placeholder}</option>
+                        )}
                         {field.options?.map((opt) => (
                           <option key={opt} value={opt}>
                             {opt}

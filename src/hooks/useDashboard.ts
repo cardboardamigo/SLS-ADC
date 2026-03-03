@@ -4,14 +4,14 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import {
-  calculateMonthlyADC,
+  getMonthSummary,
   getStartingCensus,
   setStartingCensus as setStartingCensusAPI,
   subscribeToActivityForMonth,
 } from "@/lib/census";
 import { MonthlyADC, ActivityEntry } from "@/lib/types";
 import { calculateBonus, formatCurrency } from "@/lib/bonus";
-import { BONUS_TIERS } from "@/lib/config";
+import { BONUS_TIERS, INSURANCE_TYPES } from "@/lib/config";
 
 const PULL_THRESHOLD = 80;
 
@@ -28,6 +28,8 @@ export function useDashboard() {
   const [showBonusHint, setShowBonusHint] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [insuranceCounts, setInsuranceCounts] = useState<Record<string, number>>({});
+  const [insuranceNameBreakdown, setInsuranceNameBreakdown] = useState<Record<string, Record<string, number>>>({});
   const tapCountRef = useRef(0);
   const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -40,16 +42,37 @@ export function useDashboard() {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
 
+  function computeInsurance(
+    admissions: { insuranceType?: string; insuranceName?: string }[],
+    discharges: { insuranceType?: string; insuranceName?: string }[],
+    rtas: { insuranceType?: string; insuranceName?: string }[]
+  ) {
+    const counts: Record<string, number> = {};
+    const nameBreakdown: Record<string, Record<string, number>> = {};
+    for (const entry of [...admissions, ...discharges, ...rtas]) {
+      const type = entry.insuranceType;
+      if (!type) continue;
+      counts[type] = (counts[type] || 0) + 1;
+      if (!nameBreakdown[type]) nameBreakdown[type] = {};
+      const name = entry.insuranceName?.trim() || "Unknown";
+      nameBreakdown[type][name] = (nameBreakdown[type][name] || 0) + 1;
+    }
+    return { counts, nameBreakdown };
+  }
+
   const loadData = useCallback(async () => {
     try {
       setDataLoading(true);
       setDataError(null);
-      const [adc, sc] = await Promise.all([
-        calculateMonthlyADC(year, month),
+      const [summary, sc] = await Promise.all([
+        getMonthSummary(year, month),
         getStartingCensus(year, month),
       ]);
-      setMonthlyData(adc);
+      setMonthlyData(summary.adc);
       setStartCensus(sc);
+      const { counts, nameBreakdown } = computeInsurance(summary.admissions, summary.discharges, summary.rtas);
+      setInsuranceCounts(counts);
+      setInsuranceNameBreakdown(nameBreakdown);
     } catch (err) {
       console.error("Failed to load data:", err);
       setDataError("Failed to load census data. Please check your connection and try again.");
@@ -61,13 +84,16 @@ export function useDashboard() {
   const refreshData = useCallback(async () => {
     try {
       setRefreshing(true);
-      const [adc, sc] = await Promise.all([
-        calculateMonthlyADC(year, month),
+      const [summary, sc] = await Promise.all([
+        getMonthSummary(year, month),
         getStartingCensus(year, month),
       ]);
-      setMonthlyData(adc);
+      setMonthlyData(summary.adc);
       setStartCensus(sc);
       setDataError(null);
+      const { counts, nameBreakdown } = computeInsurance(summary.admissions, summary.discharges, summary.rtas);
+      setInsuranceCounts(counts);
+      setInsuranceNameBreakdown(nameBreakdown);
     } catch (err) {
       console.error("Failed to refresh data:", err);
     } finally {
@@ -199,6 +225,10 @@ export function useDashboard() {
     totalDischarges,
     totalRTAs,
     currentCensus,
+    // Insurance
+    insuranceCounts,
+    insuranceNameBreakdown,
+    insuranceTypes: INSURANCE_TYPES,
     // Actions
     loadData,
     handleTripleTap,

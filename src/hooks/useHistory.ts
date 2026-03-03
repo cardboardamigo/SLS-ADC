@@ -47,6 +47,9 @@ export interface SearchFilters {
   // RTA filters
   rtaReason: string;
   rtaLocation: string;
+  // Insurance filters (all categories)
+  insuranceType: string;
+  insuranceName: string;
   // Chart toggle
   showChart: boolean;
 }
@@ -95,6 +98,8 @@ export function useHistory() {
     facilityName: "",
     rtaReason: "",
     rtaLocation: "",
+    insuranceType: "",
+    insuranceName: "",
     showChart: false,
   });
   const [searchResults, setSearchResults] = useState<SearchResults>({
@@ -191,6 +196,14 @@ export function useHistory() {
         if (searchFilters.patientType) {
           results = results.filter((a) => a.patientType === searchFilters.patientType);
         }
+        if (searchFilters.insuranceType) {
+          results = results.filter((a) => a.insuranceType === searchFilters.insuranceType);
+        }
+        if (searchFilters.insuranceName) {
+          results = results.filter((a) =>
+            (a.insuranceName || "").toLowerCase().includes(searchFilters.insuranceName.toLowerCase())
+          );
+        }
         setSearchResults({ admissions: results, discharges: [], rtas: [] });
       } else if (category === "discharges") {
         let results = await getDischargesForDateRange(startDate, endDate);
@@ -202,6 +215,14 @@ export function useHistory() {
             d.dischargeName.toLowerCase().includes(searchFilters.facilityName.toLowerCase())
           );
         }
+        if (searchFilters.insuranceType) {
+          results = results.filter((d) => d.insuranceType === searchFilters.insuranceType);
+        }
+        if (searchFilters.insuranceName) {
+          results = results.filter((d) =>
+            (d.insuranceName || "").toLowerCase().includes(searchFilters.insuranceName.toLowerCase())
+          );
+        }
         setSearchResults({ admissions: [], discharges: results, rtas: [] });
       } else {
         let results = await getRTAsForDateRange(startDate, endDate);
@@ -210,6 +231,14 @@ export function useHistory() {
         }
         if (searchFilters.rtaLocation) {
           results = results.filter((r) => r.hospital === searchFilters.rtaLocation);
+        }
+        if (searchFilters.insuranceType) {
+          results = results.filter((r) => r.insuranceType === searchFilters.insuranceType);
+        }
+        if (searchFilters.insuranceName) {
+          results = results.filter((r) =>
+            (r.insuranceName || "").toLowerCase().includes(searchFilters.insuranceName.toLowerCase())
+          );
         }
         setSearchResults({ admissions: [], discharges: [], rtas: results });
       }
@@ -236,6 +265,8 @@ export function useHistory() {
       facilityName: "",
       rtaReason: "",
       rtaLocation: "",
+      insuranceType: "",
+      insuranceName: "",
       showChart: false,
     });
     setSearchResults({ admissions: [], discharges: [], rtas: [] });

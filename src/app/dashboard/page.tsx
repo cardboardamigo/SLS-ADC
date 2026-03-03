@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef } from "react";
 import AppLayout from "@/components/AppLayout";
 import { useDashboard } from "@/hooks/useDashboard";
 import { format } from "date-fns";
@@ -32,12 +33,18 @@ export default function DashboardPage() {
     totalDischarges,
     totalRTAs,
     currentCensus,
+    insuranceCounts,
+    insuranceNameBreakdown,
+    insuranceTypes,
     loadData,
     handleTripleTap,
     calculateBonus,
     formatCurrency,
     router,
   } = useDashboard();
+
+  const [activeInsuranceType, setActiveInsuranceType] = useState<string | null>(null);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (loading || dataLoading) {
     return (
@@ -139,6 +146,71 @@ export default function DashboardPage() {
                 <div className="text-center flex-1">
                   <p className="text-3xl font-semibold text-amber-300">-{totalRTAs}</p>
                   <p className="text-white/60 text-sm">RTA</p>
+                </div>
+              </div>
+
+              {/* Insurance Row */}
+              <div className="mt-4 pt-4 border-t border-white/20 relative">
+                <p className="text-white/50 text-xs text-center mb-2">Insurance (hold to see breakdown)</p>
+                <div className="flex justify-between gap-1">
+                  {insuranceTypes.map((type) => {
+                    const count = insuranceCounts[type] || 0;
+                    const isActive = activeInsuranceType === type;
+                    return (
+                      <div key={type} className="flex-1 relative">
+                        <button
+                          onPointerDown={() => {
+                            if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+                            setActiveInsuranceType(type);
+                          }}
+                          onPointerUp={() => {
+                            if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+                            holdTimerRef.current = setTimeout(() => setActiveInsuranceType(null), 200);
+                          }}
+                          onPointerLeave={() => {
+                            if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+                            setActiveInsuranceType(null);
+                          }}
+                          className="w-full text-center rounded-lg py-1.5 px-1 select-none touch-none"
+                          style={{
+                            background: isActive ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.1)",
+                            border: `1px solid ${isActive ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.15)"}`,
+                            WebkitUserSelect: "none",
+                            userSelect: "none",
+                          }}
+                        >
+                          <p className="text-white font-bold text-base leading-none">{count}</p>
+                          <p className="text-white/60 text-[10px] mt-0.5 leading-none">{type}</p>
+                        </button>
+
+                        {/* Hold-to-view popup */}
+                        {isActive && insuranceNameBreakdown[type] && (
+                          <div
+                            className="absolute bottom-full mb-2 left-1/2 z-50 rounded-xl p-3 shadow-xl pointer-events-none"
+                            style={{
+                              background: "rgba(15,23,42,0.95)",
+                              border: "1px solid rgba(255,255,255,0.2)",
+                              minWidth: "140px",
+                              transform: "translateX(-50%)",
+                              backdropFilter: "blur(8px)",
+                            }}
+                          >
+                            <p className="text-white font-semibold text-xs mb-2">{type} — {count} total</p>
+                            <div className="space-y-1">
+                              {(Object.entries(insuranceNameBreakdown[type]) as [string, number][])
+                                .sort((a, b) => b[1] - a[1])
+                                .map(([name, cnt]) => (
+                                  <div key={name} className="flex items-center justify-between gap-2">
+                                    <span className="text-white/70 text-xs truncate">{name}</span>
+                                    <span className="text-white font-bold text-xs flex-shrink-0">{cnt}</span>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

@@ -38,6 +38,29 @@ export async function saveHospitalIfNew(name: string): Promise<void> {
   );
 }
 
+// --- Insurance Names (autocomplete suggestions) ---
+export async function getInsuranceNames(): Promise<string[]> {
+  const q = query(collection(db, "insuranceNames"), orderBy("name"));
+  const snapshot = await getDocsResilient(q);
+  return snapshot.docs.map((d) => d.data().name as string);
+}
+
+export async function saveInsuranceIfNew(name: string): Promise<void> {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  const existing = await getInsuranceNames();
+  const alreadyExists = existing.some(
+    (n) => n.toLowerCase() === trimmed.toLowerCase()
+  );
+  if (alreadyExists) return;
+  await withTimeout(
+    addDoc(collection(db, "insuranceNames"), {
+      name: trimmed,
+      createdAt: new Date().toISOString(),
+    })
+  );
+}
+
 // --- Discharge Facilities (autocomplete suggestions) ---
 export async function getDischargeFacilityNames(): Promise<string[]> {
   const q = query(collection(db, "dischargeFacilities"), orderBy("name"));
