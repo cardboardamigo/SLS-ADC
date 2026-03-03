@@ -49,7 +49,7 @@ export function useDashboard() {
   ) {
     const counts: Record<string, number> = {};
     const nameBreakdown: Record<string, Record<string, number>> = {};
-    for (const entry of [...admissions, ...discharges, ...rtas]) {
+    for (const entry of admissions) {
       const type = entry.insuranceType;
       if (!type) continue;
       counts[type] = (counts[type] || 0) + 1;
