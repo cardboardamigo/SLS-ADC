@@ -4,6 +4,7 @@ import {
   DISCHARGE_TYPES,
   RTA_HOSPITALS,
   RTA_REASONS,
+  INSURANCE_TYPES,
 } from "./config";
 
 export type PatientType = (typeof PATIENT_TYPES)[number];
@@ -11,6 +12,7 @@ export type ClinicalLiaison = (typeof CLINICAL_LIAISONS)[number];
 export type DischargeType = (typeof DISCHARGE_TYPES)[number];
 export type RTAHospital = (typeof RTA_HOSPITALS)[number];
 export type RTAReason = (typeof RTA_REASONS)[number];
+export type InsuranceType = (typeof INSURANCE_TYPES)[number];
 
 export interface Admission {
   id: string;
@@ -18,6 +20,8 @@ export interface Admission {
   hospitalName: string;
   patientType: PatientType;
   clinicalLiaison: ClinicalLiaison;
+  insuranceType?: InsuranceType;
+  insuranceName?: string;
   createdBy: string;
   createdAt: string;
 }
@@ -27,6 +31,8 @@ export interface Discharge {
   date: string;
   dischargeType: DischargeType;
   dischargeName: string;
+  insuranceType?: InsuranceType;
+  insuranceName?: string;
   createdBy: string;
   createdAt: string;
 }
@@ -36,6 +42,8 @@ export interface RTA {
   date: string;
   hospital: RTAHospital;
   reason: RTAReason;
+  insuranceType?: InsuranceType;
+  insuranceName?: string;
   createdBy: string;
   createdAt: string;
 }

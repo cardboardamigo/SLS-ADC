@@ -13,6 +13,7 @@ export const USERS = [
 export const PATIENT_TYPES = ["Resp Complex", "Trach Vent", "Wound", "Med Complex"] as const;
 export const CLINICAL_LIAISONS = ["Thad", "West"] as const;
 export const DISCHARGE_TYPES = ["IRF", "SNF", "HH", "ALF", "Passed"] as const;
+export const INSURANCE_TYPES = ["MCR", "M-MCR", "MCD", "M-MCD", "Private"] as const;
 export const RTA_HOSPITALS = ["UofU", "IMC", "SMH", "SLR", "HC-JV", "HC-JVW", "HCH"] as const;
 export const RTA_REASONS = [
   "Sepsis",

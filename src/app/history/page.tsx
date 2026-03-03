@@ -12,6 +12,7 @@ import {
   addDischarge, updateDischarge, deleteDischarge,
   addRTA, updateRTA, deleteRTA,
   getHospitalNames, saveHospitalIfNew,
+  getInsuranceNames, saveInsuranceIfNew,
   recordActivity,
 } from "@/lib/census";
 import { Admission, Discharge, RTA } from "@/lib/types";
@@ -19,6 +20,7 @@ import {
   PATIENT_TYPES, CLINICAL_LIAISONS,
   DISCHARGE_TYPES,
   RTA_HOSPITALS, RTA_REASONS,
+  INSURANCE_TYPES,
 } from "@/lib/config";
 import { generateSearchReportPDF } from "@/lib/pdfGenerator";
 import { subMonths, addMonths, format } from "date-fns";
@@ -911,6 +913,39 @@ function SearchView({
           </div>
         )}
 
+        {/* Insurance filters — shared across all categories */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
+              Insurance Type
+            </label>
+            <select
+              value={searchFilters.insuranceType}
+              onChange={(e) => updateSearchFilter("insuranceType", e.target.value)}
+              className="border focus:outline-none text-sm"
+              style={inputStyle}
+            >
+              <option value="">All</option>
+              {INSURANCE_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
+              Insurance Name
+            </label>
+            <input
+              type="text"
+              value={searchFilters.insuranceName}
+              onChange={(e) => updateSearchFilter("insuranceName", e.target.value)}
+              placeholder="Filter by name..."
+              className="border focus:outline-none text-sm"
+              style={inputStyle}
+            />
+          </div>
+        </div>
+
         {/* Chart toggle */}
         {searchFilters.category === "admissions" && (
           <div className="flex items-center gap-3 mb-4">
@@ -1026,6 +1061,7 @@ function SearchView({
                       </p>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                         {a.date} &middot; {a.patientType} &middot; CL: {a.clinicalLiaison}
+                        {a.insuranceType && ` \u00b7 ${a.insuranceType}${a.insuranceName ? ` (${a.insuranceName})` : ""}`}
                       </p>
                     </div>
                   </div>
@@ -1054,6 +1090,7 @@ function SearchView({
                       </p>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                         {d.date} &middot; {d.dischargeType}
+                        {d.insuranceType && ` \u00b7 ${d.insuranceType}${d.insuranceName ? ` (${d.insuranceName})` : ""}`}
                       </p>
                     </div>
                   </div>
@@ -1082,6 +1119,7 @@ function SearchView({
                       </p>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                         {r.date} &middot; {r.reason}
+                        {r.insuranceType && ` \u00b7 ${r.insuranceType}${r.insuranceName ? ` (${r.insuranceName})` : ""}`}
                       </p>
                     </div>
                   </div>
@@ -1162,11 +1200,13 @@ function DayDetailModal({
         hospitalName: "",
         patientType: PATIENT_TYPES[0],
         clinicalLiaison: defaultCL || CLINICAL_LIAISONS[0],
+        insuranceType: "",
+        insuranceName: "",
       });
     } else if (type === "discharge") {
-      setAddValues({ dischargeType: DISCHARGE_TYPES[0], dischargeName: "" });
+      setAddValues({ dischargeType: DISCHARGE_TYPES[0], dischargeName: "", insuranceType: "", insuranceName: "" });
     } else if (type === "rta") {
-      setAddValues({ hospital: RTA_HOSPITALS[0], reason: RTA_REASONS[0] });
+      setAddValues({ hospital: RTA_HOSPITALS[0], reason: RTA_REASONS[0], insuranceType: "", insuranceName: "" });
     }
   }
 
@@ -1177,19 +1217,29 @@ function DayDetailModal({
     setSubmitting(true);
     try {
       const base = { date: localDay.date, createdBy: user.uid, createdAt: new Date().toISOString() };
+      const insFields = (vals: Record<string, string>) => ({
+        ...(vals.insuranceType && { insuranceType: vals.insuranceType as Admission["insuranceType"] }),
+        ...(vals.insuranceName?.trim() && { insuranceName: vals.insuranceName.trim() }),
+      });
       if (addForm === "admission") {
-        const id = await addAdmission({ ...base, hospitalName: addValues.hospitalName.trim(), patientType: addValues.patientType as Admission["patientType"], clinicalLiaison: addValues.clinicalLiaison as Admission["clinicalLiaison"] });
-        setLocalDay((prev) => ({ ...prev, admissions: [...prev.admissions, { id, ...base, hospitalName: addValues.hospitalName.trim(), patientType: addValues.patientType as Admission["patientType"], clinicalLiaison: addValues.clinicalLiaison as Admission["clinicalLiaison"] }] }));
+        const admData = { ...base, hospitalName: addValues.hospitalName.trim(), patientType: addValues.patientType as Admission["patientType"], clinicalLiaison: addValues.clinicalLiaison as Admission["clinicalLiaison"], ...insFields(addValues) };
+        const id = await addAdmission(admData);
+        setLocalDay((prev) => ({ ...prev, admissions: [...prev.admissions, { id, ...admData }] }));
         recordActivity({ type: "Admit", patientName: addValues.hospitalName.trim(), liaisonName: profile?.name ?? "", userUID: user.uid }).catch(() => {});
         saveHospitalIfNew(addValues.hospitalName).catch(() => {});
+        if (addValues.insuranceName?.trim()) saveInsuranceIfNew(addValues.insuranceName).catch(() => {});
       } else if (addForm === "discharge") {
-        const id = await addDischarge({ ...base, dischargeType: addValues.dischargeType as Discharge["dischargeType"], dischargeName: addValues.dischargeName.trim() });
-        setLocalDay((prev) => ({ ...prev, discharges: [...prev.discharges, { id, ...base, dischargeType: addValues.dischargeType as Discharge["dischargeType"], dischargeName: addValues.dischargeName.trim() }] }));
+        const dcData = { ...base, dischargeType: addValues.dischargeType as Discharge["dischargeType"], dischargeName: addValues.dischargeName.trim(), ...insFields(addValues) };
+        const id = await addDischarge(dcData);
+        setLocalDay((prev) => ({ ...prev, discharges: [...prev.discharges, { id, ...dcData }] }));
         recordActivity({ type: "DC", patientName: addValues.dischargeName.trim(), liaisonName: profile?.name ?? "", userUID: user.uid }).catch(() => {});
+        if (addValues.insuranceName?.trim()) saveInsuranceIfNew(addValues.insuranceName).catch(() => {});
       } else if (addForm === "rta") {
-        const id = await addRTA({ ...base, hospital: addValues.hospital as RTA["hospital"], reason: addValues.reason as RTA["reason"] });
-        setLocalDay((prev) => ({ ...prev, rtas: [...prev.rtas, { id, ...base, hospital: addValues.hospital as RTA["hospital"], reason: addValues.reason as RTA["reason"] }] }));
+        const rtaData = { ...base, hospital: addValues.hospital as RTA["hospital"], reason: addValues.reason as RTA["reason"], ...insFields(addValues) };
+        const id = await addRTA(rtaData);
+        setLocalDay((prev) => ({ ...prev, rtas: [...prev.rtas, { id, ...rtaData }] }));
         recordActivity({ type: "RTA", patientName: addValues.hospital, liaisonName: profile?.name ?? "", userUID: user.uid }).catch(() => {});
+        if (addValues.insuranceName?.trim()) saveInsuranceIfNew(addValues.insuranceName).catch(() => {});
       }
       showFeedback("success", "Saved successfully");
       setAddForm(null);
@@ -1204,15 +1254,15 @@ function DayDetailModal({
   // ── Start edit ──
   function startEditAdmission(a: Admission) {
     setAddForm(null);
-    setEditState({ type: "admission", id: a.id, values: { hospitalName: a.hospitalName, patientType: a.patientType, clinicalLiaison: a.clinicalLiaison } });
+    setEditState({ type: "admission", id: a.id, values: { hospitalName: a.hospitalName, patientType: a.patientType, clinicalLiaison: a.clinicalLiaison, insuranceType: a.insuranceType || "", insuranceName: a.insuranceName || "" } });
   }
   function startEditDischarge(d: Discharge) {
     setAddForm(null);
-    setEditState({ type: "discharge", id: d.id, values: { dischargeType: d.dischargeType, dischargeName: d.dischargeName } });
+    setEditState({ type: "discharge", id: d.id, values: { dischargeType: d.dischargeType, dischargeName: d.dischargeName, insuranceType: d.insuranceType || "", insuranceName: d.insuranceName || "" } });
   }
   function startEditRTA(r: RTA) {
     setAddForm(null);
-    setEditState({ type: "rta", id: r.id, values: { hospital: r.hospital, reason: r.reason } });
+    setEditState({ type: "rta", id: r.id, values: { hospital: r.hospital, reason: r.reason, insuranceType: r.insuranceType || "", insuranceName: r.insuranceName || "" } });
   }
 
   // ── Submit edit ──
@@ -1220,17 +1270,27 @@ function DayDetailModal({
     e.preventDefault();
     if (!editState) return;
     setSubmitting(true);
+    const insUpdate = (vals: Record<string, string>) => ({
+      insuranceType: (vals.insuranceType || undefined) as Admission["insuranceType"],
+      ...(vals.insuranceName?.trim() ? { insuranceName: vals.insuranceName.trim() } : { insuranceName: "" }),
+    });
     try {
       if (editState.type === "admission") {
-        await updateAdmission(editState.id, { hospitalName: editState.values.hospitalName.trim(), patientType: editState.values.patientType as Admission["patientType"], clinicalLiaison: editState.values.clinicalLiaison as Admission["clinicalLiaison"] });
-        setLocalDay((prev) => ({ ...prev, admissions: prev.admissions.map((a) => a.id === editState.id ? { ...a, hospitalName: editState.values.hospitalName.trim(), patientType: editState.values.patientType as Admission["patientType"], clinicalLiaison: editState.values.clinicalLiaison as Admission["clinicalLiaison"] } : a) }));
+        const upd = { hospitalName: editState.values.hospitalName.trim(), patientType: editState.values.patientType as Admission["patientType"], clinicalLiaison: editState.values.clinicalLiaison as Admission["clinicalLiaison"], ...insUpdate(editState.values) };
+        await updateAdmission(editState.id, upd);
+        setLocalDay((prev) => ({ ...prev, admissions: prev.admissions.map((a) => a.id === editState.id ? { ...a, ...upd } : a) }));
         saveHospitalIfNew(editState.values.hospitalName).catch(() => {});
+        if (editState.values.insuranceName?.trim()) saveInsuranceIfNew(editState.values.insuranceName).catch(() => {});
       } else if (editState.type === "discharge") {
-        await updateDischarge(editState.id, { dischargeType: editState.values.dischargeType as Discharge["dischargeType"], dischargeName: editState.values.dischargeName.trim() });
-        setLocalDay((prev) => ({ ...prev, discharges: prev.discharges.map((d) => d.id === editState.id ? { ...d, dischargeType: editState.values.dischargeType as Discharge["dischargeType"], dischargeName: editState.values.dischargeName.trim() } : d) }));
+        const upd = { dischargeType: editState.values.dischargeType as Discharge["dischargeType"], dischargeName: editState.values.dischargeName.trim(), ...insUpdate(editState.values) };
+        await updateDischarge(editState.id, upd);
+        setLocalDay((prev) => ({ ...prev, discharges: prev.discharges.map((d) => d.id === editState.id ? { ...d, ...upd } : d) }));
+        if (editState.values.insuranceName?.trim()) saveInsuranceIfNew(editState.values.insuranceName).catch(() => {});
       } else if (editState.type === "rta") {
-        await updateRTA(editState.id, { hospital: editState.values.hospital as RTA["hospital"], reason: editState.values.reason as RTA["reason"] });
-        setLocalDay((prev) => ({ ...prev, rtas: prev.rtas.map((r) => r.id === editState.id ? { ...r, hospital: editState.values.hospital as RTA["hospital"], reason: editState.values.reason as RTA["reason"] } : r) }));
+        const upd = { hospital: editState.values.hospital as RTA["hospital"], reason: editState.values.reason as RTA["reason"], ...insUpdate(editState.values) };
+        await updateRTA(editState.id, upd);
+        setLocalDay((prev) => ({ ...prev, rtas: prev.rtas.map((r) => r.id === editState.id ? { ...r, ...upd } : r) }));
+        if (editState.values.insuranceName?.trim()) saveInsuranceIfNew(editState.values.insuranceName).catch(() => {});
       }
       showFeedback("success", "Updated successfully");
       setEditState(null);
@@ -1448,6 +1508,25 @@ function DayDetailModal({
               >
                 {CLINICAL_LIAISONS.map((cl) => <option key={cl} value={cl}>{cl}</option>)}
               </select>
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={addValues.insuranceType || ""}
+                  onChange={(e) => setAddValues((p) => ({ ...p, insuranceType: e.target.value }))}
+                  className="border focus:outline-none text-sm"
+                  style={inputStyle}
+                >
+                  <option value="">— Ins. Type —</option>
+                  {INSURANCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <AutocompleteInput
+                  value={addValues.insuranceName || ""}
+                  onChange={(v) => setAddValues((p) => ({ ...p, insuranceName: v }))}
+                  getSuggestions={getInsuranceNames}
+                  placeholder="Insurance name"
+                  className="border focus:outline-none text-sm"
+                  style={inputStyle}
+                />
+              </div>
               <div className="flex gap-2">
                 <button type="submit" disabled={submitting || !addValues.hospitalName?.trim()} className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-admit)" }}>
                   {submitting ? "Saving..." : "Save"}
@@ -1476,6 +1555,25 @@ function DayDetailModal({
                 className="border focus:outline-none text-sm"
                 style={inputStyle}
               />
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={addValues.insuranceType || ""}
+                  onChange={(e) => setAddValues((p) => ({ ...p, insuranceType: e.target.value }))}
+                  className="border focus:outline-none text-sm"
+                  style={inputStyle}
+                >
+                  <option value="">— Ins. Type —</option>
+                  {INSURANCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <AutocompleteInput
+                  value={addValues.insuranceName || ""}
+                  onChange={(v) => setAddValues((p) => ({ ...p, insuranceName: v }))}
+                  getSuggestions={getInsuranceNames}
+                  placeholder="Insurance name"
+                  className="border focus:outline-none text-sm"
+                  style={inputStyle}
+                />
+              </div>
               <div className="flex gap-2">
                 <button type="submit" disabled={submitting || !addValues.dischargeName?.trim()} className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-discharge)" }}>
                   {submitting ? "Saving..." : "Save"}
@@ -1504,6 +1602,25 @@ function DayDetailModal({
               >
                 {RTA_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={addValues.insuranceType || ""}
+                  onChange={(e) => setAddValues((p) => ({ ...p, insuranceType: e.target.value }))}
+                  className="border focus:outline-none text-sm"
+                  style={inputStyle}
+                >
+                  <option value="">— Ins. Type —</option>
+                  {INSURANCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <AutocompleteInput
+                  value={addValues.insuranceName || ""}
+                  onChange={(v) => setAddValues((p) => ({ ...p, insuranceName: v }))}
+                  getSuggestions={getInsuranceNames}
+                  placeholder="Insurance name"
+                  className="border focus:outline-none text-sm"
+                  style={inputStyle}
+                />
+              </div>
               <div className="flex gap-2">
                 <button type="submit" disabled={submitting} className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-rta)" }}>
                   {submitting ? "Saving..." : "Save"}
@@ -1536,6 +1653,13 @@ function DayDetailModal({
                     <select value={editState.values.clinicalLiaison} onChange={(e) => setEditValue("clinicalLiaison", e.target.value)} className="border focus:outline-none text-sm" style={inputStyle}>
                       {CLINICAL_LIAISONS.map((cl) => <option key={cl} value={cl}>{cl}</option>)}
                     </select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select value={editState.values.insuranceType || ""} onChange={(e) => setEditValue("insuranceType", e.target.value)} className="border focus:outline-none text-sm" style={inputStyle}>
+                        <option value="">— Ins. Type —</option>
+                        {INSURANCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <AutocompleteInput value={editState.values.insuranceName || ""} onChange={(v) => setEditValue("insuranceName", v)} getSuggestions={getInsuranceNames} placeholder="Insurance name" className="border focus:outline-none text-sm" style={inputStyle} />
+                    </div>
                     <div className="flex gap-2">
                       <button type="submit" disabled={submitting || !editState.values.hospitalName?.trim()} className="flex-1 rounded-xl py-2 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-admit)" }}>
                         {submitting ? "Saving..." : "Update"}
@@ -1559,6 +1683,7 @@ function DayDetailModal({
                       </p>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                         {a.patientType} &middot; CL: {a.clinicalLiaison}
+                        {a.insuranceType && ` \u00b7 ${a.insuranceType}${a.insuranceName ? ` (${a.insuranceName})` : ""}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-0 flex-shrink-0">
@@ -1592,6 +1717,13 @@ function DayDetailModal({
                       {DISCHARGE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                     </select>
                     <input type="text" value={editState.values.dischargeName || ""} onChange={(e) => setEditValue("dischargeName", e.target.value)} placeholder="Patient name" className="border focus:outline-none text-sm" style={inputStyle} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <select value={editState.values.insuranceType || ""} onChange={(e) => setEditValue("insuranceType", e.target.value)} className="border focus:outline-none text-sm" style={inputStyle}>
+                        <option value="">— Ins. Type —</option>
+                        {INSURANCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <AutocompleteInput value={editState.values.insuranceName || ""} onChange={(v) => setEditValue("insuranceName", v)} getSuggestions={getInsuranceNames} placeholder="Insurance name" className="border focus:outline-none text-sm" style={inputStyle} />
+                    </div>
                     <div className="flex gap-2">
                       <button type="submit" disabled={submitting || !editState.values.dischargeName?.trim()} className="flex-1 rounded-xl py-2 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-discharge)" }}>
                         {submitting ? "Saving..." : "Update"}
@@ -1615,6 +1747,7 @@ function DayDetailModal({
                       </p>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                         {d.dischargeType}
+                        {d.insuranceType && ` \u00b7 ${d.insuranceType}${d.insuranceName ? ` (${d.insuranceName})` : ""}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-0 flex-shrink-0">
@@ -1650,6 +1783,13 @@ function DayDetailModal({
                     <select value={editState.values.reason} onChange={(e) => setEditValue("reason", e.target.value)} className="border focus:outline-none text-sm" style={inputStyle}>
                       {RTA_REASONS.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
                     </select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select value={editState.values.insuranceType || ""} onChange={(e) => setEditValue("insuranceType", e.target.value)} className="border focus:outline-none text-sm" style={inputStyle}>
+                        <option value="">— Ins. Type —</option>
+                        {INSURANCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <AutocompleteInput value={editState.values.insuranceName || ""} onChange={(v) => setEditValue("insuranceName", v)} getSuggestions={getInsuranceNames} placeholder="Insurance name" className="border focus:outline-none text-sm" style={inputStyle} />
+                    </div>
                     <div className="flex gap-2">
                       <button type="submit" disabled={submitting} className="flex-1 rounded-xl py-2 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--status-rta)" }}>
                         {submitting ? "Saving..." : "Update"}
@@ -1673,6 +1813,7 @@ function DayDetailModal({
                       </p>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                         {r.reason}
+                        {r.insuranceType && ` \u00b7 ${r.insuranceType}${r.insuranceName ? ` (${r.insuranceName})` : ""}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-0 flex-shrink-0">
