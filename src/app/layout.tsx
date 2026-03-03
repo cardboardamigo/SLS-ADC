@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <link rel="apple-touch-icon" href="/CT_App_Icon.png" />
+        <link rel="apple-touch-icon" href="/CT_logo.png" />
       </head>
       <body className="safe-area-top safe-area-bottom">
         <a href="#main-content" className="skip-to-content">
