@@ -272,7 +272,7 @@ export default function ProfilePage() {
             className="text-center text-xs mt-12"
             style={{ color: "var(--text-muted)", opacity: 0.6 }}
           >
-            Census Tracker v1.0
+            Census Tracker v1.1
           </p>
         </div>
       </div>

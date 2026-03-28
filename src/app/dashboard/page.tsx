@@ -347,7 +347,7 @@ export default function DashboardPage() {
 
           {/* Hidden bonus access - triple tap area */}
           <div className="mt-12 text-center" onClick={handleTripleTap}>
-            <p className="text-sm select-none" style={{ color: "var(--text-muted)", opacity: 0.5 }}>v1.0 - SLS Census Tracker</p>
+            <p className="text-sm select-none" style={{ color: "var(--text-muted)", opacity: 0.5 }}>v1.1 - SLS Census Tracker</p>
           </div>
         </div>
 
