@@ -11,9 +11,21 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { db, withTimeout, getDocsResilient, getDocResilient } from "./firebase";
-import { Admission, Discharge, RTA, MonthlyADC, ActivityType, ActivityEntry } from "./types";
+import {
+  Admission,
+  Discharge,
+  RTA,
+  MonthlyADC,
+  ActivityType,
+  ActivityEntry,
+  BonusOverride,
+} from "./types";
 import { calculateBonus } from "./bonus";
 import { format, getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
+
+function monthKey(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
 
 // --- Hospitals (autocomplete suggestions) ---
 export async function getHospitalNames(): Promise<string[]> {
@@ -251,6 +263,70 @@ export async function setStartingCensus(
   await withTimeout(setDoc(docRef, { startingCensus: census }, { merge: true }));
 }
 
+// --- Bonus Overrides (super-user manual edits) ---
+export async function getBonusOverride(
+  year: number,
+  month: number
+): Promise<BonusOverride | null> {
+  const docRef = doc(db, "bonusOverrides", monthKey(year, month));
+  const snap = await getDocResilient(docRef);
+  if (!snap.exists()) return null;
+  return { month: monthKey(year, month), ...(snap.data() as Omit<BonusOverride, "month">) };
+}
+
+export async function setBonusOverride(
+  year: number,
+  month: number,
+  override: { averageDailyCensus?: number | null; bonusAmount?: number | null },
+  updatedBy: string
+): Promise<void> {
+  const docRef = doc(db, "bonusOverrides", monthKey(year, month));
+  // Only persist fields that were explicitly provided (non-null). A null value
+  // clears that field so the original calculation takes over.
+  const payload: Record<string, unknown> = {
+    updatedBy,
+    updatedAt: new Date().toISOString(),
+  };
+  if (override.averageDailyCensus === null) {
+    payload.averageDailyCensus = null;
+  } else if (typeof override.averageDailyCensus === "number") {
+    payload.averageDailyCensus = override.averageDailyCensus;
+  }
+  if (override.bonusAmount === null) {
+    payload.bonusAmount = null;
+  } else if (typeof override.bonusAmount === "number") {
+    payload.bonusAmount = override.bonusAmount;
+  }
+  await withTimeout(setDoc(docRef, payload, { merge: true }));
+}
+
+export async function clearBonusOverride(year: number, month: number): Promise<void> {
+  const docRef = doc(db, "bonusOverrides", monthKey(year, month));
+  await withTimeout(deleteDoc(docRef));
+}
+
+/**
+ * Apply a super-user override to a computed MonthlyADC.
+ * Overriding the ADC re-derives the tier/amount via `calculateBonus`;
+ * overriding the bonusAmount is applied last and wins unconditionally.
+ */
+function applyBonusOverride(
+  base: MonthlyADC,
+  override: BonusOverride | null
+): MonthlyADC {
+  if (!override) return base;
+  let result = base;
+  if (typeof override.averageDailyCensus === "number") {
+    const adc = Math.round(override.averageDailyCensus * 100) / 100;
+    const { tier, amount } = calculateBonus(adc);
+    result = { ...result, averageDailyCensus: adc, bonusTier: tier, bonusAmount: amount };
+  }
+  if (typeof override.bonusAmount === "number") {
+    result = { ...result, bonusAmount: override.bonusAmount };
+  }
+  return result;
+}
+
 function computeADC(
   year: number,
   month: number,
@@ -311,14 +387,16 @@ function computeADC(
 }
 
 export async function calculateMonthlyADC(year: number, month: number): Promise<MonthlyADC> {
-  const [admissions, discharges, rtas, startingCensus] = await Promise.all([
+  const [admissions, discharges, rtas, startingCensus, override] = await Promise.all([
     getAdmissionsForMonth(year, month),
     getDischargesForMonth(year, month),
     getRTAsForMonth(year, month),
     getStartingCensus(year, month),
+    getBonusOverride(year, month),
   ]);
 
-  return computeADC(year, month, admissions, discharges, rtas, startingCensus);
+  const base = computeADC(year, month, admissions, discharges, rtas, startingCensus);
+  return applyBonusOverride(base, override);
 }
 
 // --- Date-range queries (cross-month search) ---
@@ -378,15 +456,17 @@ export async function getMonthSummary(year: number, month: number): Promise<{
   discharges: Discharge[];
   rtas: RTA[];
 }> {
-  const [admissions, discharges, rtas, startingCensus] = await Promise.all([
+  const [admissions, discharges, rtas, startingCensus, override] = await Promise.all([
     getAdmissionsForMonth(year, month),
     getDischargesForMonth(year, month),
     getRTAsForMonth(year, month),
     getStartingCensus(year, month),
+    getBonusOverride(year, month),
   ]);
 
+  const base = computeADC(year, month, admissions, discharges, rtas, startingCensus);
   return {
-    adc: computeADC(year, month, admissions, discharges, rtas, startingCensus),
+    adc: applyBonusOverride(base, override),
     admissions,
     discharges,
     rtas,

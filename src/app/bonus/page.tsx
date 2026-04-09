@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, FormEvent } from "react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import AppLayout from "@/components/AppLayout";
-import { calculateMonthlyADC } from "@/lib/census";
-import { BONUS_TIERS, calculateBonus, formatCurrency } from "@/lib/bonus";
+import {
+  calculateMonthlyADC,
+  setBonusOverride,
+  clearBonusOverride,
+} from "@/lib/census";
+import { BONUS_TIERS, formatCurrency } from "@/lib/bonus";
 import { MonthlyADC } from "@/lib/types";
+import { isSuperUser } from "@/lib/config";
 import { subMonths } from "date-fns";
 import { generateBonusPDF, generateBonusReportPDF } from "@/lib/pdfGenerator";
 
@@ -18,6 +23,9 @@ export default function BonusPage() {
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [editingMonth, setEditingMonth] = useState<MonthlyADC | null>(null);
+
+  const canEdit = isSuperUser(profile?.email ?? user?.email ?? null);
 
   const loadData = useCallback(async () => {
     try {
@@ -63,6 +71,23 @@ export default function BonusPage() {
     } finally {
       setGeneratingPDF(false);
     }
+  }
+
+  async function handleSaveOverride(
+    monthData: MonthlyADC,
+    override: { averageDailyCensus?: number | null; bonusAmount?: number | null }
+  ) {
+    const [y, m] = monthData.month.split("-").map(Number);
+    await setBonusOverride(y, m, override, profile?.email ?? user?.email ?? "unknown");
+    setEditingMonth(null);
+    await loadData();
+  }
+
+  async function handleClearOverride(monthData: MonthlyADC) {
+    const [y, m] = monthData.month.split("-").map(Number);
+    await clearBonusOverride(y, m);
+    setEditingMonth(null);
+    await loadData();
   }
 
   async function handleExportReport(monthData: MonthlyADC) {
@@ -117,7 +142,9 @@ export default function BonusPage() {
     );
   }
 
-  const currentBonus = currentMonth ? calculateBonus(currentMonth.averageDailyCensus) : { tier: null, amount: 0 };
+  // Use values straight from MonthlyADC so any super-user override is respected.
+  const currentBonusAmount = currentMonth?.bonusAmount ?? 0;
+  const currentBonusTier = currentMonth?.bonusTier ?? null;
 
   return (
     <AppLayout>
@@ -139,12 +166,21 @@ export default function BonusPage() {
                   {currentMonth?.monthName} Projected Bonus
                 </p>
                 <p className="text-5xl font-bold mb-2 text-center lg:text-left">
-                  {formatCurrency(currentBonus.amount)}
+                  {formatCurrency(currentBonusAmount)}
                 </p>
                 <p className="text-white/70 text-base text-center lg:text-left">
                   ADC: {currentMonth?.averageDailyCensus.toFixed(1)}
-                  {currentBonus.tier && ` (${currentBonus.tier.adcThreshold}+ tier)`}
+                  {currentBonusTier && ` (${currentBonusTier.adcThreshold}+ tier)`}
                 </p>
+                {canEdit && currentMonth && (
+                  <button
+                    onClick={() => setEditingMonth(currentMonth)}
+                    className="mt-3 bg-white/10 hover:bg-white/20 text-white/90 text-sm font-medium transition w-full max-w-[400px] mx-auto block pill-button"
+                    style={{ padding: "10px 24px" }}
+                  >
+                    Edit ADC / Bonus
+                  </button>
+                )}
                 {currentMonth && (
                   <button
                     onClick={() => handleExportReport(currentMonth)}
@@ -170,7 +206,7 @@ export default function BonusPage() {
                     )}
                   </button>
                 )}
-                {currentMonth && currentBonus.amount > 0 && (
+                {currentMonth && currentBonusAmount > 0 && (
                   <button
                     onClick={() => handleGeneratePDF(currentMonth)}
                     disabled={generatingPDF}
@@ -190,7 +226,7 @@ export default function BonusPage() {
                     const isActive =
                       currentMonth &&
                       currentMonth.averageDailyCensus >= tier.adcThreshold;
-                    const isCurrent = currentBonus.tier?.adcThreshold === tier.adcThreshold;
+                    const isCurrent = currentBonusTier?.adcThreshold === tier.adcThreshold;
                     return (
                       <div
                         key={tier.adcThreshold}
@@ -254,7 +290,6 @@ export default function BonusPage() {
                 ) : (
                   <div className="space-y-3">
                     {previousMonths.map((m) => {
-                      const bonus = calculateBonus(m.averageDailyCensus);
                       return (
                         <div
                           key={m.month}
@@ -268,11 +303,11 @@ export default function BonusPage() {
                           <div className="text-right">
                             <p
                               className="text-base font-semibold"
-                              style={{ color: bonus.amount > 0 ? "var(--success)" : "var(--text-muted)" }}
+                              style={{ color: m.bonusAmount > 0 ? "var(--success)" : "var(--text-muted)" }}
                             >
-                              {formatCurrency(bonus.amount)}
+                              {formatCurrency(m.bonusAmount)}
                             </p>
-                            <div className="flex gap-3 mt-1">
+                            <div className="flex gap-3 mt-1 justify-end flex-wrap">
                               <button
                                 onClick={() => handleExportReport(m)}
                                 className="text-sm"
@@ -280,13 +315,22 @@ export default function BonusPage() {
                               >
                                 Report
                               </button>
-                              {bonus.amount > 0 && (
+                              {m.bonusAmount > 0 && (
                                 <button
                                   onClick={() => handleGeneratePDF(m)}
                                   className="text-sm"
                                   style={{ color: "var(--text-muted)" }}
                                 >
                                   Form
+                                </button>
+                              )}
+                              {canEdit && (
+                                <button
+                                  onClick={() => setEditingMonth(m)}
+                                  className="text-sm"
+                                  style={{ color: "var(--primary)" }}
+                                >
+                                  Edit
                                 </button>
                               )}
                             </div>
@@ -301,6 +345,191 @@ export default function BonusPage() {
           </div>
         </div>
       </div>
+      {canEdit && editingMonth && (
+        <BonusEditModal
+          monthData={editingMonth}
+          onClose={() => setEditingMonth(null)}
+          onSave={handleSaveOverride}
+          onClear={handleClearOverride}
+        />
+      )}
     </AppLayout>
+  );
+}
+
+function BonusEditModal({
+  monthData,
+  onClose,
+  onSave,
+  onClear,
+}: {
+  monthData: MonthlyADC;
+  onClose: () => void;
+  onSave: (
+    monthData: MonthlyADC,
+    override: { averageDailyCensus?: number | null; bonusAmount?: number | null }
+  ) => Promise<void>;
+  onClear: (monthData: MonthlyADC) => Promise<void>;
+}) {
+  const [adcInput, setAdcInput] = useState<string>(monthData.averageDailyCensus.toFixed(2));
+  const [bonusInput, setBonusInput] = useState<string>(String(monthData.bonusAmount));
+  const [saving, setSaving] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    const trimmedAdc = adcInput.trim();
+    const trimmedBonus = bonusInput.trim();
+
+    const adcValue = trimmedAdc === "" ? null : Number(trimmedAdc);
+    const bonusValue = trimmedBonus === "" ? null : Number(trimmedBonus);
+
+    if (adcValue !== null && (!Number.isFinite(adcValue) || adcValue < 0)) {
+      setError("ADC must be a non-negative number.");
+      return;
+    }
+    if (bonusValue !== null && (!Number.isFinite(bonusValue) || bonusValue < 0)) {
+      setError("Bonus amount must be a non-negative number.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await onSave(monthData, { averageDailyCensus: adcValue, bonusAmount: bonusValue });
+    } catch (err) {
+      console.error("Failed to save bonus override:", err);
+      setError("Failed to save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleClearClick() {
+    setError(null);
+    try {
+      setClearing(true);
+      await onClear(monthData);
+    } catch (err) {
+      console.error("Failed to clear bonus override:", err);
+      setError("Failed to reset. Please try again.");
+    } finally {
+      setClearing(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0, 0, 0, 0.5)" }}
+      onClick={onClose}
+    >
+      <div
+        className="card w-full max-w-md"
+        style={{ background: "var(--surface)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--text)" }}>
+          Edit {monthData.monthName}
+        </h2>
+        <p className="text-sm mb-5" style={{ color: "var(--text-muted)" }}>
+          Override the calculated ADC and/or bonus amount. Leave a field blank to use
+          the calculated value.
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              className="block text-sm font-medium mb-1"
+              style={{ color: "var(--text)" }}
+              htmlFor="override-adc"
+            >
+              Average Daily Census (ADC)
+            </label>
+            <input
+              id="override-adc"
+              type="number"
+              step="0.01"
+              min="0"
+              value={adcInput}
+              onChange={(e) => setAdcInput(e.target.value)}
+              className="w-full rounded-xl px-4 py-3 text-base"
+              style={{
+                background: "var(--bg)",
+                color: "var(--text)",
+                border: "1px solid var(--border)",
+              }}
+              placeholder="e.g. 32.5"
+            />
+          </div>
+          <div>
+            <label
+              className="block text-sm font-medium mb-1"
+              style={{ color: "var(--text)" }}
+              htmlFor="override-bonus"
+            >
+              Bonus Amount ($)
+            </label>
+            <input
+              id="override-bonus"
+              type="number"
+              step="1"
+              min="0"
+              value={bonusInput}
+              onChange={(e) => setBonusInput(e.target.value)}
+              className="w-full rounded-xl px-4 py-3 text-base"
+              style={{
+                background: "var(--bg)",
+                color: "var(--text)",
+                border: "1px solid var(--border)",
+              }}
+              placeholder="e.g. 5000"
+            />
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              Overriding the bonus amount takes precedence over the tier calculation.
+            </p>
+          </div>
+          {error && (
+            <p className="text-sm" style={{ color: "var(--danger)" }}>
+              {error}
+            </p>
+          )}
+          <div className="flex flex-col gap-2 pt-2">
+            <button
+              type="submit"
+              disabled={saving || clearing}
+              className="text-white text-base font-semibold pill-button w-full"
+              style={{ background: "var(--primary)", padding: "14px 28px" }}
+            >
+              {saving ? "Saving..." : "Save Override"}
+            </button>
+            <button
+              type="button"
+              onClick={handleClearClick}
+              disabled={saving || clearing}
+              className="text-base font-medium pill-button w-full"
+              style={{
+                background: "transparent",
+                color: "var(--danger)",
+                border: "1px solid var(--danger)",
+                padding: "12px 24px",
+              }}
+            >
+              {clearing ? "Resetting..." : "Reset to Calculated Values"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving || clearing}
+              className="text-base font-medium w-full"
+              style={{ color: "var(--text-muted)", padding: "10px" }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
