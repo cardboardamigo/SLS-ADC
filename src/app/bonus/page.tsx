@@ -33,11 +33,37 @@ export default function BonusPage() {
       setDataError(null);
       const now = new Date();
 
-      const months = Array.from({ length: 7 }, (_, i) => {
+      // Load each month independently via allSettled so a single flaky fetch
+      // (e.g. a cold cache read on a slow mobile connection) doesn't wipe out
+      // all 7 months of bonus data.  We only surface an error if EVERY month
+      // failed — otherwise we show whatever loaded successfully.
+      const monthPromises = Array.from({ length: 7 }, (_, i) => {
         const d = i === 0 ? now : subMonths(now, i);
         return calculateMonthlyADC(d.getFullYear(), d.getMonth() + 1);
       });
-      const [current, ...prev] = await Promise.all(months);
+      const results = await Promise.allSettled(monthPromises);
+
+      const [currentResult, ...prevResults] = results;
+      const current =
+        currentResult.status === "fulfilled" ? currentResult.value : null;
+      const prev = prevResults
+        .filter(
+          (r): r is PromiseFulfilledResult<MonthlyADC> => r.status === "fulfilled"
+        )
+        .map((r) => r.value);
+
+      const anyFailed = results.some((r) => r.status === "rejected");
+      if (anyFailed) {
+        const failures = results
+          .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+          .map((r) => r.reason);
+        console.warn("Some bonus months failed to load:", failures);
+      }
+
+      if (!current && prev.length === 0) {
+        throw new Error("All months failed to load");
+      }
+
       setCurrentMonth(current);
       setPreviousMonths(prev);
     } catch (err) {

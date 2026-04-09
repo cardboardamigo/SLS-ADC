@@ -264,14 +264,25 @@ export async function setStartingCensus(
 }
 
 // --- Bonus Overrides (super-user manual edits) ---
+// This is a brand-new collection, so on most first-loads the override doc
+// neither exists nor is cached — meaning every call hits the server.  If the
+// server is slow or the user is on a flaky connection, a single timed-out
+// fetch would otherwise crash the entire Bonus page.  "No override" is the
+// overwhelmingly common case, so we treat a failed read as "no override"
+// rather than propagating it.
 export async function getBonusOverride(
   year: number,
   month: number
 ): Promise<BonusOverride | null> {
-  const docRef = doc(db, "bonusOverrides", monthKey(year, month));
-  const snap = await getDocResilient(docRef);
-  if (!snap.exists()) return null;
-  return { month: monthKey(year, month), ...(snap.data() as Omit<BonusOverride, "month">) };
+  try {
+    const docRef = doc(db, "bonusOverrides", monthKey(year, month));
+    const snap = await getDocResilient(docRef);
+    if (!snap.exists()) return null;
+    return { month: monthKey(year, month), ...(snap.data() as Omit<BonusOverride, "month">) };
+  } catch (err) {
+    console.warn(`[census.ts] getBonusOverride(${year}, ${month}) failed, defaulting to no override:`, err);
+    return null;
+  }
 }
 
 export async function setBonusOverride(
