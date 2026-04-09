@@ -73,6 +73,20 @@ export interface BonusTier {
   bonusAmount: number;
 }
 
+/**
+ * Super-user override for a given month's bonus report.
+ * Either field may be set independently:
+ *  - `averageDailyCensus` overrides the computed ADC (and re-derives the tier/amount)
+ *  - `bonusAmount` overrides the dollar amount directly (final say)
+ */
+export interface BonusOverride {
+  month: string; // YYYY-MM
+  averageDailyCensus?: number;
+  bonusAmount?: number;
+  updatedBy?: string;
+  updatedAt?: string;
+}
+
 export type ThemeMode = "light" | "dark";
 
 export interface UserProfile {

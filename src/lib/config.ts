@@ -9,6 +9,17 @@ export const USERS = [
   { initials: "TW", name: "Thad Webb", email: "twebb@slspecialty.org", profilePic: null },
 ] as const;
 
+/**
+ * Super users can manually override values on the bonus report
+ * (e.g. correct an ADC or bonus amount for a historical month).
+ */
+export const SUPER_USER_EMAILS = ["jbrewer@slspecialty.org"] as const;
+
+export function isSuperUser(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return (SUPER_USER_EMAILS as readonly string[]).includes(email.toLowerCase());
+}
+
 /** Clinical data arrays */
 export const PATIENT_TYPES = ["Resp Complex", "Trach Vent", "Wound", "Med Complex"] as const;
 export const CLINICAL_LIAISONS = ["Thad", "West"] as const;
