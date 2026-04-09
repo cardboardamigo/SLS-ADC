@@ -264,14 +264,41 @@ export async function setStartingCensus(
 }
 
 // --- Bonus Overrides (super-user manual edits) ---
+// Stored as extra fields on the existing `censusConfig/{year-month}` document
+// (alongside `startingCensus`) so it reuses the already-deployed Firestore
+// rules and keeps all per-month config in one place.
 export async function getBonusOverride(
   year: number,
   month: number
 ): Promise<BonusOverride | null> {
-  const docRef = doc(db, "bonusOverrides", monthKey(year, month));
-  const snap = await getDocResilient(docRef);
-  if (!snap.exists()) return null;
-  return { month: monthKey(year, month), ...(snap.data() as Omit<BonusOverride, "month">) };
+  // Fail open: if the doc isn't readable for any reason, fall back to the
+  // calculated values instead of breaking the whole bonus page.
+  try {
+    const docRef = doc(db, "censusConfig", monthKey(year, month));
+    const snap = await getDocResilient(docRef);
+    if (!snap.exists()) return null;
+    const data = snap.data() as {
+      overrideADC?: number | null;
+      overrideBonusAmount?: number | null;
+      overrideUpdatedBy?: string;
+      overrideUpdatedAt?: string;
+    };
+    if (data.overrideADC == null && data.overrideBonusAmount == null) {
+      return null;
+    }
+    return {
+      month: monthKey(year, month),
+      averageDailyCensus:
+        typeof data.overrideADC === "number" ? data.overrideADC : undefined,
+      bonusAmount:
+        typeof data.overrideBonusAmount === "number" ? data.overrideBonusAmount : undefined,
+      updatedBy: data.overrideUpdatedBy,
+      updatedAt: data.overrideUpdatedAt,
+    };
+  } catch (err) {
+    console.warn("[census.ts] Failed to read bonus override:", err);
+    return null;
+  }
 }
 
 export async function setBonusOverride(
@@ -280,29 +307,39 @@ export async function setBonusOverride(
   override: { averageDailyCensus?: number | null; bonusAmount?: number | null },
   updatedBy: string
 ): Promise<void> {
-  const docRef = doc(db, "bonusOverrides", monthKey(year, month));
-  // Only persist fields that were explicitly provided (non-null). A null value
-  // clears that field so the original calculation takes over.
+  const docRef = doc(db, "censusConfig", monthKey(year, month));
+  // `null` explicitly clears that field; omitted fields are left untouched.
   const payload: Record<string, unknown> = {
-    updatedBy,
-    updatedAt: new Date().toISOString(),
+    overrideUpdatedBy: updatedBy,
+    overrideUpdatedAt: new Date().toISOString(),
   };
   if (override.averageDailyCensus === null) {
-    payload.averageDailyCensus = null;
+    payload.overrideADC = null;
   } else if (typeof override.averageDailyCensus === "number") {
-    payload.averageDailyCensus = override.averageDailyCensus;
+    payload.overrideADC = override.averageDailyCensus;
   }
   if (override.bonusAmount === null) {
-    payload.bonusAmount = null;
+    payload.overrideBonusAmount = null;
   } else if (typeof override.bonusAmount === "number") {
-    payload.bonusAmount = override.bonusAmount;
+    payload.overrideBonusAmount = override.bonusAmount;
   }
   await withTimeout(setDoc(docRef, payload, { merge: true }));
 }
 
 export async function clearBonusOverride(year: number, month: number): Promise<void> {
-  const docRef = doc(db, "bonusOverrides", monthKey(year, month));
-  await withTimeout(deleteDoc(docRef));
+  const docRef = doc(db, "censusConfig", monthKey(year, month));
+  await withTimeout(
+    setDoc(
+      docRef,
+      {
+        overrideADC: null,
+        overrideBonusAmount: null,
+        overrideUpdatedBy: null,
+        overrideUpdatedAt: null,
+      },
+      { merge: true }
+    )
+  );
 }
 
 /**
