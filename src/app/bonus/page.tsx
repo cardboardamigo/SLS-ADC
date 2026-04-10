@@ -5,6 +5,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import AppLayout from "@/components/AppLayout";
 import {
   calculateMonthlyADC,
+  calculateMonthlyADCFresh,
   setBonusOverride,
   clearBonusOverride,
 } from "@/lib/census";
@@ -122,17 +123,22 @@ export default function BonusPage() {
     setGeneratingReport(true);
     setPdfError(null);
     try {
+      // Re-fetch fresh data (server-first, bypassing persistent cache)
+      // so the report always reflects the latest override values.
+      const [y, m] = monthData.month.split("-").map(Number);
+      const fresh = await calculateMonthlyADCFresh(y, m);
+
       await generateBonusReportPDF({
         userName: profile.name,
         userEmail: profile.email,
         userTitle: profile.title,
         facility: "SL Specialty Hospital",
-        month: monthData.monthName,
-        year: monthData.year,
-        adc: monthData.averageDailyCensus,
-        bonusAmount: monthData.bonusAmount,
-        daysTracked: monthData.daysInMonth,
-        totalCensusDays: monthData.totalCensusDays,
+        month: fresh.monthName,
+        year: fresh.year,
+        adc: fresh.averageDailyCensus,
+        bonusAmount: fresh.bonusAmount,
+        daysTracked: fresh.daysInMonth,
+        totalCensusDays: fresh.totalCensusDays,
       });
     } catch (err) {
       console.error("Failed to generate report PDF:", err);
