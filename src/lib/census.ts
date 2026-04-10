@@ -9,6 +9,7 @@ import {
   setDoc,
   updateDoc,
   onSnapshot,
+  getDoc as firestoreGetDoc,
 } from "firebase/firestore";
 import { db, withTimeout, getDocsResilient, getDocResilient } from "./firebase";
 import {
@@ -404,6 +405,35 @@ export async function calculateMonthlyADC(year: number, month: number): Promise<
     getRTAsForMonth(year, month),
     getStartingCensus(year, month),
     getBonusOverride(year, month),
+  ]);
+
+  const base = computeADC(year, month, admissions, discharges, rtas, startingCensus);
+  return applyBonusOverride(base, override);
+}
+
+/**
+ * Same as calculateMonthlyADC but reads the bonus override directly from the
+ * server (bypassing the persistent cache).  Use this for PDF report generation
+ * where accuracy matters more than latency.
+ */
+export async function calculateMonthlyADCFresh(year: number, month: number): Promise<MonthlyADC> {
+  const overridePromise = (async (): Promise<BonusOverride | null> => {
+    try {
+      const docRef = doc(db, "bonusOverrides", monthKey(year, month));
+      const snap = await withTimeout(firestoreGetDoc(docRef));
+      if (!snap.exists()) return null;
+      return { month: monthKey(year, month), ...(snap.data() as Omit<BonusOverride, "month">) };
+    } catch {
+      return null;
+    }
+  })();
+
+  const [admissions, discharges, rtas, startingCensus, override] = await Promise.all([
+    getAdmissionsForMonth(year, month),
+    getDischargesForMonth(year, month),
+    getRTAsForMonth(year, month),
+    getStartingCensus(year, month),
+    overridePromise,
   ]);
 
   const base = computeADC(year, month, admissions, discharges, rtas, startingCensus);
