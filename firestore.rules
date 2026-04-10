@@ -13,10 +13,10 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Bonus overrides — manual edits by super users only
+    // Bonus overrides — any authenticated user can read/write so all
+    // clinical liaisons can adjust and print bonus reports.
     match /bonusOverrides/{docId} {
-      allow read: if request.auth != null;
-      allow write: if isSuperUser();
+      allow read, write: if request.auth != null;
     }
 
     // Census data - all authenticated users can read/write

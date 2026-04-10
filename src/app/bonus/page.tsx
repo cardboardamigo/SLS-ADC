@@ -10,7 +10,6 @@ import {
 } from "@/lib/census";
 import { BONUS_TIERS, formatCurrency } from "@/lib/bonus";
 import { MonthlyADC } from "@/lib/types";
-import { isSuperUser } from "@/lib/config";
 import { subMonths } from "date-fns";
 import { generateBonusPDF, generateBonusReportPDF } from "@/lib/pdfGenerator";
 
@@ -25,7 +24,9 @@ export default function BonusPage() {
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [editingMonth, setEditingMonth] = useState<MonthlyADC | null>(null);
 
-  const canEdit = isSuperUser(profile?.email ?? user?.email ?? null);
+  // All authenticated users can edit bonus overrides so everyone can
+  // adjust values and print accurate bonus reports.
+  const canEdit = Boolean(user);
 
   const loadData = useCallback(async () => {
     try {
@@ -427,7 +428,14 @@ function BonusEditModal({
       await onSave(monthData, { averageDailyCensus: adcValue, bonusAmount: bonusValue });
     } catch (err) {
       console.error("Failed to save bonus override:", err);
-      setError("Failed to save. Please try again.");
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      if (msg.includes("permission") || msg.includes("PERMISSION_DENIED")) {
+        setError("Permission denied. Please sign out and sign back in, then try again.");
+      } else if (msg.includes("timed out")) {
+        setError("Save timed out — check your connection and try again.");
+      } else {
+        setError(`Failed to save: ${msg}`);
+      }
     } finally {
       setSaving(false);
     }
