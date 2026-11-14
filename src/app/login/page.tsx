@@ -265,7 +265,7 @@ function LoginContent() {
                 {selectedUser.name}
               </h2>
               <p className="text-sm mt-1" style={{ color: "rgba(15,42,74,0.5)" }}>
-                Enter your PIN to continue
+                Hey buddy, enter your PIN to continue
               </p>
             </div>
 
