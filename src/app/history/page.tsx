@@ -1,3 +1,4 @@
+import { HISTORICAL_ADC_2026 } from "@/lib/historicalADC";
 "use client";
 
 import { useState, useRef, useCallback } from "react";
@@ -190,7 +191,7 @@ export default function HistoryPage() {
                     >
                       <div>
                         <p className="text-base font-semibold" style={{ color: "var(--text)" }}>
-                          {m.adc.monthName}
+                          {m.adc.monthName}{HISTORICAL_ADC_2026[m.adc.month] && " · Historical report"}
                         </p>
                         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                           {m.admissions.length} admits &middot; {m.discharges.length} D/C &middot;{" "}
