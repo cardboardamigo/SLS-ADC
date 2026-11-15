@@ -1,5 +1,6 @@
-import { HISTORICAL_ADC_2026 } from "@/lib/historicalADC";
 "use client";
+
+import { HISTORICAL_ADC_2026 } from "@/lib/historicalADC";
 
 import { useState, useRef, useCallback } from "react";
 import AppLayout from "@/components/AppLayout";
