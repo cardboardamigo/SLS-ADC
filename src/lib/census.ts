@@ -22,6 +22,7 @@ import {
   BonusOverride,
 } from "./types";
 import { calculateBonus } from "./bonus";
+import { HISTORICAL_ADC_2026 } from "./historicalADC";
 import { format, getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
 
 function monthKey(year: number, month: number): string {
@@ -326,8 +327,11 @@ function applyBonusOverride(
   base: MonthlyADC,
   override: BonusOverride | null
 ): MonthlyADC {
-  if (!override) return base;
-  let result = base;
+  const historical = HISTORICAL_ADC_2026[base.month];
+  let result = historical
+    ? { ...base, averageDailyCensus: historical.adc, bonusTier: calculateBonus(historical.adc).tier, bonusAmount: historical.bonus, totalCensusDays: 0, daysInMonth: 0 }
+    : base;
+  if (!override) return result;
   if (typeof override.averageDailyCensus === "number") {
     const adc = Math.round(override.averageDailyCensus * 100) / 100;
     const { tier, amount } = calculateBonus(adc);
