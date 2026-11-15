@@ -1,5 +1,6 @@
-import { HISTORICAL_ADC_2026 } from "@/lib/historicalADC";
 "use client";
+
+import { HISTORICAL_ADC_2026 } from "@/lib/historicalADC";
 
 import { useEffect, useState, useCallback, FormEvent } from "react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
