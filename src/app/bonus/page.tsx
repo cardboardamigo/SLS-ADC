@@ -1,3 +1,4 @@
+import { HISTORICAL_ADC_2026 } from "@/lib/historicalADC";
 "use client";
 
 import { useEffect, useState, useCallback, FormEvent } from "react";
@@ -39,7 +40,7 @@ export default function BonusPage() {
       // (e.g. a cold cache read on a slow mobile connection) doesn't wipe out
       // all 7 months of bonus data.  We only surface an error if EVERY month
       // failed — otherwise we show whatever loaded successfully.
-      const monthPromises = Array.from({ length: 7 }, (_, i) => {
+      const monthPromises = Array.from({ length: Math.max(7, (now.getFullYear() - 2026) * 12 + now.getMonth() + 1 - 2) }, (_, i) => {
         const d = i === 0 ? now : subMonths(now, i);
         return calculateMonthlyADC(d.getFullYear(), d.getMonth() + 1);
       });
@@ -331,7 +332,7 @@ export default function BonusPage() {
                         >
                           <div>
                             <p className="text-base font-medium" style={{ color: "var(--text)" }}>{m.monthName}</p>
-                            <p className="text-sm" style={{ color: "var(--text-muted)" }}>ADC: {m.averageDailyCensus.toFixed(1)}</p>
+                            <p className="text-sm" style={{ color: "var(--text-muted)" }}>ADC: {m.averageDailyCensus.toFixed(2)}{HISTORICAL_ADC_2026[m.month] && " · Historical report"}</p>
                           </div>
                           <div className="text-right">
                             <p
